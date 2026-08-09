@@ -2,7 +2,7 @@
 
 ## 1. Estrategia: Modelo Freemium
 
-Mente adopta el modelo **Freemium con límite de almacenamiento** (no de tiempo), siguiendo el modelo probado de Notion, Evernote y Spotify.
+FOCO adopta el modelo **Freemium con límite de almacenamiento** (no de tiempo), siguiendo el modelo probado de Notion, Evernote y Spotify.
 
 ### ¿Por qué Freemium y no Trial de 14 días?
 
@@ -39,7 +39,7 @@ Mente adopta el modelo **Freemium con límite de almacenamiento** (no de tiempo)
 
 ### 🔵 Plan Pro — "Para monetizar"
 
-**Target:** Estudiantes avanzados, profesionales y creadores de contenido que ya adoptaron Mente como su centro de control diario.
+**Target:** Estudiantes avanzados, profesionales y creadores de contenido que ya adoptaron FOCO como su centro de control diario.
 
 | Característica | Límite |
 |---|---|
@@ -68,7 +68,7 @@ Mente adopta el modelo **Freemium con límite de almacenamiento** (no de tiempo)
 ### Internacional (LATAM / Europa) 🌍
 - **Precio:** $5 – $7 USD o EUR / mes
 - **Comparativa:** Por debajo del precio de Notion Pro ($10 USD), Evernote Personal ($10.99 USD)
-- **Posicionamiento:** Precio diferencial que destaca Mente como la alternativa accesible y visual
+- **Posicionamiento:** Precio diferencial que destaca FOCO como la alternativa accesible y visual
 
 ---
 

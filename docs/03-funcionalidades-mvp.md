@@ -2,7 +2,7 @@
 
 ## 1. Visión General del Producto
 
-La interfaz de Mente está organizada en **vistas anidadas** que respetan la jerarquía del método P.A.R.A.:
+La interfaz de FOCO está organizada en **vistas anidadas** que respetan la jerarquía del método P.A.R.A.:
 
 ```
 Panel General (Vista de Ojo de Halcón)
@@ -71,20 +71,22 @@ Resolver la fricción de "¿dónde guardo esto rápido para no olvidarlo?".
 ### Componentes
 
 #### Barra Lateral de Inbox
-- Pestaña **colapsable** accesible desde **cualquier vista** de la app (siempre visible en el layout)
+- Pestaña **colapsable** accesible desde **cualquier vista** de la app web (`app.foco.com`)
+- Recibe en tiempo real las notas rápidas creadas tanto desde la web como desde la app móvil `foco.app` (`inbox: true`, `project_id: null`).
 - Botón de apertura rápida con atajo de teclado (sugerido: `Alt + I`)
 
 #### El Botón de Vaciado (Brain Dump)
-- Input de texto grande sin campos obligatorios
+- Input de texto grande sin campos obligatorios en web y app móvil `foco.app`
 - Acepta: texto libre, links pegados, imágenes, PDFs
 - Al guardar → la tarjeta cae como **"tarjeta cruda"** en el Inbox con `inbox: true`
 - **No pide** carpeta, etiqueta ni fecha → cero fricción
 
 #### Clasificación por Drag & Drop
 - El usuario arrastra una tarjeta del Inbox hacia cualquier tablero del panel central
-- La app detecta el destino y actualiza en la base de datos:
+- La app detecta el destino y actualiza en la base de datos de Supabase:
   - `inbox: false`
   - `project_id: <id-del-proyecto-destino>`
+
 
 ---
 

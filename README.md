@@ -1,6 +1,6 @@
-# 🎨 Mente — Frontend Web Application (`mente-frontend`)
+# 🎨 FOCO — Frontend Web Application (`foco.frontend`)
 
-Este repositorio contiene la aplicación interactiva de **Mente**, accesible en [app.mente.com](https://app.mente.com). Aquí reside toda la interfaz visual, el lienzo infinito (canvas), la barra lateral de Inbox y los módulos de productividad personal.
+Este repositorio contiene la aplicación interactiva de **FOCO**, accesible en [app.foco.com](https://app.foco.com). Aquí reside toda la interfaz visual, el lienzo infinito (canvas), la barra lateral de Inbox y los módulos de productividad personal.
 
 ---
 
@@ -9,6 +9,7 @@ Este repositorio contiene la aplicación interactiva de **Mente**, accesible en 
 - **Experiencia de Usuario (UX):** Proveer una interfaz premium, responsiva y ágil basada en arrastrar y soltar (Drag & Drop).
 - **Interactividad:** Canvas interactivo donde los usuarios conectan ideas de forma visual con flechas y bloques dinámicos.
 - **Gestión del Tiempo:** Integrar el Habit Tracker, el Pomodoro y la visualización de tareas recurrentes.
+- **Integración Móvil (Captura Rápida):** Recibir en tiempo real en la barra lateral del Inbox las notas rápidas capturadas desde la app móvil `foco.app` (con `inbox: true` y `project_id: null`), listas para ser organizadas en tableros.
 
 ---
 
@@ -26,7 +27,7 @@ Este repositorio contiene la aplicación interactiva de **Mente**, accesible en 
 ## 📂 Estructura del Proyecto
 
 ```
-mente-frontend/
+foco.frontend/
 ├── src/
 │   ├── app/             # Rutas y páginas (Next.js App Router)
 │   ├── components/      # Componentes UI (Canvas, Blocks, Pomodoro, Habits)
@@ -46,7 +47,7 @@ mente-frontend/
 Crea un archivo `.env.local` en la raíz del proyecto con las siguientes variables:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:4000/api  # Dirección de mente.backend
+NEXT_PUBLIC_API_URL=http://localhost:4000/api  # Dirección de foco.backend
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_... # Llave pública Stripe Sandbox
 ```
 
@@ -89,3 +90,5 @@ Para entender el diseño de componentes, modelo de datos en el cliente y alcance
 - [Funcionalidades del MVP (Canvas, Inbox, Widgets)](./docs/03-funcionalidades-mvp.md)
 - [Arquitectura Técnica Consolidada](./docs/02-arquitectura-tecnica.md)
 - [Estrategia Git y Configuración de GitHub](./docs/07-devops-y-git.md)
+- [App Móvil de Captura Rápida (`foco.app`)](../foco.app/README.md)
+
