@@ -1,337 +1,41 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/src/images/logo.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>foco-frontend-scaffold</title>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F.O.C.O. - Segundo Cerebro Visual</title>
   
-  <!-- Tailwind CSS CDN para desarrollo rápido en local -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Enlace al archivo CSS personalizado con estilos para scrollbars y cursores -->
+  <!-- Enlace a la hoja de estilos global -->
   <link rel="stylesheet" href="styles.css">
   
-  <!-- Configuración personalizada de colores de Tailwind para coincidir con la paleta de FOCO -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            foco: {
-              blue: '#22298A',       // Azul institucional de FOCO
-              orange: '#FC7206',     // Naranja institucional de FOCO
-              bg: '#DDE2F2',         // Fondo gris azulado del lienzo
-              sidebar: '#F1F3F9',    // Fondo gris claro de la sidebar de acciones
-              card: '#FFFFFF',       // Fondo de las tarjetas
-              btnNota: '#7C83DE',    // Azul claro para notas
-              btnTarea: '#5966B2',   // Azul intermedio para tareas
-              btnLista: '#C6C9F1',   // Azul claro para listas
-              btnFlecha: '#FDA35D'   // Naranja claro para flechas
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Configuración oficial de Tailwind para F.O.C.O. -->
+  <script src="tailwind.config.js"></script>
+
+  <!-- Importación de componentes de Vanilla JS  -->
+  <script src="src/components/Header.js" defer></script>
+  <script src="src/components/SidebarActions.js" defer></script>
+  <script src="src/components/LienzoCanvas.js" defer></script>
+  <script src="src/components/ProductivitySidebar.js" defer></script>
 </head>
-<body class="flex flex-col h-screen bg-foco-bg font-sans overflow-hidden text-slate-800">
+<body class="flex flex-col h-screen bg-foco-blue-light font-sans overflow-hidden text-slate-800">
 
-  <!-- =========================================================================
-       1. HEADER SUPERIOR
-       ========================================================================= -->
-  <header class="flex justify-between items-center h-16 bg-white px-6 border-b border-slate-200 shadow-sm z-10">
-    
-    <!-- Sección Izquierda: Logo y Eslogan -->
-    <div class="flex items-center space-x-3">
-      <!-- Icono/Logo FOCO -->
-      <div class="w-12 h-12 rounded-full bg-foco-bg flex items-center justify-center text-white font-bold text-sm shadow-md">
-        <img src="src/images/logo.svg" alt="">
-      </div>
-      <div>
-        <h1 class="text-xl font-extrabold tracking-tight text-foco-blue flex items-center gap-1.5">
-          F.O.C.O.
-          <span class="text-xs font-medium text-slate-500 hidden md:inline border-l border-slate-300 pl-2">
-            Filtro Operativo contra el Caos y la Omisión
-          </span>
-        </h1>
-      </div>
-    </div>
+  <!-- 1. Componente: Header Superior -->
+  <foco-header></foco-header>
 
-    <!-- Sección Derecha: Perfil -->
-      
-      <!-- Información del Usuario -->
-      <div class="flex items-center space-x-2">
-        <span class="text-sm font-semibold text-slate-700 hidden sm:inline">Hola, Alex</span>
-        <div class="w-9 h-9 rounded-full bg-foco-blue text-white font-bold flex items-center justify-center border-2 border-foco-orange">
-          A
-        </div>
-      </div>
-    </div>
-
-  </header>
-
-
-  <!-- =========================================================================
-       CONTENEDOR PRINCIPAL: Sidebar Izquierda + Lienzo Central
-       ========================================================================= -->
+  <!-- Contenedor del Cuerpo: Layout de 3 columnas de F.O.C.O. -->
   <div class="flex flex-1 overflow-hidden relative">
     
-    <!-- =========================================================================
-         2. BARRA DE ACCIONES RÁPIDAS (Sidebar Izquierda)
-         ========================================================================= -->
-    <aside class="w-20 bg-foco-sidebar flex flex-col items-center py-6 border-r border-slate-200 space-y-6">
-            
-      <!-- Botones de captura rápidos -->
-      <div class="flex flex-col items-center space-y-5 w-full">
-        
-        <!-- Botón: Nota -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Nota">
-          <div class="w-12 h-12 rounded-2xl bg-foco-btnNota text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
-            <!-- Icono SVG de Nota (+) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-icon lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          <span class="text-[10px] font-semibold text-foco-blue mt-1 group-hover:text-indigo-700 transition-colors">Nota</span>
-        </div>
+    <!-- 2. Componente: Barra de Acciones Rápidas (Sidebar Izquierda) -->
+    <foco-sidebar-actions></foco-sidebar-actions>
 
-        <!-- Botón: Tarea -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Tarea">
-          <div class="w-12 h-12 rounded-2xl bg-foco-btnTarea text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
-            <!-- Icono SVG de Tarea (Checklist) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-icon lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <span class="text-[10px] font-semibold text-foco-blue mt-1 group-hover:text-indigo-700 transition-colors">Tarea</span>
-        </div>
+    <!-- 3. Componente: Lienzo Central -->
+    <foco-lienzo-canvas class="flex-1"></foco-lienzo-canvas>
 
-        <!-- Botón: Flecha (Conector Visual) -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para conectar ideas con una Flecha">
-          <div class="w-12 h-12 rounded-2xl bg-foco-btnFlecha text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
-            <!-- Icono SVG de Flecha (Derecha) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-right-icon lucide-move-right"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </div>
-          <span class="text-[10px] font-semibold text-orange-600 mt-1 group-hover:text-orange-700 transition-colors">Flecha</span>
-        </div>
-
-        <!-- Botón: Lista -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Lista">
-          <div class="w-12 h-12 rounded-2xl bg-foco-btnLista text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
-            <!-- Icono SVG de Lista (Bullet Points) -->
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-          </div>
-          <span class="text-[10px] font-semibold text-foco-blue mt-1 group-hover:text-indigo-700 transition-colors">Lista</span>
-        </div>
-
-      </div>
-    </aside>
-
-
-    <!-- =========================================================================
-         3. LIENZO CENTRAL (Canvas con 4 Bloques Estáticos del Método P.A.R.A.)
-         ========================================================================= -->
-    <main class="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
-      
-      <!-- Estructura de Grilla de 2 Columnas para Desktop (lg:grid-cols-2) -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- BLOQUE 1: Objetivos Activos (Corresponde a "Áreas" del método P.A.R.A) -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue uppercase tracking-wide"> Objetivos Activos</h2>
-            </div>
-          </div>
-          
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
-
-            <!-- Listado de tareas y sprints -->
-            <div class="flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="line-through text-slate-400">Maquetar Frontend</span>
-            </div>
-            
-            <div class="flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="line-through text-slate-400">Conectar API REST</span>
-            </div>
-
-            <div class="flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="text-slate-700 font-medium">Configurar variables de entorno</span>
-            </div>
-
-            <div class="flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="text-slate-700 font-medium">Presentar avance del MVP al equipo</span>
-            </div>
-            
-          </div>
-        </section>
-
-        <!-- BLOQUE 2: Bloque Personal (Corresponde a "Proyectos" del método P.A.R.A) -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue uppercase tracking-wide">Bloque Personal</h2>
-            </div>
-          </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Rutina Equilibrada</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Controlar el presupuesto de tiempo diario.</p>
-              <span class="inline-block mt-1.5 text-[9px] font-bold text-foco-orange bg-orange-50 px-1.5 py-0.5 rounded">
-                8h Trabajo, 2h Estudio, 2h Ocio
-              </span>
-            </div>
-
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Gimnasio</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Ir 3 veces por semana para despejar la mente.</p>
-            </div>
-
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Meditación</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">10 minutos diarios antes de iniciar la jornada laboral.</p>
-            </div>
-
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Organizar apuntes</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Mover las notas rápidas recopiladas al archivo final.</p>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- BLOQUE 3: Inspiración y Creatividad (Corresponde a "Recursos" del método P.A.R.A) -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-image-icon lucide-book-image"><path d="m20 13.7-2.1-2.1a2 2 0 0 0-2.8 0L9.7 17"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><circle cx="10" cy="8" r="2"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue uppercase tracking-wide">Inspiración y Creatividad</h2>
-            </div>
-          </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-
-            <div class="p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
-              <div class="absolute top-2 right-2 text-xs text-yellow-500">📌</div>
-              <p class="text-xs text-slate-600 font-serif leading-relaxed pr-5">
-                "Paleta alternativa de colores de marca para el modo oscuro: #0F172A y #F97316."
-              </p>
-            </div>
-
-            <div class="p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
-              <div class="absolute top-2 right-2 text-xs text-yellow-500">📌</div>
-              <p class="text-xs text-slate-600 font-serif leading-relaxed pr-5">
-                "Nota de lectura: Método P.A.R.A. de Tiago Forte para evitar el caos cognitivo y estructurar carpetas."
-              </p>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- BLOQUE 4: Archivo de Vida y Bitácoras (Corresponde a "Archivo" del método P.A.R.A) -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award-icon lucide-award"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue uppercase tracking-wide">Archivo de Vida</h2>
-            </div>
-          </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
-
-          </div>
-        </section>
-        
-      </div>
-    </main>
-
-    <!-- =========================================================================
-        4. BARRA DE PRODUCTIVIDAD (Sidebar Derecha - Solo Pomodoro)
-        ========================================================================= -->
-    <aside class="w-80 bg-[#F1F3F9] border-l border-slate-200 flex flex-col h-full z-10">
-      
-      <!-- Encabezado de la Sidebar con botón de contraer -->
-      <div class="h-14 flex items-center justify-between px-4 border-b border-slate-200 bg-white">
-        <!-- Botón simulado para replegar el panel (flecha derecha en caja) -->
-        <button class="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-foco-blue border border-slate-200/60 transition-colors" title="Colapsar panel">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open-icon lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-        </button>
-      </div>
-
-      <!-- Cuerpo de la Sidebar (Contenedor de widgets) -->
-      <div class="flex-1 p-4 space-y-4 overflow-y-auto foco-scrollbar">
-        
-        <!-- TARJETA DEL CRONÓMETRO POMODORO -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col items-center relative overflow-hidden">
-          
-          <!-- Header del Widget (Icono reloj + Título + Botón de minimizar widget) -->
-          <div class="w-full flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-            <div class="flex items-center space-x-2 text-foco-blue">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check-icon lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-xs font-bold uppercase tracking-wide">Cronómetro Pomodoro</span>
-            </div>
-            <button class="text-slate-300 hover:text-slate-500 text-xs">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Tiempo Principal (Estilo Monospace de alta visibilidad) -->
-          <div class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
-            25:00
-          </div>
-
-          <!-- Metadatos de Enfoque y Tiempos de descanso -->
-          <div class="text-center space-y-0.5 mb-5">
-            <p class="text-xs font-bold text-foco-blue">Modo: Enfoque Integral</p>
-            <p class="text-[10px] font-semibold text-slate-400">Ciclo 1 de 4 - Descanso: 5 Min</p>
-          </div>
-
-          <!-- Botones de Interacción del Temporizador (Píldoras) -->
-          <div class="flex w-full gap-3">
-            <!-- Iniciar (Naranja Institucional de FOCO) -->
-            <button class="flex-grow py-2.5 px-5 bg-foco-orange hover:bg-[#FDA35D] text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
-              Iniciar
-            </button>
-            
-            <!-- Configurar (Borde Gris/Slate) -->
-            <button class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
-              Configurar
-            </button>
-          </div>
-
-        </div>
-
-      </div>
-
-    </aside>    
+    <!-- 4. Componente: Barra de Productividad (Sidebar Derecha - Colapsable) -->
+    <foco-productivity-sidebar></foco-productivity-sidebar>
 
   </div>
 
