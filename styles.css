@@ -1,76 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Estilos de fuente globales de F.O.C.O. */
+body {
+  font-family: 'Archivo', 'Inter', sans-serif !important;
+}
+
 /* =========================================================================
-   F.O.C.O. - ESTILOS PERSONALIZADOS COMPLEMENTARIOS PARA MAQUETADO
+   SCROLLBARS ELEGANTES (Para bloques estáticos P.A.R.A.)
    ========================================================================= */
-
-/* Estilos para el scroll de los 4 Bloques Estáticos */
-
-/* Para navegadores basados en Webkit (Chrome, Edge, Safari, Brave) */
 .foco-scrollbar::-webkit-scrollbar {
-  width: 5px; /* Barra muy fina */
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 .foco-scrollbar::-webkit-scrollbar-track {
-  background: transparent; /* Fondo invisible para que no ensucie la tarjeta */
+  background: transparent;
 }
 
 .foco-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1; /* Gris suave (Tailwind slate-300) */
-  border-radius: 9999px; /* Bordes completamente redondeados */
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
 .foco-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8; /* Gris intermedio al hacer foco (slate-400) */
+  background-color: #94a3b8; /* slate-400 */
 }
 
-/* Compatibilidad para Firefox */
+/* Scrollbar para Firefox */
 .foco-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-
 /* =========================================================================
-   CURSORES PARA ACCIONES RÁPIDAS
-   Mejora la experiencia de "Drag and Drop" (arrastrar y soltar) indicando
-   visualmente que las tarjetas y botones son movibles.
+   ESTADOS DE ARRASTRE Y HOVER EN BOTONES DE CAPTURA RÁPIDA
    ========================================================================= */
-
-/* Estado por defecto al pasar el mouse por encima de un botón de acción */
 .cursor-grab {
   cursor: grab;
   cursor: -webkit-grab;
-  /* Transición suave para que el cambio de color no sea brusco */
   transition: filter 0.2s ease, transform 0.1s ease;
 }
 
-/* NUEVO: Intensifica el color (saturación) y lo oscurece sutilmente al pasar el cursor */
+/* Intensifica la saturación y oscurece un poco al pasar el cursor (hover) */
 .cursor-grab:hover {
   filter: brightness(0.9) saturate(1.25);
-  transform: translateY(-1px); /* Un pequeño salto hacia arriba para dar feedback */
+  transform: translateY(-1px);
 }
 
-/* Estado activo mientras el usuario hace clic y mantiene presionado */
+/* Efecto active (clic/presionado) */
 .cursor-grabbing:active,
 .active\:cursor-grabbing:active {
   cursor: grabbing;
   cursor: -webkit-grabbing;
-  filter: brightness(0.8) saturate(1.4); /* Se intensifica aún más al presionar */
-  transform: translateY(1px); /* El botón baja simulando que se hunde al presionarlo */
+  filter: brightness(0.8) saturate(1.4);
+  transform: translateY(1px);
 }
 
-
-/* =========================================================================
-   SUAVIZADO DE CONTENEDORES
-   Pequeños retoques de transición de renderizado y suavizado de tipografía
-   ========================================================================= */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Animación sutil para el contador Pomodoro en ejecución */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(0.98); }
 }
 
-/* Evitar selección de texto accidental en los botones que se van a arrastrar */
-.select-none {
-  user-select: none;
-  -webkit-user-select: none;
+.animate-pulse-soft {
+  animation: pulse-soft 3s infinite ease-in-out;
 }
