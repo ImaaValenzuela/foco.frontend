@@ -4,6 +4,9 @@
  * Divide la pantalla en 4 bloques estáticos e independientes bajo el método P.A.R.A.
  * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
  */
+
+import Sortable from "sortablejs";
+
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
     this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-foco-azul-gray foco-scrollbar";
@@ -62,9 +65,11 @@ class FocoLienzoCanvas extends HTMLElement {
           </div>
 
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
+          <!-- Le agregamos "id" y la clase "foco-drop-zone" para que SortableJS reconozca este bloque como una zona donde se puede soltar tarjetas -->
+          <div id="bloque-personal" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
             
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
+            <!-- La clase "foco-tarjeta" marca qué elementos se pueden arrastrar dentro de una zona -->
+            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
               <h3 class="text-xs font-bold text-slate-800">Rutina Equilibrada</h3>
               <p class="text-[11px] text-slate-500 mt-0.5">Controlar el presupuesto de tiempo diario.</p>
               <span class="inline-block mt-1.5 text-[9px] font-bold text-foco-orange-accent bg-orange-50 px-1.5 py-0.5 rounded">
@@ -72,17 +77,17 @@ class FocoLienzoCanvas extends HTMLElement {
               </span>
             </div>
 
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
+            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
               <h3 class="text-xs font-bold text-slate-800">Gimnasio</h3>
               <p class="text-[11px] text-slate-500 mt-0.5">Ir 3 veces por semana para despejar la mente.</p>
             </div>
 
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
+            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
               <h3 class="text-xs font-bold text-slate-800">Meditación</h3>
               <p class="text-[11px] text-slate-500 mt-0.5">10 minutos diarios antes de iniciar la jornada laboral.</p>
             </div>
 
-            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
+            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
               <h3 class="text-xs font-bold text-slate-800">Organizar apuntes</h3>
               <p class="text-[11px] text-slate-500 mt-0.5">Mover las notas rápidas recopiladas al archivo final.</p>
             </div>
@@ -102,9 +107,9 @@ class FocoLienzoCanvas extends HTMLElement {
           </div>
 
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
+          <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
 
-            <div class="p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
+            <div class="foco-tarjeta p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
               <div class="absolute top-2 right-2 text-xs text-yellow-500">📌</div>
               <p class="text-xs text-slate-600 font-serif leading-relaxed pr-5">
                 "Nota de lectura: Método P.A.R.A. de Tiago Forte para evitar el caos cognitivo y estructurar carpetas."
@@ -126,7 +131,7 @@ class FocoLienzoCanvas extends HTMLElement {
           </div>
 
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
+          <div id="bloque-archivo-vida" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
             
 
           </div>
@@ -135,6 +140,23 @@ class FocoLienzoCanvas extends HTMLElement {
       </div>
 
     `;
+    this.activarDragAndDrop();
+  }
+
+  // Busca todos los bloques marcados como "zona de drop" y activa SortableJS en cada uno,
+  // permite arrastrar tarjetas dentro del mismo bloque o hacia otro bloque conectado.
+  activarDragAndDrop() {
+    var listaDeZonas = this.querySelectorAll(".foco-drop-zone");
+
+    for (var i = 0; i < listaDeZonas.length; i++) {
+      var zonaActual = listaDeZonas[i];
+
+      Sortable.create(zonaActual, {
+        group: "foco-tarjetas",
+        ghostClass: "foco-tarjeta-fantasma",
+        draggable: ".foco-tarjeta"
+      });
+    }
   }
 }
 
