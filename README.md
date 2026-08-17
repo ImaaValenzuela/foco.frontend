@@ -1,5 +1,9 @@
 # 🎨 FOCO — Frontend Web Application (`foco.frontend`)
 
+## Flujo de ramas
+
+`main` es producción y despliegue; `develop` es integración/staging. Cada funcionalidad nace desde `develop` en una rama `feat/...`, `fix/...` o equivalente y su PR apunta a `develop`. Los releases se promueven de `develop` a `main`.
+
 Este repositorio contiene la aplicación interactiva de **FOCO**, accesible en [app.foco.com](https://app.foco.com). Aquí reside toda la interfaz visual, el lienzo infinito (canvas), la barra lateral de Inbox y los módulos de productividad personal.
 
 ---
@@ -91,4 +95,3 @@ Para entender el diseño de componentes, modelo de datos en el cliente y alcance
 - [Arquitectura Técnica Consolidada](./docs/02-arquitectura-tecnica.md)
 - [Estrategia Git y Configuración de GitHub](./docs/07-devops-y-git.md)
 - [App Móvil de Captura Rápida (`foco.app`)](../foco.app/README.md)
-
