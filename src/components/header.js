@@ -1,4 +1,5 @@
 import logoSvg from '../images/logo.svg';
+import { getSession, signInWithGoogle, signOut, supabase } from '../auth.js';
 
 /**
  * Componente: Header
@@ -29,17 +30,28 @@ class FocoHeader extends HTMLElement {
 
             <!-- Sección Derecha: Perfil -->
             <div class="flex items-center space-x-2">
-              <span class="text-sm font-semibold text-slate-700 hidden sm:inline">Hola, Alex</span>
-              <div class="w-9 h-9 rounded-full bg-foco-blue-deep text-white font-bold flex items-center justify-center border-2 border-foco-orange-accent shadow-sm">
-                A
-              </div>
+              <span data-auth-name class="text-sm font-semibold text-slate-700 hidden sm:inline">Invitado</span>
+              <button data-auth-action type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Ingresar con Google</button>
             </div>
 
         </header>
     `;
+    const name = this.querySelector('[data-auth-name]');
+    const action = this.querySelector('[data-auth-action]');
+    const render = (session) => {
+      const user = session?.user;
+      name.textContent = user?.user_metadata?.full_name || user?.email || 'Invitado';
+      action.textContent = user ? 'Cerrar sesión' : 'Ingresar con Google';
+    };
+    getSession().then(render).catch(() => render(null));
+    action.addEventListener('click', async () => {
+      const session = await getSession();
+      if (session) await signOut();
+      else await signInWithGoogle();
+    });
+    supabase.auth.onAuthStateChange((_event, session) => render(session));
   }
 }
 
 // Registro del Custom Element global en el navegador
 customElements.define('foco-header', FocoHeader);
-

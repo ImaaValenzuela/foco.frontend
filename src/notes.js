@@ -1,5 +1,5 @@
 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-const userId = import.meta.env.VITE_USER_ID;
+import { getSession, supabase } from './auth.js';
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, (character) => ({
@@ -28,10 +28,13 @@ function noteCard(block) {
 
 export async function loadNotes() {
   const container = document.querySelector('#notes-list');
-  if (!container || !userId) return;
+  const session = await getSession();
+  if (!container || !session) return;
 
   try {
-    const response = await fetch(`${apiUrl}/api/blocks/user/${encodeURIComponent(userId)}`);
+    const response = await fetch(`${apiUrl}/api/blocks/user/${encodeURIComponent(session.user.id)}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
     if (!response.ok) throw new Error(`Error HTTP ${response.status}`);
 
     const blocks = await response.json();
@@ -45,3 +48,6 @@ export async function loadNotes() {
 }
 
 loadNotes();
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) loadNotes();
+});
