@@ -27,7 +27,7 @@ class FocoLienzoCanvas extends HTMLElement {
           </div>
           
           <!-- Contenido del Bloque -->
-          <div id="bloque-objetivos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
+          <div id="notes-list" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
             
             <div class="foco-tarjeta p-3 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-200/60 cursor-grab active:cursor-grabbing transition-all">
               <div class="flex items-start space-x-2.5 text-xs">

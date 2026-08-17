@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="F.O.C.O. - Filtro Operativo contra el Caos y la Omisión. Tu segundo cerebro visual para organizar proyectos, áreas, recursos y archivos (Método P.A.R.A.).">
   <title>F.O.C.O. - Segundo Cerebro Visual</title>
-  
+
   <!-- Google Fonts: Archivo & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,23 +19,14 @@
   <script type="module" src="/src/main.js"></script>
 </head>
 <body class="flex flex-col h-screen bg-foco-blue-light font-sans overflow-hidden text-slate-800 antialiased">
-
-  <!-- 1. Componente: Header Superior -->
   <foco-header></foco-header>
 
-  <!-- Contenedor del Cuerpo: Layout de 3 columnas de F.O.C.O. -->
   <div class="flex flex-1 overflow-hidden relative">
-    
-    <!-- 2. Componente: Barra de Acciones Rápidas (Sidebar Izquierda) -->
     <foco-sidebar-actions></foco-sidebar-actions>
-
-    <!-- 3. Componente: Lienzo Central -->
     <foco-lienzo-canvas class="flex-1"></foco-lienzo-canvas>
-
-    <!-- 4. Componente: Barra de Productividad (Sidebar Derecha - Colapsable) -->
     <foco-productivity-sidebar></foco-productivity-sidebar>
-
   </div>
 
+  <script type="module" src="/src/notes.js"></script>
 </body>
 </html>
