@@ -1,4 +1,5 @@
 import { continueAsGuest, getSession, isGuest, signInWithGoogle, signOut, supabase } from '../auth.js';
+import logoUrl from '../images/logo.svg';
 
 class FocoHeader extends HTMLElement {
   connectedCallback() {
@@ -9,8 +10,8 @@ class FocoHeader extends HTMLElement {
             <!-- Sección Izquierda: Logo y Acrónimo -->
             <div class="flex items-center space-x-3">
             <!-- Icono/Logo FOCO -->
-            <div class="w-12 h-12 rounded-full bg-foco-blue-gray flex items-center justify-center text-white font-bold text-sm shadow-md">
-                <img src="src/images/logo.svg" alt="">
+            <div class="w-12 h-12 rounded-full bg-foco-blue-gray flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden p-1">
+                <img src="${logoUrl}" alt="F.O.C.O. Logo" class="w-full h-full object-contain">
             </div>
             <div>
                 <h1 class="text-xl font-extrabold tracking-tight text-foco-blue-deep flex items-center gap-1.5">
