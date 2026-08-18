@@ -1,4 +1,4 @@
-import { getSession, signInWithGoogle, signOut, supabase } from '../auth.js';
+import { continueAsGuest, getSession, isGuest, signInWithGoogle, signOut, supabase } from '../auth.js';
 
 class FocoHeader extends HTMLElement {
   connectedCallback() {
@@ -27,26 +27,33 @@ class FocoHeader extends HTMLElement {
             <!-- Información del Usuario -->
             <div class="flex items-center space-x-2">
                 <span data-auth-name class="text-sm font-semibold text-slate-700 hidden sm:inline">Invitado</span>
-                <button data-auth-action type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Ingresar con Google</button>
+                <button data-google-action type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Iniciar sesión con Google</button>
+                <button data-guest-action type="button" class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">Continuar como invitado</button>
             </div>
             </div>
 
         </header>
     `;
     const name = this.querySelector('[data-auth-name]');
-    const action = this.querySelector('[data-auth-action]');
+    const googleAction = this.querySelector('[data-google-action]');
+    const guestAction = this.querySelector('[data-guest-action]');
     const render = (session) => {
       const user = session?.user;
-      name.textContent = user?.user_metadata?.full_name || user?.email || 'Invitado';
-      action.textContent = user ? 'Cerrar sesión' : 'Ingresar con Google';
+      name.textContent = user?.user_metadata?.full_name || user?.email || (isGuest() ? 'Invitado' : 'Sin sesión');
+      googleAction.textContent = user ? 'Cerrar sesión' : 'Iniciar sesión con Google';
+      guestAction.hidden = Boolean(user) || isGuest();
     };
     getSession().then(render).catch(() => render(null));
-    action.addEventListener('click', async () => {
+    googleAction.addEventListener('click', async () => {
       const session = await getSession();
       if (session) await signOut();
       else await signInWithGoogle();
     });
-    supabase.auth.onAuthStateChange((_event, session) => render(session));
+    guestAction.addEventListener('click', () => {
+      continueAsGuest();
+      render(null);
+    });
+    supabase?.auth.onAuthStateChange((_event, session) => render(session));
   }
 }
 
