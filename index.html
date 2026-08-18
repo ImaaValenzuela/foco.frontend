@@ -3,30 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="F.O.C.O. - Filtro Operativo contra el Caos y la Omisión. Tu segundo cerebro visual para organizar proyectos, áreas, recursos y archivos (Método P.A.R.A.).">
   <title>F.O.C.O. - Segundo Cerebro Visual</title>
-
-  <!-- Google Fonts: Archivo & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CSS CDN & Config -->
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/tailwind.config.js"></script>
+  
+  <!-- Enlace a la hoja de estilos global -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Configuración oficial de Tailwind para F.O.C.O. -->
+  <script src="tailwind.config.js"></script>
 
-  <!-- Entry Point de JavaScript -->
   <script type="module" src="/src/main.js"></script>
 </head>
-<body class="flex flex-col h-screen bg-foco-blue-light font-sans overflow-hidden text-slate-800 antialiased">
+<body class="flex flex-col h-screen bg-foco-blue-light font-sans overflow-hidden text-slate-800">
+
+  <!-- 1. Componente: Header Superior -->
   <foco-header></foco-header>
 
+  <!-- Contenedor del Cuerpo: Layout de 3 columnas de F.O.C.O. -->
   <div class="flex flex-1 overflow-hidden relative">
+    
+    <!-- 2. Componente: Barra de Acciones Rápidas (Sidebar Izquierda) -->
     <foco-sidebar-actions></foco-sidebar-actions>
+
+    <!-- 3. Componente: Lienzo Central -->
     <foco-lienzo-canvas class="flex-1"></foco-lienzo-canvas>
+
+    <!-- 4. Componente: Barra de Productividad (Sidebar Derecha - Colapsable) -->
     <foco-productivity-sidebar></foco-productivity-sidebar>
+
   </div>
 
-  <script type="module" src="/src/notes.js"></script>
 </body>
 </html>
