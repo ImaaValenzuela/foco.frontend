@@ -443,3 +443,47 @@ function togglePasswordVisibility(inputId, iconId) {
     iconSvg.outerHTML = eyeSvg;    // Reemplaza por el ojo abierto
   }
 }
+
+
+/**
+ * Inicia el flujo de autenticación de Google con Supabase
+ */
+async function handleGoogleAuth() {
+  try {
+    // 'supabase' debe estar inicializado previamente en tu proyecto
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        // Al tener éxito, Google redirecciona al usuario al Onboarding
+        redirectTo: window.location.origin + '/onboarding.html' 
+      }
+    });
+    
+    if (error) throw error;
+  } catch (err) {
+    // Reutilizamos el Toast de alertas que ya creamos en tu helper
+    showToastAlert("Error de Google Auth", "No se pudo conectar: " + err.message);
+  }
+}
+
+// Dentro de initAuthEventListeners() o al cargar el DOM:
+if (typeof supabase !== 'undefined') {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      // 1. Consultamos si el usuario ya tiene cargado su perfil en la tabla de onboarding
+      const { data, error } = await supabase
+        .from('onboarding_profiling')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      // 2. Si no existe el registro, forzamos la redirección a onboarding
+      if (!data || error) {
+        window.location.href = 'onboarding.html';
+      } else {
+        // Si ya está perfilado, va directo al lienzo core
+        window.location.href = 'index.html'; 
+      }
+    }
+  });
+}
