@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F.O.C.O. - Login</title>
+
+  <!-- 1. Motor de renderizado dinámico de Tailwind CSS (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 2. Archivo unificado de configuración de Tailwind existente en tu raíz -->
+  <script src="tailwind.config.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    body {
+      background: linear-gradient(135deg, #FFDECD 0%, #DDE2F2 50%, #C3CBE5 100%);
+      font-family: 'Archivo', 'Inter', sans-serif;
+    }
+
+    /* Estilos personalizados para los Sliders de Rutina utilizando variables de tailwind.config.js */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      border-radius: 9999px;
+      outline: none;
+      background: #E2E8F0; /* Fondo por defecto para track */
+    }
+
+    .slider-orange::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FC7206; /* foco-orange-accent */
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgb(252 114 6 / 0.4);
+      transition: transform 0.1s ease;
+    }
+    .slider-orange::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-blue::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #22298A; /* foco-blue-deep */
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgb(34 41 138 / 0.4);
+      transition: transform 0.1s ease;
+    }
+    .slider-blue::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-10 relative overflow-x-hidden">
+
+  <!-- Contenedor Principal (Tarjeta de Onboarding) -->
+  <div class="max-w-4xl w-full bg-white/95 backdrop-blur-md shadow-2xl rounded-3xl border border-white/20 p-6 md:p-8 flex flex-col justify-between transition-all duration-300">
+
+    <!-- Encabezado de la App (F.O.C.O. Logo + Nombre) -->
+    <div class="flex items-center space-x-3 border-b border-slate-100 pb-4 mb-6 select-none">
+      <div class="w-10 h-10">
+        <img src="src/images/logo.svg" alt="">
+      </div>
+      <div>
+        <h1 class="text-2xl font-black text-foco-blue-deep tracking-tight">F.O.C.O.</span>
+        </h1>
+      </div>
+    </div>
+
+    <!-- Cuerpo del Onboarding (3 Secciones de Base de Datos relacionales) -->
+    <div class="space-y-8">
+
+      <!-- SECCIÓN A: MI RUTINA (Presupuesto de Tiempo Diario) -->
+      <div>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-foco-blue-deep flex items-center gap-2">
+            Mi Rutina
+          </h2>
+          <!-- Alerta de Horas Totales -->
+          <span id="hours-indicator" class="text-xs font-bold px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+            Total asignado: <span id="hours-total">0</span>/24 hrs
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+          <!-- Estudio Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-semibold text-slate-700">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-foco-orange-accent"></span> Estudio
+              </span>
+              <span id="study-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+            </div>
+            <input
+              type="range"
+              id="study"
+              min="0" max="8" value="0"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-orange"
+            >
+          </div>
+
+          <!-- Trabajo Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-semibold text-slate-700">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-foco-blue-deep"></span> Trabajo
+              </span>
+              <span id="work-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+            </div>
+            <input
+              type="range"
+              id="work"
+              min="0" max="8" value="0"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-blue"
+            >
+          </div>
+
+          <!-- Tareas de Rutina Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-semibold text-slate-700">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-foco-orange-accent"></span> Tareas de rutina
+              </span>
+              <span id="routine-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+            </div>
+            <input
+              type="range"
+              id="routine"
+              min="0" max="8" value="0"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-orange"
+            >
+          </div>
+
+          <!-- Ocio Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-semibold text-slate-700">
+              <span class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-foco-blue-deep"></span> Ocio
+              </span>
+              <span id="leisure-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+            </div>
+            <input
+              type="range"
+              id="leisure"
+              min="0" max="8" value="0"
+              class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-blue"
+            >
+          </div>
+        </div>
+        <!-- Alerta de sobrepaso de horas -->
+        <p id="error-hours" class="text-xs text-red-500 font-semibold mt-2 hidden">El total asignado supera las 24 horas de un día. Por favor, ajustá las barras.</p>
+      </div>
+
+      <!-- SECCIÓN B: INTERESES (Afinidad Temática) -->
+      <div>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-foco-blue-deep flex items-center gap-2">
+            Mis Intereses
+          </h2>
+          <span id="interests-counter" class="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">
+            Seleccionados: <span id="interests-count">0</span>/6
+          </span>
+        </div>
+
+        <!-- Contenedor de Tags Único, Flex-wrap -->
+        <div class="flex flex-wrap gap-2.5 transition-all duration-500" id="interests-container">
+
+          <!-- DESARROLLO DE SOFTWARE / PROGRAMACIÓN -->
+          <button
+            type="button"
+            id="tag-software_development"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>💻</span> Desarrollo de Software / Programación
+          </button>
+
+          <!-- DISEÑO UX/UI Y FRONTEND -->
+          <button
+            type="button"
+            id="tag-ux_ui_design"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🎨</span> Diseño UX/UI y Frontend
+          </button>
+
+          <!-- CIENCIA DE DATOS / INTELIGENCIA ARTIFICIAL -->
+          <button
+            type="button"
+            id="tag-data_science"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>📊</span> Ciencia de Datos / Inteligencia Artificial
+          </button>
+
+          <!-- MARKETING DIGITAL Y REDACCIÓN DE CONTENIDOS -->
+          <button
+            type="button"
+            id="tag-marketing_digital"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>✍️</span> Marketing Digital y Redacción de Contenidos
+          </button>
+
+          <!-- ADMINISTRACIÓN, FINANZAS Y NEGOCIOS -->
+          <button
+            type="button"
+            id="tag-administration_finance"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>💼</span> Administración, Finanzas y Negocios
+          </button>
+
+          <!-- SALUD, MEDICINA Y CIENCIAS DE LA VIDA -->
+          <button
+            type="button"
+            id="tag-health_medicine"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🩺</span> Salud, Medicina y Ciencias de la Vida
+          </button>
+
+          <!-- LEYES, ABOGACÍA Y CIENCIAS SOCIALES -->
+          <button
+            type="button"
+            id="tag-law_social_sciences"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>⚖️</span> Leyes, Abogacía y Ciencias Sociales
+          </button>
+
+          <!-- LECTURA Y ESCRITURA CREATIVA -->
+          <button
+            type="button"
+            id="tag-reading_writing"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>📝</span> Lectura y Escritura Creativa
+          </button>
+
+          <!-- ARTES VISUALES, DIBUJO Y PINTURA -->
+          <button
+            type="button"
+            id="tag-visual_arts"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🖌️</span> Artes Visuales, Dibujo y Pintura
+          </button>
+
+          <!-- MÚSICA -->
+          <button
+            type="button"
+            id="tag-music"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🎵</span> Música
+          </button>
+
+          <!-- GAMING / VIDEOJUEGOS -->
+          <button
+            type="button"
+            id="tag-gaming"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🎮</span> Gaming / Videojuegos
+          </button>
+
+          <!-- GASTRONOMÍA Y COCINA -->
+          <button
+            type="button"
+            id="tag-gastronomy"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🍳</span> Gastronomía y Cocina
+          </button>
+
+          <!-- FOTOGRAFÍA -->
+          <button
+            type="button"
+            id="tag-photography"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>📷</span> Fotografía
+          </button>
+
+          <!-- CINE -->
+          <button
+            type="button"
+            id="tag-cinema"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🎬</span> Cine
+          </button>
+
+          <!-- IDIOMAS -->
+          <button
+            type="button"
+            id="tag-languages"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🌐</span> Idiomas
+          </button>
+
+          <!-- ENTRENAMIENTO DE FUERZA / GIMNASIO -->
+          <button
+            type="button"
+            id="tag-strength_training"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🏋️</span> Entrenamiento de Fuerza / Gimnasio
+          </button>
+
+          <!-- RUNNING Y ATLETISMO -->
+          <button
+            type="button"
+            id="tag-running"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🏃</span> Running y Atletismo
+          </button>
+
+          <!-- YOGA, MEDITACIÓN Y MINDFULNESS -->
+          <button
+            type="button"
+            id="tag-yoga_mindfulness"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🧘</span> Yoga, Meditación y Mindfulness
+          </button>
+
+          <!-- DEPORTES DE EQUIPO -->
+          <button
+            type="button"
+            id="tag-team_sports"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>⚽</span> Deportes de Equipo
+          </button>
+
+          <!-- NUTRICIÓN Y COCINA SALUDABLE -->
+          <button
+            type="button"
+            id="tag-healthy_nutrition"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🥗</span> Nutrición y Cocina Saludable
+          </button>
+
+          <!-- EMPRENDIMIENTO / STARTUPS -->
+          <button
+            type="button"
+            id="tag-entrepreneurship"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🚀</span> Emprendimiento / Startups
+          </button>
+
+          <!-- PLANIFICACIÓN DE CARRERA / BÚSQUEDA LABORAL -->
+          <button
+            type="button"
+            id="tag-career_planning"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>📈</span> Planificación de Carrera / Búsqueda Laboral
+          </button>
+
+          <!-- FINANZAS PERSONALES E INVERSIONES -->
+          <button
+            type="button"
+            id="tag-personal_finance"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>💰</span> Finanzas Personales e Inversiones
+          </button>
+
+          <!-- PROYECTOS DE INVESTIGACIÓN ACADÉMICA -->
+          <button
+            type="button"
+            id="tag-academic_research"
+            class="interest-tag flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200"
+          >
+            <span>🔬</span> Proyectos de Investigación Académica
+          </button>
+
+        </div>
+      </div>
+
+      <!-- SECCIÓN C: MIS MOTIVACIONES (Lógica Boolean del Motor de IA) -->
+      <div>
+        <h2 class="text-lg font-bold text-foco-blue-deep flex items-center gap-2 mb-4">
+          Mis Motivaciones
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Crear Hábitos -->
+          <label class="flex items-start p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all select-none gap-3">
+            <input
+              type="checkbox"
+              id="mot_create_habits"
+              class="w-5 h-5 mt-0.5 text-foco-blue-deep bg-gray-100 border-gray-300 rounded focus:ring-foco-blue-deep"
+            >
+            <div>
+              <span class="text-sm font-bold text-slate-700">Crear hábitos duraderos</span>
+              <p class="text-xs text-slate-400 mt-0.5">La IA te ayudará con recordatorios y el tracker visual en el lienzo.</p>
+            </div>
+          </label>
+
+          <!-- Evitar la dispersión -->
+          <label class="flex items-start p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all select-none gap-3">
+            <input
+              type="checkbox"
+              id="mot_avoid_dispersion"
+              class="w-5 h-5 mt-0.5 text-foco-blue-deep bg-gray-100 border-gray-300 rounded focus:ring-foco-blue-deep"
+            >
+            <div>
+              <span class="text-sm font-bold text-slate-700">Evitar la dispersión / Procrastinación</span>
+              <p class="text-xs text-slate-400 mt-0.5">Activa sugerencias en tiempo real y prioriza el reloj Pomodoro.</p>
+            </div>
+          </label>
+
+          <!-- Organización -->
+          <label class="flex items-start p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all select-none gap-3">
+            <input
+              type="checkbox"
+              id="mot_organization"
+              class="w-5 h-5 mt-0.5 text-foco-blue-deep bg-gray-100 border-gray-300 rounded focus:ring-foco-blue-deep"
+            >
+            <div>
+              <span class="text-sm font-bold text-slate-700">Organización y centralización</span>
+              <p class="text-xs text-slate-400 mt-0.5">Prepara plantillas estructuradas de objetivos rápidos en el lienzo.</p>
+            </div>
+          </label>
+
+          <!-- Reducir fatiga -->
+          <label class="flex items-start p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all select-none gap-3">
+            <input
+              type="checkbox"
+              id="mot_reduce_fatigue"
+              class="w-5 h-5 mt-0.5 text-foco-blue-deep bg-gray-100 border-gray-300 rounded focus:ring-foco-blue-deep"
+            >
+            <div>
+              <span class="text-sm font-bold text-slate-700">Reducir la fatiga cognitiva / Estrés</span>
+              <p class="text-xs text-slate-400 mt-0.5">La IA priorizará tu descarga rápida de ideas para liberar tu mente.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Botón de Enviar Onboarding (Solo visible cuando se cumplan las validaciones) -->
+    <div id="btn-onboarding-container" class="flex justify-end border-t border-slate-100 pt-6 mt-8 transition-all duration-500 transform scale-90 opacity-0 pointer-events-none h-0 overflow-hidden">
+      <button
+        type="button"
+        id="submit-onboarding-btn"
+        class="px-6 py-3 bg-foco-orange-accent hover:bg-orange-600 text-white text-sm font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-2"
+      >
+        Comenzar
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- TOAST DE ALERTA -->
+  <div
+    id="alert-toast"
+    class="fixed bottom-4 right-4 max-w-sm w-80 bg-red-50 border border-red-200 text-red-800 px-4 py-4 rounded-2xl shadow-2xl transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 flex items-start gap-3 z-50"
+  >
+    <div class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+      </svg>
+    </div>
+    <div class="flex-1">
+      <h4 class="font-bold text-sm text-red-900" id="toast-title">Alerta de Configuración</h4>
+      <p class="text-xs text-red-700 mt-1" id="toast-message">Por favor verifique las horas asignadas o selección.</p>
+    </div>
+    <button id="close-toast-btn" class="text-red-400 hover:text-red-600 transition-colors focus:outline-none">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- 3. Lógica externa modular de onboarding y control de IA -->
+  <script src="src/components/onboarding-helper.js"></script>
+</body>
+</html>
