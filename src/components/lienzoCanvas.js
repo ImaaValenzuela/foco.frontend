@@ -6,6 +6,7 @@
  */
 
 import Sortable from "sortablejs";
+import { getSession } from "../auth.js";
 
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
@@ -168,6 +169,40 @@ class FocoLienzoCanvas extends HTMLElement {
       });
     }
   }
+
+  // Envía la nota al Backend mediante POST, usando el token real de la sesión de Supabase
+  async guardarNotaEnBackend(texto){
+    var sesion = await getSession();
+
+    if (!sesion) {
+      console.log("No hay sesión activa, no se puede guardar la nota.");
+      return;
+    }
+
+    var token = sesion.access_token;
+
+    fetch("http://localhost:4000/api/blocks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        type: "note",
+        content: { texto: texto }
+      })
+    })
+      .then(function (respuesta) {
+        return respuesta.json();
+      })
+      .then(function (datos) {
+        console.log("Nota guardada en el backend:", datos);
+      })
+      .catch(function (error) {
+        console.error("Error al guardar la nota:", error);
+      });
+  }
+
   // Reemplaza el clon del botón "Nota" por una tarjeta real, con un área de texto editable.
   crearTarjetaNota(botonClonado) {
     var tarjetaNota = document.createElement("div");
@@ -182,9 +217,17 @@ class FocoLienzoCanvas extends HTMLElement {
     // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
     botonClonado.replaceWith(tarjetaNota);
 
+    var componenteActual = this;
+
+    areaDeTexto.addEventListener("blur", function () {
+      var textoEscrito = areaDeTexto.textContent;
+      componenteActual.guardarNotaEnBackend(textoEscrito);
+    });
+
     // Deja el cursor listo para escribir apenas se crea
     areaDeTexto.focus();
   }
+
 }
 
 // Registro en el navegador
