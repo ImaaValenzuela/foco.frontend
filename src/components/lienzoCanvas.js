@@ -150,13 +150,40 @@ class FocoLienzoCanvas extends HTMLElement {
 
     for (var i = 0; i < listaDeZonas.length; i++) {
       var zonaActual = listaDeZonas[i];
+      var componenteActual = this;
 
       Sortable.create(zonaActual, {
         group: "foco-tarjetas",
         ghostClass: "foco-tarjeta-fantasma",
-        draggable: ".foco-tarjeta"
+        draggable: ".foco-tarjeta",
+
+        onAdd: function (evento) {
+          var elementoAgregado = evento.item;
+
+          // Si lo que se soltó es el clon del botón "Nota", lo reemplazamos por una tarjeta editable
+          if (elementoAgregado.classList.contains("foco-crear-nota")) {
+            componenteActual.crearTarjetaNota(elementoAgregado);
+          }
+        }
       });
     }
+  }
+  // Reemplaza el clon del botón "Nota" por una tarjeta real, con un área de texto editable.
+  crearTarjetaNota(botonClonado) {
+    var tarjetaNota = document.createElement("div");
+    tarjetaNota.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+
+    var areaDeTexto = document.createElement("div");
+    areaDeTexto.className = "text-xs text-slate-700 outline-none";
+    areaDeTexto.contentEditable = "true";
+
+    tarjetaNota.appendChild(areaDeTexto);
+
+    // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
+    botonClonado.replaceWith(tarjetaNota);
+
+    // Deja el cursor listo para escribir apenas se crea
+    areaDeTexto.focus();
   }
 }
 
