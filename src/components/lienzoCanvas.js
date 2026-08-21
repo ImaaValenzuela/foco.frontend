@@ -26,26 +26,25 @@ class FocoLienzoCanvas extends HTMLElement {
           </div>
           
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
+          <div id="bloque-objetivos-activos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"> 
 
             <!-- Listado de tareas y sprints -->
-            <div class="flex items-start space-x-2.5 text-xs">
+            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
               <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
               <span class="line-through text-slate-400">Maquetar Frontend</span>
             </div>
             
-            <div class="flex items-start space-x-2.5 text-xs">
+            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
               <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
               <span class="line-through text-slate-400">Conectar API REST</span>
             </div>
 
-            <div class="flex items-start space-x-2.5 text-xs">
+            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
               <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
               <span class="text-slate-700 font-medium">Configurar variables de entorno</span>
             </div>
 
-            <div class="flex items-start space-x-2.5 text-xs">
+            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
               <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
               <span class="text-slate-700 font-medium">Presentar avance del MVP al equipo</span>
             </div>
