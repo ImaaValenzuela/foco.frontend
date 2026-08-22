@@ -114,7 +114,9 @@ class FocoLienzoCanvas extends HTMLElement {
           <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
 
             <div class="foco-tarjeta p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
-              <div class="absolute top-2 right-2 text-xs text-yellow-500">📌</div>
+              <div class="absolute top-2 right-2 text-yellow-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pin-icon lucide-pin"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.117-1.427l-.602-3.013A1 1 0 0 1 8.261 5h7.478a1 1 0 0 1 .98 1.32l-.602 3.013A2 2 0 0 1 15 10.76V17H9v-6.24z"/></svg>
+              </div>
               <p class="text-xs text-slate-600 font-serif leading-relaxed pr-5">
                 "Nota de lectura: Método P.A.R.A. de Tiago Forte para evitar el caos cognitivo y estructurar carpetas."
               </p>
@@ -145,6 +147,16 @@ class FocoLienzoCanvas extends HTMLElement {
 
     `;
     this.activarDragAndDrop();
+    this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
+    this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
+    window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
+  }
+
+  aplicarVisibilidad(estado) {
+    this.querySelectorAll(".foco-drop-zone").forEach((zona) => {
+      const visible = estado[zona.id] !== false;
+      zona.closest("section").classList.toggle("hidden", !visible);
+    });
   }
 
   // Busca todos los bloques marcados como "zona de drop" y activa SortableJS en cada uno,
