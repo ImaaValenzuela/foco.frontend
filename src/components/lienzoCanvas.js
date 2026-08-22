@@ -8,14 +8,9 @@
 import Sortable from "sortablejs";
 import { getSession } from "../auth.js";
 import { blocksService } from "../services/blocks.service.js";
+import { blockRegistry } from "../strategies/blockRegistry.js";
+import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
 
-// Traduce el id del bloque HTML al valor de "type" que acepta la base de datos
-var tiposDeBloque = {
-  "bloque-objetivos-activos": "active_objectives",
-  "bloque-personal": "personal_block",
-  "bloque-inspiracion": "inspiration_creativity",
-  "bloque-archivo-vida": "life_archive"
-};
 
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
@@ -188,6 +183,7 @@ class FocoLienzoCanvas extends HTMLElement {
       }
       const datos = await blocksService.saveBlock(tipoDeBloque, { texto }, sesion.access_token);
       console.log("Nota guardada en el backend:", datos);
+      emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
     } catch (error) {
       console.error("Error al guardar la nota:", error);
     }
@@ -207,9 +203,9 @@ class FocoLienzoCanvas extends HTMLElement {
     // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
     botonClonado.replaceWith(tarjetaNota);
 
-    // Busca el id del bloque contenedor para saber qué tipo de bloque corresponde según la base de datos
+    // Busca el id del bloque contenedor para saber qué tipo de bloque corresponde según el registro extensible (OCP)
     var idDelBloque = tarjetaNota.closest(".foco-drop-zone").id;
-    var tipoDeBloque = tiposDeBloque[idDelBloque];
+    var tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
 
     var componenteActual = this;
 

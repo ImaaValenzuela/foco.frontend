@@ -4,6 +4,8 @@
  * Cumple con SRP desvinculando la manipulación de hábitos del componente de interfaz gráfica (UI).
  */
 
+import { emitCustomEvent, FOCO_EVENTS } from '../utils/events.js';
+
 export class HabitManager {
   constructor(onUpdateCallback = null) {
     this.onUpdate = onUpdateCallback;
@@ -63,11 +65,13 @@ export class HabitManager {
   }
 
   toggleHabit(habitId) {
-    if (this.selectedOffset !== 0) return; // Regla de negocio: solo se edita el día actual (Hoy)
+    if (this.selectedOffset !== 0) return;
 
     this.habitsData[0] = this.getCurrentHabits().map(habit => {
       if (habit.id === habitId) {
-        return { ...habit, completed: !habit.completed };
+        const updated = { ...habit, completed: !habit.completed };
+        if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.HABIT_TOGGLED, updated);
+        return updated;
       }
       return habit;
     });
@@ -79,12 +83,10 @@ export class HabitManager {
 
     const current = this.getCurrentHabits();
     const newId = current.length > 0 ? Math.max(...current.map(h => h.id)) + 1 : 1;
+    const newHabit = { id: newId, name: name.trim(), completed: false };
 
-    current.push({
-      id: newId,
-      name: name.trim(),
-      completed: false
-    });
+    current.push(newHabit);
+    if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.HABIT_ADDED, newHabit);
     this.notify();
   }
 
@@ -92,6 +94,7 @@ export class HabitManager {
     if (this.selectedOffset !== 0) return;
 
     this.habitsData[0] = this.getCurrentHabits().filter(habit => habit.id !== habitId);
+    if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.HABIT_DELETED, { habitId });
     this.notify();
   }
 

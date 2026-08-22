@@ -5,6 +5,7 @@
  */
 
 import { loadPomodoroConfig, savePomodoroConfig, isValidPomodoroConfig } from '../components/productivity/pomodoroConfig.js';
+import { emitCustomEvent, FOCO_EVENTS } from '../utils/events.js';
 
 export class PomodoroManager {
   constructor(onUpdateCallback = null) {
@@ -86,12 +87,15 @@ export class PomodoroManager {
     if (this.phase === 'focus' && this.currentCycle < this.totalCycles) {
       this.phase = 'break';
       this.timeLeft = this.breakMinutes * 60;
+      if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.POMODORO_PHASE_CHANGE, { phase: 'break', cycle: this.currentCycle });
     } else if (this.phase === 'break') {
       this.phase = 'focus';
       this.currentCycle += 1;
       this.timeLeft = this.focusMinutes * 60;
+      if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.POMODORO_PHASE_CHANGE, { phase: 'focus', cycle: this.currentCycle });
     } else {
       this.sessionComplete = true;
+      if (typeof window !== 'undefined') emitCustomEvent(window, FOCO_EVENTS.POMODORO_COMPLETE, { totalCycles: this.totalCycles });
     }
   }
 
