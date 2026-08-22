@@ -8,6 +8,14 @@
 import Sortable from "sortablejs";
 import { getSession } from "../auth.js";
 
+// Traduce el id del bloque HTML al valor de "type" que acepta la base de datos
+var tiposDeBloque = {
+  "bloque-objetivos-activos": "active_objectives",
+  "bloque-personal": "personal_block",
+  "bloque-inspiracion": "inspiration_creativity",
+  "bloque-archivo-vida": "life_archive"
+};
+
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
     this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-foco-azul-gray foco-scrollbar";
@@ -170,7 +178,7 @@ class FocoLienzoCanvas extends HTMLElement {
   }
 
   // Envía la nota al Backend mediante POST, usando el token real de la sesión de Supabase
-  async guardarNotaEnBackend(texto){
+  async guardarNotaEnBackend(texto, tipoDeBloque){
     var sesion = await getSession();
 
     if (!sesion) {
@@ -187,7 +195,7 @@ class FocoLienzoCanvas extends HTMLElement {
         "Authorization": "Bearer " + token
       },
       body: JSON.stringify({
-        type: "note",
+        type: tipoDeBloque,
         content: { texto: texto }
       })
     })
@@ -216,11 +224,15 @@ class FocoLienzoCanvas extends HTMLElement {
     // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
     botonClonado.replaceWith(tarjetaNota);
 
+    // Busca el id del bloque contenedor para saber qué tipo de bloque corresponde según la base de datos
+    var idDelBloque = tarjetaNota.closest(".foco-drop-zone").id;
+    var tipoDeBloque = tiposDeBloque[idDelBloque];
+
     var componenteActual = this;
 
     areaDeTexto.addEventListener("blur", function () {
       var textoEscrito = areaDeTexto.textContent;
-      componenteActual.guardarNotaEnBackend(textoEscrito);
+      componenteActual.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
     });
 
     // Deja el cursor listo para escribir apenas se crea
