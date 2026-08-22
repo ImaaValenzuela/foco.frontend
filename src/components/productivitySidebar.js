@@ -9,6 +9,17 @@ class FocoProductivitySidebar extends HTMLElement {
   constructor() {
     super();
 
+    const saved = JSON.parse(localStorage.getItem('foco-pomodoro-config') || '{}');
+    this.focusMinutes = saved.focusMinutes || 25;
+    this.breakMinutes = saved.breakMinutes || 5;
+    this.totalCycles = saved.totalCycles || 4;
+    this.currentCycle = 1;
+    this.phase = 'focus';
+    this.timeLeft = this.focusMinutes * 60;
+    this.isRunning = false;
+    this.timerInterval = null;
+    this.sessionComplete = false;
+
     // 1. ESTADO: Día seleccionado (0 = Hoy, 1 a 7 = Días anteriores)
     this.selectedOffset = 0;
 
@@ -234,26 +245,26 @@ class FocoProductivitySidebar extends HTMLElement {
           </div>
 
           <!-- Tiempo Principal (Estilo Monospace de alta visibilidad) -->
-          <div class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
-            25:00
+          <div id="pomodoro-display" class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
+            ${this.formatTime(this.timeLeft)}
           </div>
 
           <!-- Metadatos de Enfoque y Tiempos de descanso -->
           <div class="text-center space-y-0.5 mb-5">
-            <p class="text-xs font-bold text-foco-blue-deep">Modo: Enfoque Integral</p>
-            <p class="text-[10px] font-semibold text-slate-400">Ciclo 1 de 4 - Descanso: 5 Min</p>
+            <p class="text-xs font-bold text-foco-blue-deep">${this.sessionComplete ? 'Sesión completada' : (this.isRunning ? 'Temporizador activo' : 'Temporizador pausado')}</p>
+            <p class="text-[10px] font-semibold text-slate-400">Ciclo ${this.currentCycle} de ${this.totalCycles} - Descanso: ${this.breakMinutes} Min</p>
           </div>
 
           <!-- Botones de Interacción del Temporizador -->
           <div class="flex w-full gap-3">
             <!-- Iniciar (Naranja Institucional de FOCO) -->
-            <button class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
-              Iniciar
+              <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
+                ${this.isRunning ? 'Pausar' : 'Iniciar'}
             </button>
             
             <!-- Configurar (Borde Gris/Slate) -->
-            <button class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
-              Configurar
+              <button id="reset-pomodoro" class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
+                Reiniciar
             </button>
           </div>
 
@@ -325,6 +336,9 @@ class FocoProductivitySidebar extends HTMLElement {
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => this.toggleCollapse());
     }
+
+    this.querySelector('#start-pomodoro')?.addEventListener('click', () => this.toggleTimer());
+    this.querySelector('#reset-pomodoro')?.addEventListener('click', () => this.resetTimer());
 
     const quickIconPomodoro = this.querySelector('#quick-pomodoro');
     if (quickIconPomodoro) {
@@ -404,6 +418,54 @@ class FocoProductivitySidebar extends HTMLElement {
   toggleCollapse() {
     this.classList.toggle('w-16');
     this.classList.toggle('w-80');
+    this.render();
+  }
+
+  formatTime(seconds) {
+    return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+  }
+
+  toggleTimer() {
+    if (this.isRunning) {
+      this.isRunning = false;
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    } else if (!this.sessionComplete) {
+      this.isRunning = true;
+      this.timerInterval = setInterval(() => {
+        if (this.timeLeft > 0) {
+          this.timeLeft -= 1;
+          const display = this.querySelector('#pomodoro-display');
+          if (display) display.textContent = this.formatTime(this.timeLeft);
+        } else {
+          this.isRunning = false;
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+          if (this.phase === 'focus' && this.currentCycle < this.totalCycles) {
+            this.phase = 'break';
+            this.timeLeft = this.breakMinutes * 60;
+          } else if (this.phase === 'break') {
+            this.phase = 'focus';
+            this.currentCycle += 1;
+            this.timeLeft = this.focusMinutes * 60;
+          } else {
+            this.sessionComplete = true;
+          }
+          this.render();
+        }
+      }, 1000);
+    }
+    this.render();
+  }
+
+  resetTimer() {
+    clearInterval(this.timerInterval);
+    this.timerInterval = null;
+    this.isRunning = false;
+    this.sessionComplete = false;
+    this.currentCycle = 1;
+    this.phase = 'focus';
+    this.timeLeft = this.focusMinutes * 60;
     this.render();
   }
 }
