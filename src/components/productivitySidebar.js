@@ -68,17 +68,45 @@ class FocoProductivitySidebar extends HTMLElement {
 
   // 4. MANEJADOR DE CAMBIOS: Permite checkear/uncheckear hábitos únicamente si es hoy (offset 0)
   toggleHabit(habitId) {
-
     if (this.selectedOffset !== 0) return; // Bloqueo de seguridad para evitar manipular el historial
 
-    this.habitsData = this.habitsData.map(habit => {
+    this.habitsData[this.selectedOffset] = this.habitsData[this.selectedOffset].map(habit => {
       if (habit.id === habitId) {
         return { ...habit, completed: !habit.completed };
       }
       return habit;
     });
     this.render();
-  }  
+  }
+
+  // Añadir un nuevo hábito (habilitado únicamente para el día de la fecha)
+  addHabit(name) {
+    if (this.selectedOffset !== 0 || !name.trim()) return; // Bloqueo de seguridad si no es hoy
+
+    const currentHabits = this.habitsData[this.selectedOffset];
+
+    // Genera un ID único e incremental mayor que los existentes en el día actual
+    const newId = currentHabits.length > 0 
+      ? Math.max(...currentHabits.map(h => h.id)) + 1 
+      : 1;
+
+    const newHabit = {
+      id: newId,
+      name: name.trim(),
+      completed: false
+    };
+
+    currentHabits.push(newHabit);
+    this.render(); // Redibujar la interfaz para reflejar los cambios
+  }
+
+  // Eliminar un hábito (habilitado únicamente para el día de la fecha)
+  deleteHabit(habitId) {
+    if (this.selectedOffset !== 0) return; // Bloqueo de seguridad si no es hoy
+
+    this.habitsData[this.selectedOffset] = this.habitsData[this.selectedOffset].filter(habit => habit.id !== habitId);
+    this.render(); // Redibujar la interfaz para reflejar los cambios
+  }
 
   render() {
     const isExpanded = this.classList.contains('w-80');
@@ -111,44 +139,72 @@ class FocoProductivitySidebar extends HTMLElement {
         `;
       }).join('');
 
-      // Generar el HTML dinámico para el listado de hábitos
+// Generar el HTML dinámico para el listado de hábitos (reemplazar esta sección)
       const habitsHtml = currentHabits.map(habit => {
         const isToday = this.selectedOffset === 0;
-        
-        // Estilos e íconos SVG de checkbox según el mockup de F.O.C.O.
-        const checkboxHtml = habit.completed
-          ? `<div class="w-5 h-5 flex items-center justify-center rounded-md bg-foco-orange-accent text-white shadow-sm border border-foco-orange-accent transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-             </div>`
-          : `<div class="w-5 h-5 rounded-md border-2 border-slate-300 hover:border-foco-orange-accent transition-all bg-white"></div>`;
+        const textClass = habit.completed ? 'line-through text-slate-400 font-normal' : 'font-semibold text-slate-700';
+        const isDisabled = !isToday ? 'disabled' : '';
+        const hoverClass = isToday ? 'cursor-pointer hover:bg-white/70' : 'cursor-not-allowed opacity-75';
 
-        // Textos del mockup: completados tienen color más oscuro, pendientes son normales
-        const textClass = habit.completed 
-          ? 'text-foco-blue-deep font-bold text-xs' 
-          : 'text-slate-600 font-semibold text-xs';
-        
-        const hoverClass = isToday ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed opacity-75';
+        // Botón de eliminar, visible únicamente si es Hoy
+        const deleteButtonHtml = isToday
+          ? `
+            <button 
+              class="delete-habit-btn text-slate-400 hover:text-red-500 p-1 rounded transition-colors ml-2 focus:outline-none" 
+              data-habit-id="${habit.id}"
+              title="Eliminar hábito"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          `
+          : '';
 
         return `
           <div 
             data-habit-id="${habit.id}"
-            class="habit-row flex items-center justify-start gap-3 text-xs transition-all p-1.5 rounded-xl ${hoverClass}"
+            class="habit-row flex items-center justify-between text-xs transition-all p-1.5 rounded-xl ${hoverClass}"
           >
-            <div class="flex items-center select-none">
-              ${checkboxHtml}
-            </div>
-            <span class="${textClass} flex-grow select-none text-left">
+            <span class="${textClass} flex-grow select-none">
               ${habit.name}
             </span>
+            <div class="flex items-center ml-2">
+              <input 
+                type="checkbox" 
+                ${habit.completed ? 'checked' : ''} 
+                ${isDisabled}
+                class="rounded border-slate-300 text-foco-orange-accent focus:ring-foco-orange-accent h-4 w-4 ${isToday ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}" 
+              />
+              ${deleteButtonHtml}
+            </div>
           </div>
         `;
       }).join('');
 
+      // Formulario para ingresar nuevos hábitos, renderizado únicamente si es Hoy
+      const isToday = this.selectedOffset === 0;
+      const addHabitFormHtml = isToday
+        ? `
+          <div class="flex gap-2 pt-2 border-t border-slate-200/60 mt-2 w-full">
+            <input 
+              id="new-habit-input" 
+              type="text" 
+              placeholder="Nuevo hábito..." 
+              class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-foco-orange-accent focus:border-foco-orange-accent text-slate-700 bg-white"
+            />
+            <button 
+              id="add-habit-btn" 
+              class="bg-foco-orange-accent text-white px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm hover:bg-orange-600 transition-all flex items-center justify-center focus:outline-none"
+              title="Añadir hábito"
+            >
+              +
+            </button>
+          </div>
+        `
+        : '';
+        
       const statusBadge = this.selectedOffset === 0
         ? '<span class="text-[9px] text-foco-orange-accent bg-orange-50 font-bold px-1.5 py-0.5 rounded border border-orange-100">Hoy</span>'
-        : '<span class="text-[9px] text-slate-500 bg-slate-50 font-bold px-1.5 py-0.5 rounded border border-slate-200">Solo Lectura</span>';
+        : '<span class="text-[9px] text-slate-500 bg-slate-50 font-bold px-1.5 py-0.5 rounded border border-slate-200">Historial</span>';
 
 
       this.innerHTML = `
@@ -226,6 +282,7 @@ class FocoProductivitySidebar extends HTMLElement {
                 <div class="space-y-1.5">
                   ${habitsHtml}
                 </div>
+                ${addHabitFormHtml}
               </div>
 
             </div>
@@ -242,7 +299,7 @@ class FocoProductivitySidebar extends HTMLElement {
         </div>
 
         <!-- CUERPO REPLEGADO -->
-        <div class="flex-grow overflow-y-auto p-4 flex flex-col items-center select-none text-slate-400 w-full pt-6 space-y-6">
+        <div class="flex-grow p-4 flex flex-col items-center select-none text-slate-400 w-full pt-6 space-y-6">
           <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-foco-blue-deep transition-all group" title="Abrir Pomodoro">
             <!-- SVG de Reloj -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check-icon lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>
@@ -294,12 +351,52 @@ class FocoProductivitySidebar extends HTMLElement {
 
     // Interacción con la lista de hábitos (Habilitada únicamente si es Hoy - selectedOffset === 0)
     if (this.selectedOffset === 0) {
+      // EVENT LISTENERS PARA AÑADIR UN NUEVO HÁBITO
+      const addBtn = this.querySelector('#add-habit-btn');
+      const input = this.querySelector('#new-habit-input');
+
+      const handleAdd = () => {
+        if (input && input.value.trim()) {
+          this.addHabit(input.value);
+        }
+      };
+
+      if (addBtn && input) {
+        addBtn.addEventListener('click', handleAdd);
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') handleAdd();
+        });
+      }
+
+      // EVENT LISTENERS PARA ELIMINAR HÁBITOS
+      const deleteButtons = this.querySelectorAll('.delete-habit-btn');
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Evita que el evento se propague a la fila y marque/desmarque el hábito
+          const habitId = parseInt(btn.getAttribute('data-habit-id'), 10);
+          this.deleteHabit(habitId);
+        });
+      });
+
+      // EVENT LISTENERS ORIGINALES DE LA FILA (Modificados para evitar conflictos de clicks)
       const habitRows = this.querySelectorAll('.habit-row');
       habitRows.forEach(row => {
         row.addEventListener('click', (e) => {
+          // Previene que se dispare si el usuario hace clic en la casilla de verificación o en el botón de eliminar
+          if (e.target.tagName === 'INPUT' || e.target.closest('.delete-habit-btn')) return;
+          
           const habitId = parseInt(row.getAttribute('data-habit-id'), 10);
           this.toggleHabit(habitId);
         });
+
+        // Asegurar que cambiar el checkbox directo también dispare el re-renderizado
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.addEventListener('change', () => {
+            const habitId = parseInt(row.getAttribute('data-habit-id'), 10);
+            this.toggleHabit(habitId);
+          });
+        }
       });
     }
   }
