@@ -1,3 +1,7 @@
+import { isValidPomodoroConfig, loadPomodoroConfig, savePomodoroConfig } from './productivity/pomodoroConfig.js';
+import { renderPomodoro } from './productivity/pomodoro.js';
+import { renderHabitTracker } from './productivity/habitTracker.js';
+
 /**
  * Componente: FocoProductivitySidebar (Vanilla JS)
  * Barra lateral derecha de productividad. Contiene el Cronómetro Pomodoro y el Tracker de Hábitos con historial.
@@ -9,16 +13,17 @@ class FocoProductivitySidebar extends HTMLElement {
   constructor() {
     super();
 
-    const saved = JSON.parse(localStorage.getItem('foco-pomodoro-config') || '{}');
-    this.focusMinutes = saved.focusMinutes || 25;
-    this.breakMinutes = saved.breakMinutes || 5;
-    this.totalCycles = saved.totalCycles || 4;
+    const saved = loadPomodoroConfig();
+    this.focusMinutes = saved.focusMinutes;
+    this.breakMinutes = saved.breakMinutes;
+    this.totalCycles = saved.totalCycles;
     this.currentCycle = 1;
     this.phase = 'focus';
     this.timeLeft = this.focusMinutes * 60;
     this.isRunning = false;
     this.timerInterval = null;
     this.sessionComplete = false;
+    this.showConfig = false;
 
     // 1. ESTADO: Día seleccionado (0 = Hoy, 1 a 7 = Días anteriores)
     this.selectedOffset = 0;
@@ -230,73 +235,16 @@ class FocoProductivitySidebar extends HTMLElement {
       <!-- Cuerpo de la Sidebar (Contenedor de widgets) -->
       <div class="flex-1 p-4 space-y-4 overflow-y-auto foco-scrollbar">
         
-        <!-- TARJETA DEL CRONÓMETRO POMODORO -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col items-center relative overflow-hidden">
-          
-          <!-- Header del Widget (Icono reloj + Título + Botón de minimizar widget) -->
-          <div class="w-full flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-            <div class="flex items-center space-x-2 text-foco-blue-deep">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check-icon lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-xs font-bold uppercase tracking-wide">Cronómetro Pomodoro</span>
-            </div>
-            <button class="text-slate-300 hover:text-slate-500 text-xs">
-            </button>
-          </div>
-
-          <!-- Tiempo Principal (Estilo Monospace de alta visibilidad) -->
-          <div id="pomodoro-display" class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
-            ${this.formatTime(this.timeLeft)}
-          </div>
-
-          <!-- Metadatos de Enfoque y Tiempos de descanso -->
-          <div class="text-center space-y-0.5 mb-5">
-            <p class="text-xs font-bold text-foco-blue-deep">${this.sessionComplete ? 'Sesión completada' : (this.isRunning ? 'Temporizador activo' : 'Temporizador pausado')}</p>
-            <p class="text-[10px] font-semibold text-slate-400">Ciclo ${this.currentCycle} de ${this.totalCycles} - Descanso: ${this.breakMinutes} Min</p>
-          </div>
-
-          <!-- Botones de Interacción del Temporizador -->
-          <div class="flex w-full gap-3">
-            <!-- Iniciar (Naranja Institucional de FOCO) -->
-              <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
-                ${this.isRunning ? 'Pausar' : 'Iniciar'}
-            </button>
-            
-            <!-- Configurar (Borde Gris/Slate) -->
-              <button id="reset-pomodoro" class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
-                Reiniciar
-            </button>
-          </div>
-
-        </div>
-
-
-            <!-- TARJETA DE TRACKER DE HÁBITOS DIARIOS -->
-            <div class="w-full bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 space-y-3">
-              
-              <!-- Header del Widget -->
-              <div class="w-full flex justify-between items-center border-b border-slate-100 pb-2">
-                <div class="flex items-center space-x-2 text-foco-blue-deep">
-                  <!-- Clipboard Check SVG -->
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check-icon lucide-calendar-check"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></svg>
-                  <span class="text-xs font-bold uppercase tracking-wide">Hábitos diarios</span>
-                </div>
-                ${statusBadge}
-              </div>
-
-              <!-- Selector horizontal de los últimos 8 días -->
-              <div class="flex justify-between items-center bg-slate-50 border border-slate-200/80 rounded-xl p-1 w-full overflow-hidden gap-0.5">
-                ${daysHtml}
-              </div>
-
-              <!-- Contenedor de la lista de hábitos -->
-                <div class="space-y-1.5">
-                  ${habitsHtml}
-                </div>
-                ${addHabitFormHtml}
-              </div>
-
-            </div>
+          ${renderPomodoro({
+            showConfig: this.showConfig,
+            configModal: this.renderConfigModal(),
+            display: this.formatTime(this.timeLeft),
+            status: this.sessionComplete ? 'Sesión completada' : (this.isRunning ? 'Temporizador activo' : 'Temporizador pausado'),
+            cycle: `${this.currentCycle} de ${this.totalCycles}`,
+            breakMinutes: this.breakMinutes,
+            isRunning: this.isRunning,
+          })}
+             ${renderHabitTracker({ daysHtml, habitsHtml, addHabitFormHtml, statusBadge })}
         </div>
       `;
     } else {
@@ -339,6 +287,10 @@ class FocoProductivitySidebar extends HTMLElement {
 
     this.querySelector('#start-pomodoro')?.addEventListener('click', () => this.toggleTimer());
     this.querySelector('#reset-pomodoro')?.addEventListener('click', () => this.resetTimer());
+    this.querySelector('#open-config')?.addEventListener('click', () => this.openConfig());
+    this.querySelector('#close-config')?.addEventListener('click', () => this.closeConfig());
+    this.querySelector('#cancel-config')?.addEventListener('click', () => this.closeConfig());
+    this.querySelector('#save-config')?.addEventListener('click', () => this.saveConfig());
 
     const quickIconPomodoro = this.querySelector('#quick-pomodoro');
     if (quickIconPomodoro) {
@@ -419,6 +371,29 @@ class FocoProductivitySidebar extends HTMLElement {
     this.classList.toggle('w-16');
     this.classList.toggle('w-80');
     this.render();
+  }
+
+  renderConfigModal() {
+    return `<div id="config-overlay" class="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4"><div class="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6"><div class="flex justify-between mb-4"><h3 class="text-sm font-bold">Configurar tiempos</h3><button id="close-config" type="button" aria-label="Cerrar">X</button></div><div class="space-y-3"><label class="text-xs">Enfoque<input id="input-focus" type="number" min="1" max="180" value="${this.focusMinutes}" class="w-full border rounded px-2 py-1" /></label><label class="text-xs">Descanso<input id="input-break" type="number" min="1" max="60" value="${this.breakMinutes}" class="w-full border rounded px-2 py-1" /></label><label class="text-xs">Ciclos<input id="input-cycles" type="number" min="1" max="12" value="${this.totalCycles}" class="w-full border rounded px-2 py-1" /></label></div><p id="config-error" class="text-xs text-red-600"></p><div class="flex gap-2 mt-4"><button id="save-config" type="button" class="flex-grow bg-foco-orange-accent text-white rounded py-2">Guardar</button><button id="cancel-config" type="button" class="border rounded px-3">Cancelar</button></div></div></div>`;
+  }
+
+  openConfig() {
+    if (!this.isRunning) { this.showConfig = true; this.render(); }
+  }
+
+  closeConfig() { this.showConfig = false; this.render(); }
+
+  saveConfig() {
+    const values = ['focus', 'break', 'cycles'].map(name => Number(this.querySelector(`#input-${name}`)?.value));
+    const config = { focusMinutes: values[0], breakMinutes: values[1], totalCycles: values[2] };
+    if (!isValidPomodoroConfig(config)) {
+      this.querySelector('#config-error').textContent = 'Introduce valores dentro de los rangos indicados.';
+      return;
+    }
+    [this.focusMinutes, this.breakMinutes, this.totalCycles] = values;
+    savePomodoroConfig(config);
+    this.showConfig = false;
+    this.resetTimer();
   }
 
   formatTime(seconds) {

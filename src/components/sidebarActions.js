@@ -3,6 +3,8 @@
  * Barra de herramientas lateral izquierda con botones arrastrables simulados.
  * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
  */
+import Sortable from "sortablejs";
+
 class FocoSidebarActions extends HTMLElement {
   connectedCallback() {
     this.className = "w-20 bg-foco-gray-sidebar flex flex-col items-center py-6 border-r border-slate-200 space-y-6 select-none";
@@ -10,12 +12,12 @@ class FocoSidebarActions extends HTMLElement {
       <div class="flex flex-col items-center space-y-5 w-full">
         
         <!-- Botón: Nota -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Nota">
+        <div class="foco-crear-nota flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Nota">
           <div class="w-12 h-12 rounded-2xl bg-foco-blue-accent text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Nota (+) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-icon lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-          </div>
+          </div> 
           <span class="text-[10px] font-semibold text-foco-blue-deep mt-1 group-hover:text-indigo-700 transition-colors">Nota</span>
         </div>
 
@@ -52,6 +54,23 @@ class FocoSidebarActions extends HTMLElement {
 
       </div>
     `;
+  this.activarCrearNota();
+  }
+
+  // Activa SortableJS sobre el botón "Nota", configurado para que al arrastrarlo
+  // se cree una copia en el destino, sin mover ni eliminar el botón original.
+  activarCrearNota() {
+    var contenedorBotones = this.querySelector(".flex.flex-col.items-center.space-y-5");
+
+    Sortable.create(contenedorBotones, {
+      group: {
+        name: "foco-tarjetas",
+        pull: "clone",
+        put: false
+      },
+      sort: false,
+      draggable: ".foco-crear-nota"
+    });
   }
 }
 

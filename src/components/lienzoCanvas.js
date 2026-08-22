@@ -6,6 +6,15 @@
  */
 
 import Sortable from "sortablejs";
+import { getSession } from "../auth.js";
+
+// Traduce el id del bloque HTML al valor de "type" que acepta la base de datos
+var tiposDeBloque = {
+  "bloque-objetivos-activos": "active_objectives",
+  "bloque-personal": "personal_block",
+  "bloque-inspiracion": "inspiration_creativity",
+  "bloque-archivo-vida": "life_archive"
+};
 
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
@@ -149,14 +158,87 @@ class FocoLienzoCanvas extends HTMLElement {
 
     for (var i = 0; i < listaDeZonas.length; i++) {
       var zonaActual = listaDeZonas[i];
+      var componenteActual = this;
 
       Sortable.create(zonaActual, {
         group: "foco-tarjetas",
         ghostClass: "foco-tarjeta-fantasma",
-        draggable: ".foco-tarjeta"
+        draggable: ".foco-tarjeta",
+
+        onAdd: function (evento) {
+          var elementoAgregado = evento.item;
+
+          // Si lo que se soltó es el clon del botón "Nota", lo reemplazamos por una tarjeta editable
+          if (elementoAgregado.classList.contains("foco-crear-nota")) {
+            componenteActual.crearTarjetaNota(elementoAgregado);
+          }
+        }
       });
     }
   }
+
+  // Envía la nota al Backend mediante POST, usando el token real de la sesión de Supabase
+  async guardarNotaEnBackend(texto, tipoDeBloque){
+    var sesion = await getSession();
+
+    if (!sesion) {
+      console.log("No hay sesión activa, no se puede guardar la nota.");
+      return;
+    }
+
+    var token = sesion.access_token;
+
+    fetch("http://localhost:4000/api/blocks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        type: tipoDeBloque,
+        content: { texto: texto }
+      })
+    })
+      .then(function (respuesta) {
+        return respuesta.json();
+      })
+      .then(function (datos) {
+        console.log("Nota guardada en el backend:", datos);
+      })
+      .catch(function (error) {
+        console.error("Error al guardar la nota:", error);
+      });
+  }
+
+  // Reemplaza el clon del botón "Nota" por una tarjeta real, con un área de texto editable.
+  crearTarjetaNota(botonClonado) {
+    var tarjetaNota = document.createElement("div");
+    tarjetaNota.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+
+    var areaDeTexto = document.createElement("div");
+    areaDeTexto.className = "text-xs text-slate-700 outline-none";
+    areaDeTexto.contentEditable = "true";
+
+    tarjetaNota.appendChild(areaDeTexto);
+
+    // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
+    botonClonado.replaceWith(tarjetaNota);
+
+    // Busca el id del bloque contenedor para saber qué tipo de bloque corresponde según la base de datos
+    var idDelBloque = tarjetaNota.closest(".foco-drop-zone").id;
+    var tipoDeBloque = tiposDeBloque[idDelBloque];
+
+    var componenteActual = this;
+
+    areaDeTexto.addEventListener("blur", function () {
+      var textoEscrito = areaDeTexto.textContent;
+      componenteActual.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
+    });
+
+    // Deja el cursor listo para escribir apenas se crea
+    areaDeTexto.focus();
+  }
+
 }
 
 // Registro en el navegador
