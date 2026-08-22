@@ -2,6 +2,9 @@
  * F.O.C.O. - Módulo de Autenticación y Validación de Clientes
  * Centraliza las reglas de negocio de la Épica 1 (Autenticación e Inducción)
  */
+import { sessionStore } from '../services/storage.service.js';
+import { validators } from '../utils/validators.js';
+import { showToastAlert, closeToastAlert } from './ui/toast.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inicialización de escuchadores en tiempo real
@@ -83,13 +86,9 @@ function switchView(viewTarget) {
 }
 
 /**
- * 2. EXPRESIONES REGULARES Y FUNCIONES DE VALIDACIÓN PURAS
+ * 2. FUNCIONES DE VALIDACIÓN PURAS (Importadas desde validators.js)
  */
-const validators = {
-  isEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
-  isName: (name) => name.trim().length >= 3,
-  isPassword: (pass) => pass.length >= 6
-};
+
 
 /**
  * 3. VALIDACIÓN DE CAMPOS INDIVIDUALES (ONBLUR)
@@ -181,39 +180,9 @@ function toggleButtonContainer(container, show) {
 }
 
 /**
- * 5. CONTROLADOR GLOBAL DEL TOAST DE ERROR (Esquina inferior derecha)
+ * 5. CONTROLADOR GLOBAL DEL TOAST DE ERROR (Importado desde ui/toast.js)
  */
-let toastTimeout;
-function showToastAlert(title, message) {
-  const container = document.getElementById(authDOM.toast.container);
-  const titleEl = document.getElementById(authDOM.toast.title);
-  const msgEl = document.getElementById(authDOM.toast.message);
 
-  if (!container || !titleEl || !msgEl) return;
-
-  titleEl.textContent = title;
-  msgEl.textContent = message;
-
-  // Animación de entrada
-  container.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-12');
-  container.classList.add('opacity-100', 'translate-y-0');
-
-  // Limpiar timers activos si se gatilla otro error consecutivo
-  clearTimeout(toastTimeout);
-
-  // Autocerrado a los 7 segundos para no molestar la vista
-  toastTimeout = setTimeout(() => {
-    closeToastAlert();
-  }, 7000);
-}
-
-function closeToastAlert() {
-  const container = document.getElementById(authDOM.toast.container);
-  if (container) {
-    container.classList.add('opacity-0', 'pointer-events-none', 'translate-y-12');
-    container.classList.remove('opacity-100', 'translate-y-0');
-  }
-}
 
 /**
  * 6. LISTENERS E INTEGRACIÓN DE SUBMITS (Simulado con lógica de negocio)
@@ -274,8 +243,8 @@ function handleLoginSubmit(event) {
   }
 
   // Guardar sesión e ingresar directamente al Onboarding
-  sessionStorage.setItem('foco_session_active', 'true');
-  sessionStorage.setItem('foco_user_email', email);
+  sessionStore.setItem('foco_session_active', 'true');
+  sessionStore.setItem('foco_user_email', email);
 
   // Animación de botón de éxito en la interfaz
   const container = document.getElementById(authDOM.login.btnContainer);
@@ -327,9 +296,9 @@ function handleRegisterSubmit(event) {
   }
 
   // Guardar datos temporales de registro para inicializar onboarding
-  sessionStorage.setItem('foco_session_active', 'true');
-  sessionStorage.setItem('foco_user_email', email);
-  sessionStorage.setItem('foco_user_name', name);
+  sessionStore.setItem('foco_session_active', 'true');
+  sessionStore.setItem('foco_user_email', email);
+  sessionStore.setItem('foco_user_name', name);
 
   const container = document.getElementById(authDOM.register.btnContainer);
   if (container) {

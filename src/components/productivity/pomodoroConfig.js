@@ -1,15 +1,18 @@
+import { localStore } from '../../services/storage.service.js';
+
 const DEFAULT_CONFIG = { focusMinutes: 25, breakMinutes: 5, totalCycles: 4 };
+const STORAGE_KEY = 'foco-pomodoro-config';
 
 export function loadPomodoroConfig() {
-  try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('foco-pomodoro-config') || '{}') };
-  } catch {
-    return DEFAULT_CONFIG;
+  const saved = localStore.getItem(STORAGE_KEY);
+  if (saved && typeof saved === 'object') {
+    return { ...DEFAULT_CONFIG, ...saved };
   }
+  return DEFAULT_CONFIG;
 }
 
 export function savePomodoroConfig(config) {
-  localStorage.setItem('foco-pomodoro-config', JSON.stringify(config));
+  localStore.setItem(STORAGE_KEY, config);
 }
 
 export function isValidPomodoroConfig(values) {
