@@ -1,35 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
+import { authService } from './services/auth.service.js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const supabase = authService.getSupabaseClient();
 
 export async function signInWithGoogle() {
-  if (!supabase) throw new Error('Faltan las variables de Supabase');
-  return supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin },
-  });
+  return authService.signInWithGoogle();
 }
 
 export async function signOut() {
-  return supabase?.auth.signOut();
+  return authService.signOut();
 }
 
 export async function getSession() {
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+  return authService.getSession();
 }
 
 export function continueAsGuest() {
-  localStorage.setItem('foco_guest', 'true');
+  authService.continueAsGuest();
 }
 
 export function isGuest() {
-  return localStorage.getItem('foco_guest') === 'true';
+  return authService.isGuest();
 }

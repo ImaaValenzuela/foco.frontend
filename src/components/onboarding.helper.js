@@ -2,6 +2,8 @@
  * F.O.C.O. - Módulo Controlador de Onboarding y Calibración del Motor de IA
  * Centraliza las reglas de la Épica 1 - Feature 1.2
  */
+import { localStore } from '../services/storage.service.js';
+
 
 document.addEventListener('DOMContentLoaded', () => {
   initOnboarding();
@@ -265,7 +267,7 @@ function submitOnboardingProfiling() {
     mot_reduce_fatigue: document.getElementById('mot_reduce_fatigue').checked
   };
 
-  localStorage.setItem('foco_onboarding_data', JSON.stringify(profilingData));
+  localStore.setItem('foco_onboarding_data', profilingData);
 
   // Animación del botón al presionar
   const mainBtn = document.getElementById(onboardingDOM.submitBtn);

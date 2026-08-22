@@ -7,6 +7,7 @@
 
 import Sortable from "sortablejs";
 import { getSession } from "../auth.js";
+import { blocksService } from "../services/blocks.service.js";
 
 // Traduce el id del bloque HTML al valor de "type" que acepta la base de datos
 var tiposDeBloque = {
@@ -177,37 +178,19 @@ class FocoLienzoCanvas extends HTMLElement {
     }
   }
 
-  // Envía la nota al Backend mediante POST, usando el token real de la sesión de Supabase
-  async guardarNotaEnBackend(texto, tipoDeBloque){
-    var sesion = await getSession();
-
-    if (!sesion) {
-      console.log("No hay sesión activa, no se puede guardar la nota.");
-      return;
+  // Envía la nota al Backend mediante POST, usando el servicio de bloques abstracto
+  async guardarNotaEnBackend(texto, tipoDeBloque) {
+    try {
+      const sesion = await getSession();
+      if (!sesion) {
+        console.log("No hay sesión activa, no se puede guardar la nota.");
+        return;
+      }
+      const datos = await blocksService.saveBlock(tipoDeBloque, { texto }, sesion.access_token);
+      console.log("Nota guardada en el backend:", datos);
+    } catch (error) {
+      console.error("Error al guardar la nota:", error);
     }
-
-    var token = sesion.access_token;
-
-    fetch("http://localhost:4000/api/blocks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
-      },
-      body: JSON.stringify({
-        type: tipoDeBloque,
-        content: { texto: texto }
-      })
-    })
-      .then(function (respuesta) {
-        return respuesta.json();
-      })
-      .then(function (datos) {
-        console.log("Nota guardada en el backend:", datos);
-      })
-      .catch(function (error) {
-        console.error("Error al guardar la nota:", error);
-      });
   }
 
   // Reemplaza el clon del botón "Nota" por una tarjeta real, con un área de texto editable.

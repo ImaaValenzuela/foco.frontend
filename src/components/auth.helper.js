@@ -2,6 +2,7 @@
  * F.O.C.O. - Módulo de Autenticación y Validación de Clientes
  * Centraliza las reglas de negocio de la Épica 1 (Autenticación e Inducción)
  */
+import { sessionStore } from '../services/storage.service.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inicialización de escuchadores en tiempo real
@@ -274,8 +275,8 @@ function handleLoginSubmit(event) {
   }
 
   // Guardar sesión e ingresar directamente al Onboarding
-  sessionStorage.setItem('foco_session_active', 'true');
-  sessionStorage.setItem('foco_user_email', email);
+  sessionStore.setItem('foco_session_active', 'true');
+  sessionStore.setItem('foco_user_email', email);
 
   // Animación de botón de éxito en la interfaz
   const container = document.getElementById(authDOM.login.btnContainer);
@@ -327,9 +328,9 @@ function handleRegisterSubmit(event) {
   }
 
   // Guardar datos temporales de registro para inicializar onboarding
-  sessionStorage.setItem('foco_session_active', 'true');
-  sessionStorage.setItem('foco_user_email', email);
-  sessionStorage.setItem('foco_user_name', name);
+  sessionStore.setItem('foco_session_active', 'true');
+  sessionStore.setItem('foco_user_email', email);
+  sessionStore.setItem('foco_user_name', name);
 
   const container = document.getElementById(authDOM.register.btnContainer);
   if (container) {
