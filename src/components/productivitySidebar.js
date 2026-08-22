@@ -8,7 +8,6 @@
  * US 4.1.2: Modal de configuración para personalizar tiempos de enfoque, descanso y cantidad de ciclos.
  */
 class FocoProductivitySidebar extends HTMLElement {
-<<<<<<< HEAD
   constructor() {
     super();
 
@@ -27,8 +26,6 @@ class FocoProductivitySidebar extends HTMLElement {
     this.showConfig = false;
   }
 
-=======
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
   connectedCallback() {
     // Inicializar el estado replegado por defecto (w-16)
     this.className = "bg-white border-l border-slate-200 shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
@@ -40,7 +37,6 @@ class FocoProductivitySidebar extends HTMLElement {
 
     if (isExpanded) {
       this.innerHTML = `
-<<<<<<< HEAD
        <!-- Encabezado de la Sidebar con botón de config y contraer -->
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-200 bg-white">
         <button id="open-config" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 hover:text-foco-blue-deep text-slate-500 transition-all border border-slate-200/50 shadow-sm" title="Configurar tiempos">
@@ -55,13 +51,9 @@ class FocoProductivitySidebar extends HTMLElement {
             <path d="M15 3v18"/>
             <path d="m8 9 3 3-3 3"/>
           </svg>
-=======
-
-       <!-- Encabezado de la Sidebar con botón de contraer -->
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-200 bg-white">
         <button id="toggle-sidebar" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 hover:text-foco-blue-deep text-slate-500 transition-all border border-slate-200/50 shadow-sm" title="Expandir Productividad">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open-icon lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
         </button>
       </div>
 
@@ -86,30 +78,25 @@ class FocoProductivitySidebar extends HTMLElement {
           </div>
 
           <!-- Tiempo Principal (Estilo Monospace de alta visibilidad) -->
-          <div class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
-            25:00
+          <div id="pomodoro-display" class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">
+            ${this.formatTime(this.timeLeft)}
           </div>
 
           <!-- Metadatos de Enfoque y Tiempos de descanso -->
           <div class="text-center space-y-0.5 mb-5">
-<<<<<<< HEAD
             <p class="text-xs font-bold text-foco-blue-deep">Modo: ${this.isRunning ? '🔥 Enfoque Activo' : 'Modo Enfoque'}</p>
             <p class="text-[10px] font-semibold text-slate-400">Ciclo ${this.currentCycle} de ${this.totalCycles} - Descanso: ${this.breakMinutes} Min</p>
-=======
-            <p class="text-xs font-bold text-foco-blue-deep">Modo: Enfoque Integral</p>
-            <p class="text-[10px] font-semibold text-slate-400">Ciclo 1 de 4 - Descanso: 5 Min</p>
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
           </div>
 
           <!-- Botones de Interacción del Temporizador -->
           <div class="flex w-full gap-3">
             <!-- Iniciar (Naranja Institucional de FOCO) -->
-            <button class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
-              Iniciar
+            <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">
+              ${this.isRunning ? 'Pausar' : 'Iniciar'}
             </button>
             
             <!-- Configurar (Borde Gris/Slate) -->
-            <button class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
+            <button id="open-config" class="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">
               Configurar
             </button>
           </div>
@@ -118,11 +105,7 @@ class FocoProductivitySidebar extends HTMLElement {
 
       </div>
 
-<<<<<<< HEAD
       ${this.showConfig ? this.renderConfigModal() : ''}
-=======
-      
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
       `;
     } else {
       this.innerHTML = `
@@ -210,8 +193,6 @@ class FocoProductivitySidebar extends HTMLElement {
     if (quickIcon) {
       quickIcon.addEventListener('click', () => this.toggleCollapse());
     }
-<<<<<<< HEAD
-
     const startBtn = this.querySelector('#start-pomodoro');
     if (startBtn) {
       startBtn.addEventListener('click', () => this.toggleTimer());
@@ -286,6 +267,12 @@ class FocoProductivitySidebar extends HTMLElement {
     }
   }
 
+  formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${remainingSeconds}`;
+  }
+
   resetTimer() {
     this.pauseTimer();
     this.timeLeft = this.focusMinutes * 60;
@@ -305,8 +292,6 @@ class FocoProductivitySidebar extends HTMLElement {
     }
     this.timeLeft = this.focusMinutes * 60;
     this.render();
-=======
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
   }
 
   toggleCollapse() {
@@ -353,8 +338,4 @@ class FocoProductivitySidebar extends HTMLElement {
 }
 
 // Registro en el navegador
-<<<<<<< HEAD
 customElements.define('foco-productivity-sidebar', FocoProductivitySidebar);
-=======
-customElements.define('foco-productivity-sidebar', FocoProductivitySidebar);
->>>>>>> e6c9ec6ce40bfe16f6628416f131ef235023ba0d
