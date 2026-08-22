@@ -18,7 +18,14 @@ class FocoProductivitySidebar extends HTMLElement {
 
   connectedCallback() {
     this.className = "bg-white border-l border-slate-200 shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
+    this.aplicarVisibilidad(localStorage.getItem('foco-productivity-sidebar') !== 'false');
+    this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
+    window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
     this.render();
+  }
+
+  aplicarVisibilidad(visible) {
+    this.classList.toggle('hidden', !visible);
   }
 
   disconnectedCallback() {

@@ -48,6 +48,30 @@ body {
   transform: translateY(-1px);
 }
 
+/* Hace evidente que el contenido de cada bloque se puede desplazar. */
+.foco-tarjeta {
+  cursor: grab;
+  position: relative;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.foco-tarjeta:hover {
+  background-color: rgba(124, 131, 222, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(124, 131, 222, 0.18);
+  transform: translateY(-1px);
+}
+.foco-tarjeta:active { cursor: grabbing; }
+.foco-sidebar-action {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  color: #22298a;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.foco-sidebar-action:hover { background: #e2e5f5; transform: translateY(-1px); }
+.foco-modal { backdrop-filter: blur(2px); }
+
 /* Efecto active (clic/presionado) */
 .cursor-grabbing:active,
 .active\:cursor-grabbing:active {
