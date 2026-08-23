@@ -33,10 +33,12 @@ export class BlocksService {
     return response.json();
   }
 
-  async fetchBlocks(token) {
+  async fetchBlocks(token, userId) {
     if (!token) return [];
 
-    const response = await fetch(`${this.baseUrl}/blocks`, {
+    if (!userId) return [];
+
+    const response = await fetch(`${this.baseUrl}/blocks/user/${encodeURIComponent(userId)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
