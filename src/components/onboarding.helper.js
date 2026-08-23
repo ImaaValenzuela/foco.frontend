@@ -3,6 +3,7 @@
  * Centraliza las reglas de la Épica 1 - Feature 1.2
  */
 import { localStore } from '../services/storage.service.js';
+import { getSession } from '../auth.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -243,7 +244,7 @@ function closeAlertToast() {
 /**
  * Persistencia del Onboarding en LocalStorage y redirección
  */
-function submitOnboardingProfiling() {
+async function submitOnboardingProfiling() {
   const s = parseInt(document.getElementById(onboardingDOM.sliders.study).value) || 0;
   const w = parseInt(document.getElementById(onboardingDOM.sliders.work).value) || 0;
   const r = parseInt(document.getElementById(onboardingDOM.sliders.routine).value) || 0;
@@ -267,8 +268,6 @@ function submitOnboardingProfiling() {
     mot_reduce_fatigue: document.getElementById('mot_reduce_fatigue').checked
   };
 
-  localStore.setItem('foco_onboarding_data', profilingData);
-
   // Animación del botón al presionar
   const mainBtn = document.getElementById(onboardingDOM.submitBtn);
   if (mainBtn) {
@@ -281,7 +280,22 @@ function submitOnboardingProfiling() {
     `;
   }
 
-  setTimeout(() => {
+  try {
+    const session = await getSession();
+    if (!session) throw new Error('La sesión expiró. Inicia sesión nuevamente.');
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/onboarding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(profilingData),
+    });
+    if (!response.ok) throw new Error('No se pudo guardar el onboarding.');
+    localStore.setItem('foco_onboarding_data', profilingData);
     window.location.href = 'index.html';
-  }, 1500);
+  } catch (error) {
+    showOnboardingAlert('Error de guardado', error.message);
+    if (mainBtn) mainBtn.disabled = false;
+  }
 }
