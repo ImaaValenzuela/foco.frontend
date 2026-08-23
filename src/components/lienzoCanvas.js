@@ -147,9 +147,45 @@ class FocoLienzoCanvas extends HTMLElement {
 
     `;
     this.activarDragAndDrop();
+    this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
+  }
+
+  async cargarBlocks() {
+    const sesion = await getSession();
+    if (!sesion?.user?.id) return;
+
+    try {
+      const blocks = await blocksService.fetchBlocks(sesion.access_token, sesion.user.id);
+      blocks.forEach((block) => {
+        const domId = [...blockRegistry.registry.entries()]
+          .find(([, backendType]) => backendType === block.type)?.[0];
+        const zona = domId ? this.querySelector(`#${CSS.escape(domId)}`) : null;
+        if (!zona) return;
+
+        const contenido = block.content || {};
+        const texto = contenido.text || contenido.texto || "";
+        if (!texto && !contenido.title) return;
+
+        const tarjeta = document.createElement("div");
+        tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+        if (contenido.title) {
+          const titulo = document.createElement("h3");
+          titulo.className = "text-xs font-bold text-slate-800";
+          titulo.textContent = contenido.title;
+          tarjeta.appendChild(titulo);
+        }
+        const cuerpo = document.createElement("p");
+        cuerpo.className = "text-[11px] text-slate-600 mt-0.5 whitespace-pre-wrap";
+        cuerpo.textContent = texto;
+        tarjeta.appendChild(cuerpo);
+        zona.appendChild(tarjeta);
+      });
+    } catch (error) {
+      console.error("Error al cargar los blocks:", error);
+    }
   }
 
   aplicarVisibilidad(estado) {
@@ -193,7 +229,7 @@ class FocoLienzoCanvas extends HTMLElement {
         console.log("No hay sesión activa, no se puede guardar la nota.");
         return;
       }
-      const datos = await blocksService.saveBlock(tipoDeBloque, { texto }, sesion.access_token);
+       const datos = await blocksService.saveBlock(tipoDeBloque, { text: texto }, sesion.access_token);
       console.log("Nota guardada en el backend:", datos);
       emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
     } catch (error) {
