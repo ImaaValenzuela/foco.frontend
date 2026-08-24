@@ -6,10 +6,13 @@
  */
 
 import Sortable from "sortablejs";
-import { getSession } from "../auth.js";
+import { getSession, supabase } from "../auth.js";
 import { blocksService } from "../services/blocks.service.js";
 import { blockRegistry } from "../strategies/blockRegistry.js";
 import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
+import { localStore } from "../services/storage.service.js";
+
+const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
 
 class FocoLienzoCanvas extends HTMLElement {
@@ -33,27 +36,6 @@ class FocoLienzoCanvas extends HTMLElement {
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
           <div id="bloque-objetivos-activos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"> 
 
-            <!-- Listado de tareas y sprints -->
-            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="line-through text-slate-400">Maquetar Frontend</span>
-            </div>
-            
-            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" checked disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="line-through text-slate-400">Conectar API REST</span>
-            </div>
-
-            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="text-slate-700 font-medium">Configurar variables de entorno</span>
-            </div>
-
-            <div class="foco-tarjeta flex items-start space-x-2.5 text-xs">
-              <input type="checkbox" disabled class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="text-slate-700 font-medium">Presentar avance del MVP al equipo</span>
-            </div>
-            
           </div>
         </section>
 
@@ -73,29 +55,6 @@ class FocoLienzoCanvas extends HTMLElement {
           <div id="bloque-personal" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
             
             <!-- La clase "foco-tarjeta" marca qué elementos se pueden arrastrar dentro de una zona -->
-            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Rutina Equilibrada</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Controlar el presupuesto de tiempo diario.</p>
-              <span class="inline-block mt-1.5 text-[9px] font-bold text-foco-orange-accent bg-orange-50 px-1.5 py-0.5 rounded">
-                8h Trabajo, 2h Estudio, 2h Ocio
-              </span>
-            </div>
-
-            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Gimnasio</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Ir 3 veces por semana para despejar la mente.</p>
-            </div>
-
-            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Meditación</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">10 minutos diarios antes de iniciar la jornada laboral.</p>
-            </div>
-
-            <div class="foco-tarjeta p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
-              <h3 class="text-xs font-bold text-slate-800">Organizar apuntes</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Mover las notas rápidas recopiladas al archivo final.</p>
-            </div>
-
           </div>
         </section>
 
@@ -112,15 +71,6 @@ class FocoLienzoCanvas extends HTMLElement {
 
           <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
           <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-
-            <div class="foco-tarjeta p-3 bg-yellow-50/60 rounded-xl border border-yellow-100/50 relative">
-              <div class="absolute top-2 right-2 text-yellow-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pin-icon lucide-pin"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.117-1.427l-.602-3.013A1 1 0 0 1 8.261 5h7.478a1 1 0 0 1 .98 1.32l-.602 3.013A2 2 0 0 1 15 10.76V17H9v-6.24z"/></svg>
-              </div>
-              <p class="text-xs text-slate-600 font-serif leading-relaxed pr-5">
-                "Nota de lectura: Método P.A.R.A. de Tiago Forte para evitar el caos cognitivo y estructurar carpetas."
-              </p>
-            </div>
 
           </div>
         </section>
@@ -151,15 +101,31 @@ class FocoLienzoCanvas extends HTMLElement {
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
+    supabase?.auth.onAuthStateChange((_event, session) => {
+      if (session) this.migrarBlocksLocales(session);
+      this.mostrarAvisoLocal(!session);
+    });
   }
 
   async cargarBlocks() {
     const sesion = await getSession();
-    if (!sesion?.user?.id) return;
+    this.mostrarAvisoLocal(!sesion);
+    if (!sesion?.user?.id) {
+      this.renderBlocks(localStore.getItem(LOCAL_BLOCKS_KEY) || []);
+      return;
+    }
 
     try {
       const blocks = await blocksService.fetchBlocks(sesion.access_token, sesion.user.id);
-      blocks.forEach((block) => {
+      this.renderBlocks(blocks);
+      await this.migrarBlocksLocales(sesion);
+    } catch (error) {
+      console.error("Error al cargar los blocks:", error);
+    }
+  }
+
+  renderBlocks(blocks) {
+    blocks.forEach((block) => {
         const domId = [...blockRegistry.registry.entries()]
           .find(([, backendType]) => backendType === block.type)?.[0];
         const zona = domId ? this.querySelector(`#${CSS.escape(domId)}`) : null;
@@ -183,9 +149,29 @@ class FocoLienzoCanvas extends HTMLElement {
         tarjeta.appendChild(cuerpo);
         zona.appendChild(tarjeta);
       });
-    } catch (error) {
-      console.error("Error al cargar los blocks:", error);
+  }
+
+  mostrarAvisoLocal(esInvitado) {
+    let aviso = this.querySelector("[data-local-warning]");
+    if (!aviso) {
+      aviso = document.createElement("div");
+      aviso.dataset.localWarning = "true";
+      aviso.className = "mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900";
+      this.prepend(aviso);
     }
+    aviso.hidden = !esInvitado;
+    aviso.textContent = "Estás usando F.O.C.O. como invitado. Tus bloques se guardan solo en este dispositivo. Iniciá sesión con Google para sincronizarlos y no perderlos.";
+  }
+
+  async migrarBlocksLocales(session) {
+    const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+    if (!locales.length || !session?.access_token) return;
+    for (const block of locales) {
+      await blocksService.saveBlock(block.type, block.content, session.access_token);
+    }
+    localStore.removeItem(LOCAL_BLOCKS_KEY);
+    this.querySelectorAll(".foco-tarjeta[data-local-block]").forEach((card) => card.remove());
+    await this.cargarBlocks();
   }
 
   aplicarVisibilidad(estado) {
@@ -225,11 +211,15 @@ class FocoLienzoCanvas extends HTMLElement {
   async guardarNotaEnBackend(texto, tipoDeBloque) {
     try {
       const sesion = await getSession();
+      const block = { id: crypto.randomUUID(), type: tipoDeBloque, content: { text: texto } };
       if (!sesion) {
-        console.log("No hay sesión activa, no se puede guardar la nota.");
+        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+        localStore.setItem(LOCAL_BLOCKS_KEY, [...locales, block]);
+        tarjetaNota.dataset.localBlock = "true";
+        this.mostrarAvisoLocal(true);
         return;
       }
-       const datos = await blocksService.saveBlock(tipoDeBloque, { text: texto }, sesion.access_token);
+      const datos = await blocksService.saveBlock(tipoDeBloque, block.content, sesion.access_token);
       console.log("Nota guardada en el backend:", datos);
       emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
     } catch (error) {

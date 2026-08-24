@@ -10,32 +10,7 @@ export class HabitManager {
   constructor(onUpdateCallback = null) {
     this.onUpdate = onUpdateCallback;
     this.selectedOffset = 0; // 0 = Hoy, 1..7 = Historial
-    this.habitsData = {
-      0: [
-        { id: 1, name: 'Estudiar programación (1,5 hs)', completed: true },
-        { id: 2, name: 'Leer un capítulo de un libro', completed: true },
-        { id: 3, name: 'Actividad física', completed: false },
-        { id: 4, name: 'Ocio planificado', completed: false },
-      ],
-      1: [
-        { id: 1, name: 'Estudiar programación (1,5 hs)', completed: true },
-        { id: 2, name: 'Leer un capítulo de un libro', completed: true },
-        { id: 3, name: 'Actividad física', completed: true },
-        { id: 4, name: 'Ocio planificado', completed: true },
-      ],
-      2: [
-        { id: 1, name: 'Estudiar programación (1,5 hs)', completed: false },
-        { id: 2, name: 'Leer un capítulo de un libro', completed: true },
-        { id: 3, name: 'Actividad física', completed: false },
-        { id: 4, name: 'Ocio planificado', completed: true },
-      ],
-      3: [
-        { id: 1, name: 'Estudiar programación (1,5 hs)', completed: true },
-        { id: 2, name: 'Leer un capítulo de un libro', completed: true },
-        { id: 3, name: 'Actividad física', completed: false },
-        { id: 4, name: 'Ocio planificado', completed: false },
-      ]
-    };
+    this.habitsData = {};
   }
 
   getPastDays() {
