@@ -51,6 +51,12 @@ class FocoSidebarActions extends HTMLElement {
         </div>
 
       </div>
+      <div class="mt-auto pb-4">
+        <div data-trash-zone class="foco-trash-zone flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-2xl border-2 border-dashed border-red-200 text-red-400 transition-colors" title="Arrastrá una tarjeta para eliminarla">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+          <span class="text-[9px] font-bold">Borrar</span>
+        </div>
+      </div>
       <div class="mt-auto flex flex-col-reverse gap-3">
         <button type="button" data-action="settings" class="foco-sidebar-action" aria-label="Abrir ajustes" title="Ajustes">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.5v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.5v-2.5h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.1H15v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
@@ -61,6 +67,10 @@ class FocoSidebarActions extends HTMLElement {
       </div>
     `;
     this.activarCrearNota();
+    Sortable.create(this.querySelector('[data-trash-zone]'), {
+      group: { name: 'foco-tarjetas', put: true },
+      onAdd: (event) => window.dispatchEvent(new CustomEvent('foco:trash-drop', { detail: { card: event.item, origin: event.from } })),
+    });
     this.querySelector('[data-action="settings"]').addEventListener('click', () => this.abrirModal('settings'));
     this.querySelector('[data-action="help"]').addEventListener('click', () => this.abrirModal('help'));
   }

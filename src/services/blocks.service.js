@@ -51,6 +51,24 @@ export class BlocksService {
 
     return response.json();
   }
+
+  async deleteBlock(id, token) {
+    const response = await fetch(`${this.baseUrl}/blocks/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error(`Error al eliminar bloque: Status ${response.status}`);
+  }
+
+  async updateBlock(id, type, token) {
+    const response = await fetch(`${this.baseUrl}/blocks/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ type }),
+    });
+    if (!response.ok) throw new Error(`Error al actualizar bloque: Status ${response.status}`);
+    return response.json();
+  }
 }
 
 export const blocksService = new BlocksService();
