@@ -5,6 +5,7 @@
 import { sessionStore } from '../services/storage.service.js';
 import { validators } from '../utils/validators.js';
 import { showToastAlert, closeToastAlert } from './ui/toast.js';
+import { supabase } from '../auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inicialización de escuchadores en tiempo real
@@ -435,8 +436,10 @@ async function handleGoogleAuth() {
   }
 }
 
+window.handleGoogleAuth = handleGoogleAuth;
+
 // Dentro de initAuthEventListeners() o al cargar el DOM:
-if (typeof supabase !== 'undefined') {
+if (supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
       // 1. Consultamos si el usuario ya tiene cargado su perfil en la tabla de onboarding
