@@ -51,6 +51,30 @@ export class BlocksService {
 
     return response.json();
   }
+
+  // Método para actualizar el contenido de una nota (Edición)
+  async updateBlock(id, content, token) {
+    if (!token || !id) throw new Error('Se requiere un token e ID para actualizar.');
+    const response = await fetch(`${this.baseUrl}/blocks/${id}`, {
+      method: 'PUT', // o PATCH, dependiendo de tu backend
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ content })
+    });
+    if (!response.ok) throw new Error(`Error al actualizar bloque: Status ${response.status}`);
+    return response.json();
+  }
+
+  // Método para eliminar una nota
+  async deleteBlock(id, token) {
+    if (!token || !id) throw new Error('Se requiere un token e ID para eliminar.');
+    const response = await fetch(`${this.baseUrl}/blocks/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error(`Error al eliminar bloque: Status ${response.status}`);
+    return true;
+  }
 }
+
 
 export const blocksService = new BlocksService();

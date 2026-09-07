@@ -124,32 +124,191 @@ class FocoLienzoCanvas extends HTMLElement {
     }
   }
 
-  renderBlocks(blocks) {
+renderBlocks(blocks) {
     blocks.forEach((block) => {
-        const domId = [...blockRegistry.registry.entries()]
-          .find(([, backendType]) => backendType === block.type)?.[0];
-        const zona = domId ? this.querySelector(`#${CSS.escape(domId)}`) : null;
-        if (!zona) return;
+      const domId = [...blockRegistry.registry.entries()]
+        .find(([, backendType]) => backendType === block.type)?.[0];
+      const zona = domId ? this.querySelector(`#${CSS.escape(domId)}`) : null;
+      if (!zona) return;
 
-        const contenido = block.content || {};
-        const texto = contenido.text || contenido.texto || "";
-        if (!texto && !contenido.title) return;
+      const contenido = block.content || {};
+      const texto = contenido.text || contenido.texto || "";
+      if (!texto && !contenido.title) return;
 
-        const tarjeta = document.createElement("div");
-        tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
-        if (contenido.title) {
-          const titulo = document.createElement("h3");
-          titulo.className = "text-xs font-bold text-slate-800";
-          titulo.textContent = contenido.title;
-          tarjeta.appendChild(titulo);
-        }
-        const cuerpo = document.createElement("p");
-        cuerpo.className = "text-[11px] text-slate-600 mt-0.5 whitespace-pre-wrap";
-        cuerpo.textContent = texto;
-        tarjeta.appendChild(cuerpo);
-        zona.appendChild(tarjeta);
-      });
+      const tarjeta = this.crearElementoTarjeta(block.id, contenido.title, texto);
+      zona.appendChild(tarjeta);
+    });
   }
+
+  // Centraliza la creación del DOM de una tarjeta con sus controles
+  crearElementoTarjeta(id, tituloTexto, cuerpoTexto) {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all";
+    if (id) tarjeta.dataset.id = id;
+
+    // Contenedor de controles (Oculto por defecto, visible al hacer hover)
+    const controles = document.createElement("div");
+    controles.className = "absolute top-2 right-2 hidden group-hover:flex space-x-2 bg-blue-50/90 rounded px-1";
+    
+    // Botón Editar
+    const btnEditar = document.createElement("button");
+    btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+    
+    // Botón Eliminar
+    const btnEliminar = document.createElement("button");
+    btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+    
+    controles.appendChild(btnEditar);
+    controles.appendChild(btnEliminar);
+    tarjeta.appendChild(controles);
+
+    if (tituloTexto) {
+      const titulo = document.createElement("h3");
+      titulo.className = "text-xs font-bold text-slate-800 mb-1";
+      titulo.textContent = tituloTexto;
+      tarjeta.appendChild(titulo);
+    }
+
+    const cuerpo = document.createElement("p");
+    cuerpo.className = "text-[11px] text-slate-600 mt-0.5 whitespace-pre-wrap";
+    cuerpo.textContent = cuerpoTexto;
+    tarjeta.appendChild(cuerpo);
+
+    // LÓGICA DE ELIMINACIÓN
+    btnEliminar.addEventListener("click", async () => {
+      const blockId = tarjeta.dataset.id;
+      if (!blockId) return; // Si es local o aún no tiene ID, podrías simplemente removerla
+      
+      // Reactividad inmediata en UI
+      tarjeta.style.opacity = '0.5'; 
+      try {
+        const sesion = await getSession();
+        if (sesion) {
+          await blocksService.deleteBlock(blockId, sesion.access_token);
+        }
+        tarjeta.remove(); // Remover reactivamente del bloque
+      } catch (error) {
+        console.error("Error al eliminar la nota:", error);
+        tarjeta.style.opacity = '1'; // Revertir si falla
+        alert("No se pudo eliminar la nota.");
+      }
+    });
+
+    // LÓGICA DE EDICIÓN (Transformación a Textarea)
+    btnEditar.addEventListener("click", () => {
+      cuerpo.classList.add("hidden"); // Ocultamos el texto normal
+      controles.classList.add("hidden"); // Ocultamos botones durante edición
+      tarjeta.classList.remove("group"); // Quitamos temporalmente el comportamiento hover
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "w-full text-[11px] text-slate-700 bg-white border border-blue-200 rounded p-1 outline-none resize-none foco-scrollbar";
+      textarea.value = cuerpo.textContent;
+      textarea.rows = 3;
+      
+      tarjeta.appendChild(textarea);
+      textarea.focus();
+
+      // Guardar cambios al perder el foco
+      textarea.addEventListener("blur", async () => {
+        const nuevoTexto = textarea.value.trim();
+        const blockId = tarjeta.dataset.id;
+        
+        textarea.remove(); // Quitamos el textarea
+        cuerpo.textContent = nuevoTexto; // Actualizamos el DOM
+        cuerpo.classList.remove("hidden");
+        controles.classList.remove("hidden");
+        tarjeta.classList.add("group");
+
+        // Solo actualizar en DB si el texto cambió y tenemos ID
+        if (nuevoTexto !== cuerpoTexto && blockId) {
+          try {
+            const sesion = await getSession();
+            if (sesion) {
+              await blocksService.updateBlock(blockId, { text: nuevoTexto }, sesion.access_token);
+            }
+            cuerpoTexto = nuevoTexto; // Actualizamos la referencia en memoria
+          } catch (error) {
+            console.error("Error al actualizar la nota:", error);
+            cuerpo.textContent = cuerpoTexto; // Rollback visual si falla
+          }
+        }
+      });
+    });
+
+    return tarjeta;
+  }
+
+  // Se actualiza para devolver la data completa y así poder obtener el ID asignado por Supabase
+  async guardarNotaEnBackend(texto, tipoDeBloque) {
+    try {
+      const sesion = await getSession();
+      const block = { id: crypto.randomUUID(), type: tipoDeBloque, content: { text: texto } };
+      if (!sesion) {
+        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+        localStore.setItem(LOCAL_BLOCKS_KEY, [...locales, block]);
+        this.mostrarAvisoLocal(true);
+        return block;
+      }
+      const datos = await blocksService.saveBlock(tipoDeBloque, block.content, sesion.access_token);
+      emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
+      return datos; // Retornamos los datos generados por el backend (incluyendo el ID final)
+    } catch (error) {
+      console.error("Error al guardar la nota:", error);
+      return null;
+    }
+  }
+
+  // Reemplaza el clon del botón "Nota" por una tarjeta temporal y luego por la definitiva
+    crearTarjetaNota(botonClonado) {
+      const tarjetaTemporal = document.createElement("div");
+      tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
+      textarea.placeholder = "Escribe una nota...";
+      textarea.rows = 3;
+
+      tarjetaTemporal.appendChild(textarea);
+      
+      // Reemplaza el clon por la tarjeta temporal interactiva
+      botonClonado.replaceWith(tarjetaTemporal);
+      textarea.focus();
+
+      const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
+      if (!zonaDrop) return;
+      
+      const idDelBloque = zonaDrop.id;
+      const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
+
+      // Evento al terminar de escribir
+      textarea.addEventListener("blur", async () => {
+        const textoEscrito = textarea.value.trim();
+        
+        if (!textoEscrito) {
+          tarjetaTemporal.remove(); // Descartar si quedó vacía
+          return;
+        }
+
+        // Feedback visual mientras guarda en el backend
+        textarea.disabled = true; 
+        textarea.classList.add("opacity-50");
+
+        const datosGuardados = await this.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
+        
+        if (datosGuardados) {
+          // Extraemos el ID dependiendo de cómo responda tu API
+          const idGenerado = datosGuardados.id || (Array.isArray(datosGuardados) ? datosGuardados[0]?.id : null);
+          
+          // Generamos la tarjeta definitiva usando la MISMA función del renderizado inicial
+          const tarjetaDefinitiva = this.crearElementoTarjeta(idGenerado, null, textoEscrito);
+          
+          // El paso clave: sustituir el elemento temporal por el que tiene los botones
+          tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+        } else {
+          tarjetaTemporal.remove(); // Descartamos si hubo un error en la red
+        }
+      });
+    }
 
   mostrarAvisoLocal(esInvitado) {
     let aviso = this.querySelector("[data-local-warning]");
@@ -205,55 +364,6 @@ class FocoLienzoCanvas extends HTMLElement {
         }
       });
     }
-  }
-
-  // Envía la nota al Backend mediante POST, usando el servicio de bloques abstracto
-  async guardarNotaEnBackend(texto, tipoDeBloque) {
-    try {
-      const sesion = await getSession();
-      const block = { id: crypto.randomUUID(), type: tipoDeBloque, content: { text: texto } };
-      if (!sesion) {
-        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
-        localStore.setItem(LOCAL_BLOCKS_KEY, [...locales, block]);
-        tarjetaNota.dataset.localBlock = "true";
-        this.mostrarAvisoLocal(true);
-        return;
-      }
-      const datos = await blocksService.saveBlock(tipoDeBloque, block.content, sesion.access_token);
-      console.log("Nota guardada en el backend:", datos);
-      emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
-    } catch (error) {
-      console.error("Error al guardar la nota:", error);
-    }
-  }
-
-  // Reemplaza el clon del botón "Nota" por una tarjeta real, con un área de texto editable.
-  crearTarjetaNota(botonClonado) {
-    var tarjetaNota = document.createElement("div");
-    tarjetaNota.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
-
-    var areaDeTexto = document.createElement("div");
-    areaDeTexto.className = "text-xs text-slate-700 outline-none";
-    areaDeTexto.contentEditable = "true";
-
-    tarjetaNota.appendChild(areaDeTexto);
-
-    // Reemplaza el clon (que todavía tenía forma de botón) por la tarjeta nueva
-    botonClonado.replaceWith(tarjetaNota);
-
-    // Busca el id del bloque contenedor para saber qué tipo de bloque corresponde según el registro extensible (OCP)
-    var idDelBloque = tarjetaNota.closest(".foco-drop-zone").id;
-    var tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
-
-    var componenteActual = this;
-
-    areaDeTexto.addEventListener("blur", function () {
-      var textoEscrito = areaDeTexto.textContent;
-      componenteActual.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
-    });
-
-    // Deja el cursor listo para escribir apenas se crea
-    areaDeTexto.focus();
   }
 
 }
