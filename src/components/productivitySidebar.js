@@ -36,16 +36,36 @@ class FocoProductivitySidebar extends HTMLElement {
   }
 
   render() {
-    if (document.fullscreenElement && document.fullscreenElement.id === 'pomodoro-container') {
-      const displayEl = document.querySelector('#pomodoro-display');
-      if (displayEl) {
-        displayEl.textContent = this.pomodoroManager.getState().formattedTime;
-      }
-      return;
-    }
+      const pomodoroState = this.pomodoroManager.getState();
 
+      // Actualización selectiva del DOM cuando está en pantalla completa
+    if (document.fullscreenElement && document.fullscreenElement.id === 'pomodoro-container') {
+          const container = document.fullscreenElement;
+          
+          const displayEl = container.querySelector('#pomodoro-display');
+          if (displayEl) {
+            displayEl.textContent = pomodoroState.formattedTime;
+          }
+
+          const startBtn = container.querySelector('#start-pomodoro');
+          if (startBtn) {
+            startBtn.textContent = pomodoroState.isRunning ? 'Pausar' : 'Iniciar';
+          }
+
+          const statusEl = container.querySelector('#pomodoro-status');
+          if (statusEl) {
+            statusEl.textContent = pomodoroState.statusText;
+          }
+
+          const cycleEl = container.querySelector('#pomodoro-cycle');
+          if (cycleEl) {
+            cycleEl.textContent = `Ciclo ${pomodoroState.cycleText} - Descanso: ${pomodoroState.breakMinutes} Min`;
+          }
+
+          return;
+        }
+        
     const isExpanded = this.classList.contains('w-80');
-    const pomodoroState = this.pomodoroManager.getState();
 
     if (isExpanded) {
       const pastDays = this.habitManager.getPastDays();
@@ -275,7 +295,7 @@ class FocoProductivitySidebar extends HTMLElement {
         displayEl.classList.add('text-9xl');
       }
 
-      var botonesEl = contenedorPomodoro.querySelector('#pomodoro-buttons');
+var botonesEl = contenedorPomodoro.querySelector('#pomodoro-buttons');
       if (botonesEl) {
         botonesEl.classList.remove('w-full');
         botonesEl.classList.add('w-64', 'mx-auto', 'justify-center');
@@ -283,6 +303,7 @@ class FocoProductivitySidebar extends HTMLElement {
         if (botonIniciar) {
           botonIniciar.classList.remove('flex-grow');
         }
+      
 
       var headerEl = contenedorPomodoro.querySelector('#pomodoro-header');
       if (headerEl) {

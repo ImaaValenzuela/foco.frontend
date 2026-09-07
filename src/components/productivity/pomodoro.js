@@ -13,9 +13,9 @@ export function renderPomodoro({ showConfig, configModal, display, status, cycle
         </div>
       ${showConfig ? configModal : ''}
       <div id="pomodoro-display" class="text-5xl font-mono font-black text-slate-800 tracking-tight my-2">${display}</div>
-      <div class="text-center space-y-0.5 mb-5">git 
-        <p class="text-xs font-bold text-foco-blue-deep">${status}</p>
-        <p class="text-[10px] font-semibold text-slate-400">Ciclo ${cycle} - Descanso: ${breakMinutes} Min</p>
+      <div class="text-center space-y-0.5 mb-5">
+        <p id="pomodoro-status" class="text-xs font-bold text-foco-blue-deep">${status}</p>
+        <p id="pomodoro-cycle" class="text-[10px] font-semibold text-slate-400">Ciclo ${cycle} - Descanso: ${breakMinutes} Min</p>
       </div>
       <div id="pomodoro-buttons" class="flex w-full gap-3">
         <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-foco-orange-accent hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">${isRunning ? 'Pausar' : 'Iniciar'}</button>
