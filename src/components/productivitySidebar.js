@@ -39,32 +39,48 @@ class FocoProductivitySidebar extends HTMLElement {
       const pomodoroState = this.pomodoroManager.getState();
 
       // Actualización selectiva del DOM cuando está en pantalla completa
-    if (document.fullscreenElement && document.fullscreenElement.id === 'pomodoro-container') {
-          const container = document.fullscreenElement;
-          
-          const displayEl = container.querySelector('#pomodoro-display');
-          if (displayEl) {
-            displayEl.textContent = pomodoroState.formattedTime;
+      if (document.fullscreenElement && document.fullscreenElement.id === 'pomodoro-container') {
+            const container = document.fullscreenElement;
+            
+            const displayEl = container.querySelector('#pomodoro-display');
+            if (displayEl) {
+              displayEl.textContent = pomodoroState.formattedTime;
+            }
+
+            const startBtn = container.querySelector('#start-pomodoro');
+            if (startBtn) {
+              startBtn.textContent = pomodoroState.isRunning ? 'Pausar' : 'Iniciar';
+            }
+
+            const statusEl = container.querySelector('#pomodoro-status');
+            if (statusEl) {
+              statusEl.textContent = pomodoroState.statusText;
+            }
+
+            const cycleEl = container.querySelector('#pomodoro-cycle');
+            if (cycleEl) {
+              cycleEl.textContent = `Ciclo ${pomodoroState.cycleText} - Descanso: ${pomodoroState.breakMinutes} Min`;
+            }
+
+            // Gestión del modal de configuración en pantalla completa
+            let modalOverlay = container.querySelector('#config-overlay');
+
+            if (pomodoroState.showConfig) {
+              if (!modalOverlay) {
+                container.insertAdjacentHTML('beforeend', this.renderConfigModal(pomodoroState));
+                
+                // Re-vincular eventos a los nuevos botones del modal inyectado
+                container.querySelector('#close-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
+                container.querySelector('#cancel-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
+                container.querySelector('#save-config')?.addEventListener('click', () => this.handleSaveConfig());
+              }
+            } else if (modalOverlay) {
+              modalOverlay.remove();
+            }
+
+            return;
           }
 
-          const startBtn = container.querySelector('#start-pomodoro');
-          if (startBtn) {
-            startBtn.textContent = pomodoroState.isRunning ? 'Pausar' : 'Iniciar';
-          }
-
-          const statusEl = container.querySelector('#pomodoro-status');
-          if (statusEl) {
-            statusEl.textContent = pomodoroState.statusText;
-          }
-
-          const cycleEl = container.querySelector('#pomodoro-cycle');
-          if (cycleEl) {
-            cycleEl.textContent = `Ciclo ${pomodoroState.cycleText} - Descanso: ${pomodoroState.breakMinutes} Min`;
-          }
-
-          return;
-        }
-        
     const isExpanded = this.classList.contains('w-80');
 
     if (isExpanded) {
