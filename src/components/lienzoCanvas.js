@@ -1,10 +1,3 @@
-/**
- * Componente: LienzoCanvas
- * Renderiza el espacio de trabajo principal de F.O.C.O.
- * Divide la pantalla en 4 bloques estáticos e independientes bajo el método P.A.R.A.
- * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
- */
-
 import Sortable from "sortablejs";
 import { getSession, supabase } from "../auth.js";
 import { blocksService } from "../services/blocks.service.js";
@@ -14,10 +7,9 @@ import { localStore } from "../services/storage.service.js";
 
 const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
-
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
-    this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-foco-azul-gray foco-scrollbar";
+    this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-slate-100 foco-scrollbar";
     this.innerHTML = `
     <!-- Estructura de Grilla de 2 Columnas para Desktop (lg:grid-cols-2) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -96,11 +88,14 @@ class FocoLienzoCanvas extends HTMLElement {
       </div>
 
     `;
+        this.blocksData = []; // Caché local para evitar lecturas de red concurrentes
     this.activarDragAndDrop();
     this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
+
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
+
     supabase?.auth.onAuthStateChange((_event, session) => {
       if (session) this.migrarBlocksLocales(session);
       this.mostrarAvisoLocal(!session);
@@ -111,12 +106,13 @@ class FocoLienzoCanvas extends HTMLElement {
     const sesion = await getSession();
     this.mostrarAvisoLocal(!sesion);
     if (!sesion?.user?.id) {
-      this.renderBlocks(localStore.getItem(LOCAL_BLOCKS_KEY) || []);
+      this.blocksData = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+      this.renderBlocks(this.blocksData);
       return;
     }
-
     try {
       const blocks = await blocksService.fetchBlocks(sesion.access_token, sesion.user.id);
+      this.blocksData = blocks;
       this.renderBlocks(blocks);
       await this.migrarBlocksLocales(sesion);
     } catch (error) {
@@ -124,7 +120,12 @@ class FocoLienzoCanvas extends HTMLElement {
     }
   }
 
-renderBlocks(blocks) {
+  renderBlocks(blocks) {
+    // Limpiamos los contenedores antes de renderizar
+    this.querySelectorAll(".foco-drop-zone").forEach((zona) => {
+      zona.innerHTML = "";
+    });
+
     blocks.forEach((block) => {
       const domId = [...blockRegistry.registry.entries()]
         .find(([, backendType]) => backendType === block.type)?.[0];
@@ -132,32 +133,42 @@ renderBlocks(blocks) {
       if (!zona) return;
 
       const contenido = block.content || {};
-      const texto = contenido.text || contenido.texto || "";
-      if (!texto && !contenido.title) return;
+      const notes = contenido.notes || [];
 
-      const tarjeta = this.crearElementoTarjeta(block.id, contenido.title, texto);
-      zona.appendChild(tarjeta);
+      // Soporte de compatibilidad con versiones previas (si el contenido guardaba un único texto plano)
+      const oldText = contenido.text || contenido.texto || "";
+      if (oldText && notes.length === 0) {
+        notes.push({ id: crypto.randomUUID(), text: oldText, title: contenido.title || null });
+      }
+
+      notes.forEach((note) => {
+        // Cada tarjeta almacena su propio id de nota, el id del bloque en BD, el título y el texto
+        const tarjeta = this.crearElementoTarjeta(note.id, block.id, note.title, note.text);
+        zona.appendChild(tarjeta);
+      });
     });
   }
 
-  // Centraliza la creación del DOM de una tarjeta con sus controles
-  crearElementoTarjeta(id, tituloTexto, cuerpoTexto) {
+  crearElementoTarjeta(id, blockId, tituloTexto, cuerpoTexto) {
     const tarjeta = document.createElement("div");
-    tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all";
-    if (id) tarjeta.dataset.id = id;
+    tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all cursor-grab active:cursor-grabbing";
+    
+    // Inyectamos metadatos clave como data-attributes
+    if (id) tarjeta.dataset.noteId = id;
+    if (blockId) tarjeta.dataset.blockId = blockId;
 
     // Contenedor de controles
     const controles = document.createElement("div");
-    controles.className = "absolute top-2 right-7 hidden group-hover:flex flex-row items-center gap-2 bg-blue-50/90 rounded px-2 py-1";
-    
+    controles.className = "absolute top-2 right-2.5 hidden group-hover:flex flex-row items-center gap-2 bg-blue-50/90 rounded px-2 py-1 shadow-sm";
+
     // Botón Editar
     const btnEditar = document.createElement("button");
-    btnEditar.className = "flex items-center justify-center shrink-0 p-0.5";
+    btnEditar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
     btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600 transition-colors"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
-    
+
     // Botón Eliminar
     const btnEliminar = document.createElement("button");
-    btnEliminar.className = "flex items-center justify-center shrink-0 p-0.5";
+    btnEliminar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
     btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600 transition-colors"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
     controles.appendChild(btnEditar);
@@ -176,143 +187,217 @@ renderBlocks(blocks) {
     cuerpo.textContent = cuerpoTexto;
     tarjeta.appendChild(cuerpo);
 
-    // LÓGICA DE ELIMINACIÓN
+    // LÓGICA DE ELIMINACIÓN (Filtra la nota del array y actualiza el bloque JSONB)
     btnEliminar.addEventListener("click", async () => {
-      const blockId = tarjeta.dataset.id;
-      if (!blockId) return; // Si es local o aún no tiene ID, podrías simplemente removerla
-      
-      // Reactividad inmediata en UI
-      tarjeta.style.opacity = '0.5'; 
+      const noteId = tarjeta.dataset.noteId;
+      const bId = tarjeta.dataset.blockId;
+
+      tarjeta.style.opacity = '0.5';
+
       try {
         const sesion = await getSession();
-        if (sesion) {
-          await blocksService.deleteBlock(blockId, sesion.access_token);
+        if (sesion && bId) {
+          const bloque = this.blocksData.find(b => b.id === bId);
+          if (bloque) {
+            // Removemos únicamente la nota seleccionada
+            const notasActualizadas = (bloque.content.notes || []).filter(n => n.id !== noteId);
+            const nuevoContenido = { ...bloque.content, notes: notasActualizadas };
+
+            await blocksService.updateBlock(bId, nuevoContenido, sesion.access_token);
+            bloque.content = nuevoContenido; // Sincronización en caché local
+          }
+        } else {
+          // Flujo offline
+          const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+          const updatedLocales = locales.map(b => {
+            if (b.id === bId) {
+              const notes = (b.content.notes || []).filter(n => n.id !== noteId);
+              return { ...b, content: { ...b.content, notes } };
+            }
+            return b;
+          });
+          localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+          this.blocksData = updatedLocales;
         }
-        tarjeta.remove(); // Remover reactivamente del bloque
+
+        tarjeta.remove();
       } catch (error) {
         console.error("Error al eliminar la nota:", error);
-        tarjeta.style.opacity = '1'; // Revertir si falla
+        tarjeta.style.opacity = '1';
         alert("No se pudo eliminar la nota.");
       }
     });
 
-  // LÓGICA DE EDICIÓN (Transformación a Textarea)
-      btnEditar.addEventListener("click", () => {
-        cuerpo.classList.add("hidden");
-        
-        tarjeta.classList.remove("group"); 
+    // LÓGICA DE EDICIÓN (Modifica el texto en el array e implementa UPDATE en JSONB)
+    btnEditar.addEventListener("click", () => {
+      cuerpo.classList.add("hidden");
+      tarjeta.classList.remove("group");
+      
+      const textarea = document.createElement("textarea");
+      textarea.className = "w-full text-[11px] text-slate-700 bg-white border border-blue-200 rounded p-1 outline-none resize-none foco-scrollbar";
+      textarea.value = cuerpo.textContent;
+      textarea.rows = 3;
+      tarjeta.appendChild(textarea);
+      textarea.focus();
 
-        const textarea = document.createElement("textarea");
-        textarea.className = "w-full text-[11px] text-slate-700 bg-white border border-blue-200 rounded p-1 outline-none resize-none foco-scrollbar";
-        textarea.value = cuerpo.textContent;
-        textarea.rows = 3;
-        
-        tarjeta.appendChild(textarea);
-        textarea.focus();
+      textarea.addEventListener("blur", async () => {
+        const nuevoTexto = textarea.value.trim();
+        const noteId = tarjeta.dataset.noteId;
+        const bId = tarjeta.dataset.blockId;
 
-        // Guardar cambios al perder el foco
-        textarea.addEventListener("blur", async () => {
-          const nuevoTexto = textarea.value.trim();
-          const blockId = tarjeta.dataset.id;
-          
-          textarea.remove(); 
-          cuerpo.textContent = nuevoTexto;
-          
-          cuerpo.classList.remove("hidden"); 
-          
-          // Devolvemos la capacidad de hover a la tarjeta (esto hace reaparecer los botones correctamente alineados)
-          tarjeta.classList.add("group");
+        textarea.remove();
+        cuerpo.textContent = nuevoTexto;
+        cuerpo.classList.remove("hidden");
+        tarjeta.classList.add("group");
 
-          // Solo actualizar en DB si el texto cambió y tenemos ID
-          if (nuevoTexto !== cuerpoTexto && blockId) {
-            try {
-              const sesion = await getSession();
-              if (sesion) {
-                await blocksService.updateBlock(blockId, { text: nuevoTexto }, sesion.access_token);
+        if (nuevoTexto && nuevoTexto !== cuerpoTexto) {
+          try {
+            const sesion = await getSession();
+            if (sesion && bId) {
+              const bloque = this.blocksData.find(b => b.id === bId);
+              if (bloque) {
+                const notasActualizadas = (bloque.content.notes || []).map(n => {
+                  if (n.id === noteId) return { ...n, text: nuevoTexto };
+                  return n;
+                });
+                const nuevoContenido = { ...bloque.content, notes: notasActualizadas };
+
+                await blocksService.updateBlock(bId, nuevoContenido, sesion.access_token);
+                bloque.content = nuevoContenido;
               }
-              cuerpoTexto = nuevoTexto; 
-            } catch (error) {
-              console.error("Error al actualizar la nota:", error);
-              cuerpo.textContent = cuerpoTexto; 
+            } else {
+              // Flujo offline
+              const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+              const updatedLocales = locales.map(b => {
+                if (b.id === bId) {
+                  const notes = (b.content.notes || []).map(n => {
+                    if (n.id === noteId) return { ...n, text: nuevoTexto };
+                    return n;
+                  });
+                  return { ...b, content: { ...b.content, notes } };
+                }
+                return b;
+              });
+              localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+              this.blocksData = updatedLocales;
             }
+            cuerpoTexto = nuevoTexto;
+          } catch (error) {
+            console.error("Error al actualizar la nota:", error);
+            cuerpo.textContent = cuerpoTexto;
           }
-        });
+        }
       });
+    });
 
     return tarjeta;
   }
 
-  // Se actualiza para devolver la data completa y así poder obtener el ID asignado por Supabase
   async guardarNotaEnBackend(texto, tipoDeBloque) {
     try {
       const sesion = await getSession();
-      const block = { id: crypto.randomUUID(), type: tipoDeBloque, content: { text: texto } };
+      const nuevaNota = {
+        id: crypto.randomUUID(),
+        text: texto,
+        title: null,
+        createdAt: new Date().toISOString()
+      };
+
       if (!sesion) {
+        // Flujo offline
         const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
-        localStore.setItem(LOCAL_BLOCKS_KEY, [...locales, block]);
+        let bloqueLocal = locales.find((b) => b.type === tipoDeBloque);
+        
+        if (bloqueLocal) {
+          bloqueLocal.content.notes = [...(bloqueLocal.content.notes || []), nuevaNota];
+        } else {
+          bloqueLocal = {
+            id: crypto.randomUUID(),
+            type: tipoDeBloque,
+            content: { notes: [nuevaNota] }
+          };
+          locales.push(bloqueLocal);
+        }
+        
+        localStore.setItem(LOCAL_BLOCKS_KEY, locales);
+        this.blocksData = locales;
         this.mostrarAvisoLocal(true);
-        return block;
+        
+        return { noteId: nuevaNota.id, blockId: bloqueLocal.id, text: texto };
       }
-      const datos = await blocksService.saveBlock(tipoDeBloque, block.content, sesion.access_token);
-      emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datos });
-      return datos; // Retornamos los datos generados por el backend (incluyendo el ID final)
+
+      // Flujo online con sesión de Supabase
+      // Buscamos si el usuario ya posee el bloque de este tipo creado
+      let bloqueExistente = this.blocksData.find((b) => b.type === tipoDeBloque);
+
+      if (bloqueExistente) {
+        const notasActualizadas = [...(bloqueExistente.content.notes || []), nuevaNota];
+        const nuevoContenido = { ...bloqueExistente.content, notes: notasActualizadas };
+
+        await blocksService.updateBlock(bloqueExistente.id, nuevoContenido, sesion.access_token);
+        bloqueExistente.content = nuevoContenido;
+
+        return { noteId: nuevaNota.id, blockId: bloqueExistente.id, text: texto };
+      } else {
+        // Es la primera nota en este bloque, se hace un POST para instanciar la fila por primera vez
+        const nuevoContenido = { notes: [nuevaNota] };
+        const datosCreados = await blocksService.saveBlock(tipoDeBloque, nuevoContenido, sesion.access_token);
+        
+        this.blocksData.push(datosCreados);
+        emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datosCreados });
+        
+        return { noteId: nuevaNota.id, blockId: datosCreados.id, text: texto };
+      }
     } catch (error) {
-      console.error("Error al guardar la nota:", error);
+      console.error("Error al guardar la nota en backend:", error);
       return null;
     }
   }
 
-  // Reemplaza el clon del botón "Nota" por una tarjeta temporal y luego por la definitiva
-    crearTarjetaNota(botonClonado) {
-      const tarjetaTemporal = document.createElement("div");
-      tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+  crearTarjetaNota(botonClonado) {
+    const tarjetaTemporal = document.createElement("div");
+    tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
 
-      const textarea = document.createElement("textarea");
-      textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
-      textarea.placeholder = "Escribe una nota...";
-      textarea.rows = 3;
+    const textarea = document.createElement("textarea");
+    textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
+    textarea.placeholder = "Escribe una nota...";
+    textarea.rows = 3;
+    tarjetaTemporal.appendChild(textarea);
 
-      tarjetaTemporal.appendChild(textarea);
-      
-      // Reemplaza el clon por la tarjeta temporal interactiva
-      botonClonado.replaceWith(tarjetaTemporal);
-      textarea.focus();
+    botonClonado.replaceWith(tarjetaTemporal);
+    textarea.focus();
 
-      const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
-      if (!zonaDrop) return;
-      
-      const idDelBloque = zonaDrop.id;
-      const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
+    const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
+    if (!zonaDrop) return;
 
-      // Evento al terminar de escribir
-      textarea.addEventListener("blur", async () => {
-        const textoEscrito = textarea.value.trim();
-        
-        if (!textoEscrito) {
-          tarjetaTemporal.remove(); // Descartar si quedó vacía
-          return;
-        }
+    const idDelBloque = zonaDrop.id;
+    const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
 
-        // Feedback visual mientras guarda en el backend
-        textarea.disabled = true; 
-        textarea.classList.add("opacity-50");
+    textarea.addEventListener("blur", async () => {
+      const textoEscrito = textarea.value.trim();
+      if (!textoEscrito) {
+        tarjetaTemporal.remove();
+        return;
+      }
 
-        const datosGuardados = await this.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
-        
-        if (datosGuardados) {
-          // Extraemos el ID dependiendo de cómo responda tu API
-          const idGenerado = datosGuardados.id || (Array.isArray(datosGuardados) ? datosGuardados[0]?.id : null);
-          
-          // Generamos la tarjeta definitiva usando la MISMA función del renderizado inicial
-          const tarjetaDefinitiva = this.crearElementoTarjeta(idGenerado, null, textoEscrito);
-          
-          // El paso clave: sustituir el elemento temporal por el que tiene los botones
-          tarjetaTemporal.replaceWith(tarjetaDefinitiva);
-        } else {
-          tarjetaTemporal.remove(); // Descartamos si hubo un error en la red
-        }
-      });
-    }
+      textarea.disabled = true;
+      textarea.classList.add("opacity-50");
+
+      const datosGuardados = await this.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
+
+      if (datosGuardados) {
+        const tarjetaDefinitiva = this.crearElementoTarjeta(
+          datosGuardados.noteId,
+          datosGuardados.blockId,
+          null,
+          textoEscrito
+        );
+        tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+      } else {
+        tarjetaTemporal.remove();
+      }
+    });
+  }
 
   mostrarAvisoLocal(esInvitado) {
     let aviso = this.querySelector("[data-local-warning]");
@@ -323,18 +408,42 @@ renderBlocks(blocks) {
       this.prepend(aviso);
     }
     aviso.hidden = !esInvitado;
-    aviso.textContent = "Estás usando F.O.C.O. como invitado. Tus bloques se guardan solo en este dispositivo. Iniciá sesión con Google para sincronizarlos y no perderlos.";
+    aviso.textContent = "Estás usando F.O.C.O. como invitado. Tus bloques se guardan solo en este dispositivo. Iniciá sesión para sincronizarlos y no perderlos.";
   }
 
   async migrarBlocksLocales(session) {
     const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
     if (!locales.length || !session?.access_token) return;
-    for (const block of locales) {
-      await blocksService.saveBlock(block.type, block.content, session.access_token);
+
+    try {
+      for (const localBlock of locales) {
+        let bloqueExistente = this.blocksData.find((b) => b.type === localBlock.type);
+
+        if (bloqueExistente) {
+          // Fusionamos las notas evitando colisiones de ID
+          const notasOnline = bloqueExistente.content.notes || [];
+          const notasLocales = localBlock.content.notes || [];
+
+          const mapaNotas = new Map();
+          notasOnline.forEach(n => mapaNotas.set(n.id, n));
+          notasLocales.forEach(n => mapaNotas.set(n.id, n));
+
+          const notasFusionadas = Array.from(mapaNotas.values());
+          const nuevoContenido = { ...bloqueExistente.content, notes: notasFusionadas };
+
+          await blocksService.updateBlock(bloqueExistente.id, nuevoContenido, session.access_token);
+        } else {
+          // No existía el bloque de este tipo online, lo instanciamos directo
+          await blocksService.saveBlock(localBlock.type, localBlock.content, session.access_token);
+        }
+      }
+
+      localStore.removeItem(LOCAL_BLOCKS_KEY);
+      this.querySelectorAll(".foco-tarjeta").forEach((card) => card.remove());
+      await this.cargarBlocks();
+    } catch (error) {
+      console.error("Error durante la migración de bloques locales:", error);
     }
-    localStore.removeItem(LOCAL_BLOCKS_KEY);
-    this.querySelectorAll(".foco-tarjeta[data-local-block]").forEach((card) => card.remove());
-    await this.cargarBlocks();
   }
 
   aplicarVisibilidad(estado) {
@@ -344,11 +453,8 @@ renderBlocks(blocks) {
     });
   }
 
-  // Busca todos los bloques marcados como "zona de drop" y activa SortableJS en cada uno,
-  // permite arrastrar tarjetas dentro del mismo bloque o hacia otro bloque conectado.
   activarDragAndDrop() {
     var listaDeZonas = this.querySelectorAll(".foco-drop-zone");
-
     for (var i = 0; i < listaDeZonas.length; i++) {
       var zonaActual = listaDeZonas[i];
       var componenteActual = this;
@@ -357,20 +463,93 @@ renderBlocks(blocks) {
         group: "foco-tarjetas",
         ghostClass: "foco-tarjeta-fantasma",
         draggable: ".foco-tarjeta",
-
-        onAdd: function (evento) {
+        onAdd: async function (evento) {
           var elementoAgregado = evento.item;
 
-          // Si lo que se soltó es el clon del botón "Nota", lo reemplazamos por una tarjeta editable
+          // 1. Si soltamos el clon de botón de creación
           if (elementoAgregado.classList.contains("foco-crear-nota")) {
             componenteActual.crearTarjetaNota(elementoAgregado);
+            return;
+          }
+
+          // 2. Si arrastramos una tarjeta entre bloques distintos (Transición relacional en la base de datos)
+          const noteId = elementoAgregado.dataset.noteId;
+          const oldBlockId = elementoAgregado.dataset.blockId;
+          const newZoneId = evento.to.id; // ID del contenedor de destino (ej: 'bloque-personal')
+          const newBlockType = blockRegistry.getBackendType(newZoneId);
+
+          if (!noteId || !oldBlockId) return;
+
+          try {
+            const sesion = await getSession();
+            const textoCard = elementoAgregado.querySelector("p")?.textContent || "";
+            const tituloCard = elementoAgregado.querySelector("h3")?.textContent || null;
+            const notaAMover = { id: noteId, text: textoCard, title: tituloCard };
+
+            if (sesion) {
+              // FLUJO ONLINE (SUPABASE Y REST API)
+              
+              // A. Remover de bloque de origen
+              const bloqueOrigen = componenteActual.blocksData.find(b => b.id === oldBlockId);
+              if (bloqueOrigen) {
+                bloqueOrigen.content.notes = (bloqueOrigen.content.notes || []).filter(n => n.id !== noteId);
+                await blocksService.updateBlock(oldBlockId, bloqueOrigen.content, sesion.access_token);
+              }
+
+              // B. Insertar en bloque de destino
+              let bloqueDestino = componenteActual.blocksData.find(b => b.type === newBlockType);
+              if (bloqueDestino) {
+                bloqueDestino.content.notes = [...(bloqueDestino.content.notes || []), notaAMover];
+                await blocksService.updateBlock(bloqueDestino.id, bloqueDestino.content, sesion.access_token);
+                elementoAgregado.dataset.blockId = bloqueDestino.id; // Actualizamos el id contenedor de la tarjeta
+              } else {
+                // Instanciar el bloque destino por primera vez
+                const nuevoContenido = { notes: [notaAMover] };
+                const datosCreados = await blocksService.saveBlock(newBlockType, nuevoContenido, sesion.access_token);
+                componenteActual.blocksData.push(datosCreados);
+                elementoAgregado.dataset.blockId = datosCreados.id;
+              }
+            } else {
+              // FLUJO OFFLINE (LOCALSTORAGE)
+              const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+
+              // Remover de origen local
+              const updatedLocales = locales.map(b => {
+                if (b.id === oldBlockId) {
+                  const notes = (b.content.notes || []).filter(n => n.id !== noteId);
+                  return { ...b, content: { ...b.content, notes } };
+                }
+                return b;
+              });
+
+              // Insertar en destino local
+              let destBlock = updatedLocales.find(b => b.type === newBlockType);
+              if (destBlock) {
+                destBlock.content.notes = [...(destBlock.content.notes || []), notaAMover];
+                elementoAgregado.dataset.blockId = destBlock.id;
+              } else {
+                const newId = crypto.randomUUID();
+                destBlock = {
+                  id: newId,
+                  type: newBlockType,
+                  content: { notes: [notaAMover] }
+                };
+                updatedLocales.push(destBlock);
+                elementoAgregado.dataset.blockId = newId;
+              }
+
+              localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+              componenteActual.blocksData = updatedLocales;
+            }
+          } catch (error) {
+            console.error("Error al transferir la nota entre bloques:", error);
+            alert("No se pudo reubicar la nota en la base de datos.");
+            componenteActual.cargarBlocks(); // Recarga para restaurar el estado consistente
           }
         }
       });
     }
   }
-
 }
 
-// Registro en el navegador
 customElements.define('foco-lienzo-canvas', FocoLienzoCanvas);
