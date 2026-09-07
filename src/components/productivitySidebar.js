@@ -21,6 +21,8 @@ class FocoProductivitySidebar extends HTMLElement {
     this.aplicarVisibilidad(localStorage.getItem('foco-productivity-sidebar') !== 'false');
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
+    this.onFullscreenChange = () => this.handleFullscreenChange();
+    document.addEventListener('fullscreenchange', this.onFullscreenChange);
     this.render();
   }
 
@@ -34,8 +36,52 @@ class FocoProductivitySidebar extends HTMLElement {
   }
 
   render() {
+      const pomodoroState = this.pomodoroManager.getState();
+
+      // Actualización selectiva del DOM cuando está en pantalla completa
+      if (document.fullscreenElement && document.fullscreenElement.id === 'pomodoro-container') {
+            const container = document.fullscreenElement;
+            
+            const displayEl = container.querySelector('#pomodoro-display');
+            if (displayEl) {
+              displayEl.textContent = pomodoroState.formattedTime;
+            }
+
+            const startBtn = container.querySelector('#start-pomodoro');
+            if (startBtn) {
+              startBtn.textContent = pomodoroState.isRunning ? 'Pausar' : 'Iniciar';
+            }
+
+            const statusEl = container.querySelector('#pomodoro-status');
+            if (statusEl) {
+              statusEl.textContent = pomodoroState.statusText;
+            }
+
+            const cycleEl = container.querySelector('#pomodoro-cycle');
+            if (cycleEl) {
+              cycleEl.textContent = `Ciclo ${pomodoroState.cycleText} - Descanso: ${pomodoroState.breakMinutes} Min`;
+            }
+
+            // Gestión del modal de configuración en pantalla completa
+            let modalOverlay = container.querySelector('#config-overlay');
+
+            if (pomodoroState.showConfig) {
+              if (!modalOverlay) {
+                container.insertAdjacentHTML('beforeend', this.renderConfigModal(pomodoroState));
+                
+                // Re-vincular eventos a los nuevos botones del modal inyectado
+                container.querySelector('#close-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
+                container.querySelector('#cancel-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
+                container.querySelector('#save-config')?.addEventListener('click', () => this.handleSaveConfig());
+              }
+            } else if (modalOverlay) {
+              modalOverlay.remove();
+            }
+
+            return;
+          }
+
     const isExpanded = this.classList.contains('w-80');
-    const pomodoroState = this.pomodoroManager.getState();
 
     if (isExpanded) {
       const pastDays = this.habitManager.getPastDays();
@@ -181,6 +227,7 @@ class FocoProductivitySidebar extends HTMLElement {
     this.querySelector('#start-pomodoro')?.addEventListener('click', () => this.pomodoroManager.toggleTimer());
     this.querySelector('#reset-pomodoro')?.addEventListener('click', () => this.pomodoroManager.resetTimer());
     this.querySelector('#open-config')?.addEventListener('click', () => this.pomodoroManager.openConfig());
+    this.querySelector('#expand-pomodoro')?.addEventListener('click', () => this.togglePomodoroFullscreen());
     this.querySelector('#close-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
     this.querySelector('#cancel-config')?.addEventListener('click', () => this.pomodoroManager.closeConfig());
     this.querySelector('#save-config')?.addEventListener('click', () => this.handleSaveConfig());
@@ -248,6 +295,71 @@ class FocoProductivitySidebar extends HTMLElement {
     this.classList.toggle('w-16');
     this.classList.toggle('w-80');
     this.render();
+  }
+
+  togglePomodoroFullscreen() {
+    var contenedorPomodoro = this.querySelector('#pomodoro-container');
+    if (!contenedorPomodoro) return;
+
+    if (!document.fullscreenElement) {
+      contenedorPomodoro.requestFullscreen();
+      contenedorPomodoro.classList.add('justify-center', 'h-screen');
+      
+      var displayEl = contenedorPomodoro.querySelector('#pomodoro-display');
+      if (displayEl) {
+        displayEl.classList.remove('text-5xl');
+        displayEl.classList.add('text-9xl');
+      }
+
+var botonesEl = contenedorPomodoro.querySelector('#pomodoro-buttons');
+      if (botonesEl) {
+        botonesEl.classList.remove('w-full');
+        botonesEl.classList.add('w-64', 'mx-auto', 'justify-center');
+        var botonIniciar = botonesEl.querySelector('#start-pomodoro');
+        if (botonIniciar) {
+          botonIniciar.classList.remove('flex-grow');
+        }
+      
+
+      var headerEl = contenedorPomodoro.querySelector('#pomodoro-header');
+      if (headerEl) {
+        headerEl.classList.add('absolute', 'top-0', 'left-0', 'right-0', 'px-6', 'pt-4');
+      }
+
+      }
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  handleFullscreenChange() {
+    if (document.fullscreenElement) return;
+
+    var contenedorPomodoro = this.querySelector('#pomodoro-container');
+    if (!contenedorPomodoro) return;
+
+    contenedorPomodoro.classList.remove('justify-center', 'h-screen');
+    
+    var displayEl = contenedorPomodoro.querySelector('#pomodoro-display');
+    if (displayEl) {
+      displayEl.classList.remove('text-9xl');
+      displayEl.classList.add('text-5xl');
+    }
+
+    var botonesEl = contenedorPomodoro.querySelector('#pomodoro-buttons');
+    if (botonesEl) {
+      botonesEl.classList.remove('w-64', 'mx-auto', 'justify-center');
+      botonesEl.classList.add('w-full');
+      var botonIniciar = botonesEl.querySelector('#start-pomodoro');
+      if (botonIniciar) {
+        botonIniciar.classList.add('flex-grow');
+      }
+    }
+
+    var headerEl = contenedorPomodoro.querySelector('#pomodoro-header');
+    if (headerEl) {
+      headerEl.classList.remove('absolute', 'top-0', 'left-0', 'right-0', 'px-6', 'pt-4');
+    }
   }
 
   renderConfigModal(state) {
