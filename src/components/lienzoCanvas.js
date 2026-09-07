@@ -146,18 +146,20 @@ renderBlocks(blocks) {
     tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all";
     if (id) tarjeta.dataset.id = id;
 
-    // Contenedor de controles (Oculto por defecto, visible al hacer hover)
+    // Contenedor de controles
     const controles = document.createElement("div");
-    controles.className = "absolute top-2 right-2 hidden group-hover:flex space-x-2 bg-blue-50/90 rounded px-1";
+    controles.className = "absolute top-2 right-7 hidden group-hover:flex flex-row items-center gap-2 bg-blue-50/90 rounded px-2 py-1";
     
     // Botón Editar
     const btnEditar = document.createElement("button");
-    btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+    btnEditar.className = "flex items-center justify-center shrink-0 p-0.5";
+    btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600 transition-colors"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
     
     // Botón Eliminar
     const btnEliminar = document.createElement("button");
-    btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-    
+    btnEliminar.className = "flex items-center justify-center shrink-0 p-0.5";
+    btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600 transition-colors"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+
     controles.appendChild(btnEditar);
     controles.appendChild(btnEliminar);
     tarjeta.appendChild(controles);
@@ -194,46 +196,48 @@ renderBlocks(blocks) {
       }
     });
 
-    // LÓGICA DE EDICIÓN (Transformación a Textarea)
-    btnEditar.addEventListener("click", () => {
-      cuerpo.classList.add("hidden"); // Ocultamos el texto normal
-      controles.classList.add("hidden"); // Ocultamos botones durante edición
-      tarjeta.classList.remove("group"); // Quitamos temporalmente el comportamiento hover
-
-      const textarea = document.createElement("textarea");
-      textarea.className = "w-full text-[11px] text-slate-700 bg-white border border-blue-200 rounded p-1 outline-none resize-none foco-scrollbar";
-      textarea.value = cuerpo.textContent;
-      textarea.rows = 3;
-      
-      tarjeta.appendChild(textarea);
-      textarea.focus();
-
-      // Guardar cambios al perder el foco
-      textarea.addEventListener("blur", async () => {
-        const nuevoTexto = textarea.value.trim();
-        const blockId = tarjeta.dataset.id;
+  // LÓGICA DE EDICIÓN (Transformación a Textarea)
+      btnEditar.addEventListener("click", () => {
+        cuerpo.classList.add("hidden");
         
-        textarea.remove(); // Quitamos el textarea
-        cuerpo.textContent = nuevoTexto; // Actualizamos el DOM
-        cuerpo.classList.remove("hidden");
-        controles.classList.remove("hidden");
-        tarjeta.classList.add("group");
+        tarjeta.classList.remove("group"); 
 
-        // Solo actualizar en DB si el texto cambió y tenemos ID
-        if (nuevoTexto !== cuerpoTexto && blockId) {
-          try {
-            const sesion = await getSession();
-            if (sesion) {
-              await blocksService.updateBlock(blockId, { text: nuevoTexto }, sesion.access_token);
+        const textarea = document.createElement("textarea");
+        textarea.className = "w-full text-[11px] text-slate-700 bg-white border border-blue-200 rounded p-1 outline-none resize-none foco-scrollbar";
+        textarea.value = cuerpo.textContent;
+        textarea.rows = 3;
+        
+        tarjeta.appendChild(textarea);
+        textarea.focus();
+
+        // Guardar cambios al perder el foco
+        textarea.addEventListener("blur", async () => {
+          const nuevoTexto = textarea.value.trim();
+          const blockId = tarjeta.dataset.id;
+          
+          textarea.remove(); 
+          cuerpo.textContent = nuevoTexto;
+          
+          cuerpo.classList.remove("hidden"); 
+          
+          // Devolvemos la capacidad de hover a la tarjeta (esto hace reaparecer los botones correctamente alineados)
+          tarjeta.classList.add("group");
+
+          // Solo actualizar en DB si el texto cambió y tenemos ID
+          if (nuevoTexto !== cuerpoTexto && blockId) {
+            try {
+              const sesion = await getSession();
+              if (sesion) {
+                await blocksService.updateBlock(blockId, { text: nuevoTexto }, sesion.access_token);
+              }
+              cuerpoTexto = nuevoTexto; 
+            } catch (error) {
+              console.error("Error al actualizar la nota:", error);
+              cuerpo.textContent = cuerpoTexto; 
             }
-            cuerpoTexto = nuevoTexto; // Actualizamos la referencia en memoria
-          } catch (error) {
-            console.error("Error al actualizar la nota:", error);
-            cuerpo.textContent = cuerpoTexto; // Rollback visual si falla
           }
-        }
+        });
       });
-    });
 
     return tarjeta;
   }
