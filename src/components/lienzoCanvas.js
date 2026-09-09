@@ -225,6 +225,28 @@ class FocoLienzoCanvas extends HTMLElement {
       tarjeta.appendChild(textarea);
       textarea.focus();
 
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          textarea.blur(); // Dispara la persistencia existente
+        } else if (e.key === "Escape") {
+          textarea.value = item.text; // Revierte el texto
+          textarea.blur();
+        }
+      });
+
+      checkbox.addEventListener("change", async (e) => {
+        const checkboxEl = e.target;
+        const newState = checkboxEl.checked;
+        
+        checkboxEl.disabled = true;
+        cuerpo.classList.toggle("line-through", newState);
+        cuerpo.classList.toggle("text-slate-400", newState);
+        
+        await this.actualizarEstadoCheckbox(item.id, tarjeta.dataset.blockId, newState);
+        checkboxEl.disabled = false;
+      });
+
       textarea.addEventListener("blur", async () => {
         const nuevoTexto = textarea.value.trim();
         const noteId = tarjeta.dataset.noteId;
