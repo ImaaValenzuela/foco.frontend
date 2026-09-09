@@ -20,7 +20,7 @@ class FocoSidebarActions extends HTMLElement {
         </div>
 
         <!-- Botón: Tarea -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Tarea">
+        <div class="foco-crear-tarea flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Tarea">
           <div class="w-12 h-12 rounded-2xl bg-foco-blue-mid text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Tarea (Checklist) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-icon lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -91,19 +91,18 @@ class FocoSidebarActions extends HTMLElement {
   // Activa SortableJS sobre el botón "Nota", configurado para que al arrastrarlo
   // se cree una copia en el destino, sin mover ni eliminar el botón original.
   activarCrearNota() {
-    var contenedorBotones = this.querySelector(".flex.flex-col.items-center.gap-5");
-
-    Sortable.create(contenedorBotones, {
-      group: {
-        name: "foco-tarjetas",
-        pull: "clone",
-        put: false
-      },
-      sort: false,
-      draggable: ".foco-crear-nota"
-    });
+      var contenedorBotones = this.querySelector(".flex.flex-col.items-center.gap-5");
+      Sortable.create(contenedorBotones, {
+        group: {
+          name: "foco-tarjetas",
+          pull: "clone",
+          put: false
+        },
+        sort: false,
+        draggable: ".foco-crear-nota, .foco-crear-tarea" // Se añade la nueva clase
+      });
+    }
   }
-}
 
 // Registro en el navegador
 customElements.define('foco-sidebar-actions', FocoSidebarActions);

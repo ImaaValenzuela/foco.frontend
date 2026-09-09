@@ -10,85 +10,57 @@ const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
     this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-slate-100 foco-scrollbar";
+    // (Mantenemos la estructura HTML original de los 4 bloques intacta)
     this.innerHTML = `
-    <!-- Estructura de Grilla de 2 Columnas para Desktop (lg:grid-cols-2) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- BLOQUE 1: Objetivos Activos -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div class="flex items-center space-x-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
               <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide"> Objetivos Activos</h2>
             </div>
           </div>
-          
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div id="bloque-objetivos-activos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"> 
-
-          </div>
+          <div id="bloque-objetivos-activos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
         <!-- BLOQUE 2: Bloque Personal -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div class="flex items-center space-x-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
               <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Bloque Personal</h2>
             </div>
           </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <!-- Le agregamos "id" y la clase "foco-drop-zone" para que SortableJS reconozca este bloque como una zona donde se puede soltar tarjetas -->
-          <div id="bloque-personal" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
-            <!-- La clase "foco-tarjeta" marca qué elementos se pueden arrastrar dentro de una zona -->
-          </div>
+          <div id="bloque-personal" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
-        <!-- BLOQUE 3: Inspiración y Creatividad (Corresponde a "Recursos" del método P.A.R.A) -->
+        <!-- BLOQUE 3: Inspiración y Creatividad -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div class="flex items-center space-x-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-image-icon lucide-book-image"><path d="m20 13.7-2.1-2.1a2 2 0 0 0-2.8 0L9.7 17"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><circle cx="10" cy="8" r="2"/></svg>
               <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Inspiración y Creatividad</h2>
             </div>
           </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-
-          </div>
+          <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
-        <!-- BLOQUE 4: Archivo de Vida y Bitácoras -->
+        <!-- BLOQUE 4: Archivo de Vida -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          
-          <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
             <div class="flex items-center space-x-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award-icon lucide-award"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
               <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Archivo de Vida</h2>
             </div>
           </div>
-
-          <!-- Contenido del Bloque con Scroll Interno Personalizado (.foco-scrollbar) -->
-          <div id="bloque-archivo-vida" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar">
-            
-
-          </div>
+          <div id="bloque-archivo-vida" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
         
       </div>
-
     `;
-        this.blocksData = []; // Caché local para evitar lecturas de red concurrentes
+    this.blocksData = []; 
     this.activarDragAndDrop();
     this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
@@ -121,7 +93,6 @@ class FocoLienzoCanvas extends HTMLElement {
   }
 
   renderBlocks(blocks) {
-    // Limpiamos los contenedores antes de renderizar
     this.querySelectorAll(".foco-drop-zone").forEach((zona) => {
       zona.innerHTML = "";
     });
@@ -135,38 +106,34 @@ class FocoLienzoCanvas extends HTMLElement {
       const contenido = block.content || {};
       const notes = contenido.notes || [];
 
-      // Soporte de compatibilidad con versiones previas (si el contenido guardaba un único texto plano)
       const oldText = contenido.text || contenido.texto || "";
       if (oldText && notes.length === 0) {
-        notes.push({ id: crypto.randomUUID(), text: oldText, title: contenido.title || null });
+        notes.push({ id: crypto.randomUUID(), text: oldText, title: contenido.title || null, isTask: false });
       }
 
-      notes.forEach((note) => {
-        // Cada tarjeta almacena su propio id de nota, el id del bloque en BD, el título y el texto
-        const tarjeta = this.crearElementoTarjeta(note.id, block.id, note.title, note.text);
+      notes.forEach((item) => {
+        // Ahora pasamos el objeto ítem completo para poder leer isTask y checked
+        const tarjeta = this.crearElementoTarjeta(item, block.id);
         zona.appendChild(tarjeta);
       });
     });
   }
 
-  crearElementoTarjeta(id, blockId, tituloTexto, cuerpoTexto) {
+  // Modificado para recibir un objeto Item (Nota o Tarea) y renderizar dinámicamente
+  crearElementoTarjeta(item, blockId) {
     const tarjeta = document.createElement("div");
     tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all cursor-grab active:cursor-grabbing";
     
-    // Inyectamos metadatos clave como data-attributes
-    if (id) tarjeta.dataset.noteId = id;
+    if (item.id) tarjeta.dataset.noteId = item.id;
     if (blockId) tarjeta.dataset.blockId = blockId;
 
-    // Contenedor de controles
     const controles = document.createElement("div");
     controles.className = "absolute top-2 right-2.5 hidden group-hover:flex flex-row items-center gap-2 bg-blue-50/90 rounded px-2 py-1 shadow-sm";
 
-    // Botón Editar
     const btnEditar = document.createElement("button");
     btnEditar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
     btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600 transition-colors"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
 
-    // Botón Eliminar
     const btnEliminar = document.createElement("button");
     btnEliminar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
     btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600 transition-colors"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
@@ -175,23 +142,46 @@ class FocoLienzoCanvas extends HTMLElement {
     controles.appendChild(btnEliminar);
     tarjeta.appendChild(controles);
 
-    if (tituloTexto) {
+    if (item.title) {
       const titulo = document.createElement("h3");
       titulo.className = "text-xs font-bold text-slate-800 mb-1";
-      titulo.textContent = tituloTexto;
+      titulo.textContent = item.title;
       tarjeta.appendChild(titulo);
     }
 
-    const cuerpo = document.createElement("p");
-    cuerpo.className = "text-[11px] text-slate-600 mt-0.5 whitespace-pre-wrap";
-    cuerpo.textContent = cuerpoTexto;
-    tarjeta.appendChild(cuerpo);
+    // Contenedor Flex para alinear checkbox y texto
+    const contenidoFlex = document.createElement("div");
+    contenidoFlex.className = "flex items-start gap-2 mt-0.5";
+    
+    const esTarea = item.isTask === true;
 
-    // LÓGICA DE ELIMINACIÓN (Filtra la nota del array y actualiza el bloque JSONB)
+    // Generación del Checkbox si es Tarea
+    if (esTarea) {
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "mt-0.5 cursor-pointer w-3.5 h-3.5 shrink-0 rounded border-slate-300 text-foco-blue-deep focus:ring-foco-blue-deep";
+      checkbox.checked = item.checked || false;
+      
+      // Listener para actualizar el estado del Check en la Base de Datos
+      checkbox.addEventListener("change", async (e) => {
+        const newState = e.target.checked;
+        cuerpo.classList.toggle("line-through", newState);
+        cuerpo.classList.toggle("text-slate-400", newState);
+        await this.actualizarEstadoCheckbox(item.id, tarjeta.dataset.blockId, newState);
+      });
+      contenidoFlex.appendChild(checkbox);
+    }
+
+    const cuerpo = document.createElement("p");
+    cuerpo.className = `text-[11px] text-slate-600 flex-1 whitespace-pre-wrap transition-colors ${esTarea && item.checked ? 'line-through text-slate-400' : ''}`;
+    cuerpo.textContent = item.text;
+    
+    contenidoFlex.appendChild(cuerpo);
+    tarjeta.appendChild(contenidoFlex);
+
     btnEliminar.addEventListener("click", async () => {
       const noteId = tarjeta.dataset.noteId;
       const bId = tarjeta.dataset.blockId;
-
       tarjeta.style.opacity = '0.5';
 
       try {
@@ -199,15 +189,12 @@ class FocoLienzoCanvas extends HTMLElement {
         if (sesion && bId) {
           const bloque = this.blocksData.find(b => b.id === bId);
           if (bloque) {
-            // Removemos únicamente la nota seleccionada
             const notasActualizadas = (bloque.content.notes || []).filter(n => n.id !== noteId);
             const nuevoContenido = { ...bloque.content, notes: notasActualizadas };
-
             await blocksService.updateBlock(bId, nuevoContenido, sesion.access_token);
-            bloque.content = nuevoContenido; // Sincronización en caché local
+            bloque.content = nuevoContenido; 
           }
         } else {
-          // Flujo offline
           const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
           const updatedLocales = locales.map(b => {
             if (b.id === bId) {
@@ -219,18 +206,16 @@ class FocoLienzoCanvas extends HTMLElement {
           localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
           this.blocksData = updatedLocales;
         }
-
         tarjeta.remove();
       } catch (error) {
-        console.error("Error al eliminar la nota:", error);
+        console.error("Error al eliminar el item:", error);
         tarjeta.style.opacity = '1';
-        alert("No se pudo eliminar la nota.");
+        alert("No se pudo eliminar.");
       }
     });
 
-    // LÓGICA DE EDICIÓN (Modifica el texto en el array e implementa UPDATE en JSONB)
     btnEditar.addEventListener("click", () => {
-      cuerpo.classList.add("hidden");
+      contenidoFlex.classList.add("hidden");
       tarjeta.classList.remove("group");
       
       const textarea = document.createElement("textarea");
@@ -240,6 +225,16 @@ class FocoLienzoCanvas extends HTMLElement {
       tarjeta.appendChild(textarea);
       textarea.focus();
 
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          textarea.blur(); // Dispara la persistencia existente
+        } else if (e.key === "Escape") {
+          textarea.value = item.text; // Revierte el texto
+          textarea.blur();
+        }
+      });
+
       textarea.addEventListener("blur", async () => {
         const nuevoTexto = textarea.value.trim();
         const noteId = tarjeta.dataset.noteId;
@@ -247,15 +242,16 @@ class FocoLienzoCanvas extends HTMLElement {
 
         textarea.remove();
         cuerpo.textContent = nuevoTexto;
-        cuerpo.classList.remove("hidden");
+        contenidoFlex.classList.remove("hidden");
         tarjeta.classList.add("group");
 
-        if (nuevoTexto && nuevoTexto !== cuerpoTexto) {
+        if (nuevoTexto && nuevoTexto !== item.text) {
           try {
             const sesion = await getSession();
             if (sesion && bId) {
               const bloque = this.blocksData.find(b => b.id === bId);
               if (bloque) {
+                // Al hacer spread (...n), preservamos intactos el "isTask" y el "checked"
                 const notasActualizadas = (bloque.content.notes || []).map(n => {
                   if (n.id === noteId) return { ...n, text: nuevoTexto };
                   return n;
@@ -266,7 +262,6 @@ class FocoLienzoCanvas extends HTMLElement {
                 bloque.content = nuevoContenido;
               }
             } else {
-              // Flujo offline
               const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
               const updatedLocales = locales.map(b => {
                 if (b.id === bId) {
@@ -281,10 +276,10 @@ class FocoLienzoCanvas extends HTMLElement {
               localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
               this.blocksData = updatedLocales;
             }
-            cuerpoTexto = nuevoTexto;
+            item.text = nuevoTexto;
           } catch (error) {
-            console.error("Error al actualizar la nota:", error);
-            cuerpo.textContent = cuerpoTexto;
+            console.error("Error al actualizar el texto:", error);
+            cuerpo.textContent = item.text;
           }
         }
       });
@@ -293,18 +288,53 @@ class FocoLienzoCanvas extends HTMLElement {
     return tarjeta;
   }
 
-  async guardarNotaEnBackend(texto, tipoDeBloque) {
+  // Nuevo método dedicado a persistir el Toggle del Checkbox sin modificar el texto
+  async actualizarEstadoCheckbox(noteId, blockId, newState) {
+    try {
+      const sesion = await getSession();
+      if (sesion && blockId) {
+        const bloque = this.blocksData.find(b => b.id === blockId);
+        if (bloque) {
+          const notasActualizadas = (bloque.content.notes || []).map(n => 
+            n.id === noteId ? { ...n, checked: newState } : n
+          );
+          const nuevoContenido = { ...bloque.content, notes: notasActualizadas };
+          await blocksService.updateBlock(blockId, nuevoContenido, sesion.access_token);
+          bloque.content = nuevoContenido;
+        }
+      } else {
+        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+        const updatedLocales = locales.map(b => {
+          if (b.id === blockId) {
+            const notes = (b.content.notes || []).map(n => 
+              n.id === noteId ? { ...n, checked: newState } : n
+            );
+            return { ...b, content: { ...b.content, notes } };
+          }
+          return b;
+        });
+        localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+        this.blocksData = updatedLocales;
+      }
+    } catch (error) {
+      console.error("Error al actualizar el estado de la tarea:", error);
+    }
+  }
+
+  // Modificado para soportar Tareas mediante el parámetro isTask
+  async guardarItemEnBackend(texto, tipoDeBloque, isTask = false) {
     try {
       const sesion = await getSession();
       const nuevaNota = {
         id: crypto.randomUUID(),
         text: texto,
         title: null,
+        isTask: isTask,
+        checked: false,
         createdAt: new Date().toISOString()
       };
 
       if (!sesion) {
-        // Flujo offline
         const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
         let bloqueLocal = locales.find((b) => b.type === tipoDeBloque);
         
@@ -323,11 +353,9 @@ class FocoLienzoCanvas extends HTMLElement {
         this.blocksData = locales;
         this.mostrarAvisoLocal(true);
         
-        return { noteId: nuevaNota.id, blockId: bloqueLocal.id, text: texto };
+        return { noteId: nuevaNota.id, blockId: bloqueLocal.id, item: nuevaNota };
       }
 
-      // Flujo online con sesión de Supabase
-      // Buscamos si el usuario ya posee el bloque de este tipo creado
       let bloqueExistente = this.blocksData.find((b) => b.type === tipoDeBloque);
 
       if (bloqueExistente) {
@@ -337,67 +365,91 @@ class FocoLienzoCanvas extends HTMLElement {
         await blocksService.updateBlock(bloqueExistente.id, nuevoContenido, sesion.access_token);
         bloqueExistente.content = nuevoContenido;
 
-        return { noteId: nuevaNota.id, blockId: bloqueExistente.id, text: texto };
+        return { noteId: nuevaNota.id, blockId: bloqueExistente.id, item: nuevaNota };
       } else {
-        // Es la primera nota en este bloque, se hace un POST para instanciar la fila por primera vez
         const nuevoContenido = { notes: [nuevaNota] };
         const datosCreados = await blocksService.saveBlock(tipoDeBloque, nuevoContenido, sesion.access_token);
         
         this.blocksData.push(datosCreados);
         emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, { type: tipoDeBloque, content: texto, data: datosCreados });
         
-        return { noteId: nuevaNota.id, blockId: datosCreados.id, text: texto };
+        return { noteId: nuevaNota.id, blockId: datosCreados.id, item: nuevaNota };
       }
     } catch (error) {
-      console.error("Error al guardar la nota en backend:", error);
+      console.error("Error al guardar el item en backend:", error);
       return null;
     }
   }
 
-  crearTarjetaNota(botonClonado) {
-    const tarjetaTemporal = document.createElement("div");
-    tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30";
+  // Unifica la creación de ambos elementos arrastrados
+  crearTarjetaItem(botonClonado, isTask) {
+      const tarjetaTemporal = document.createElement("div");
+      tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 flex items-start gap-2";
 
-    const textarea = document.createElement("textarea");
-    textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
-    textarea.placeholder = "Escribe una nota...";
-    textarea.rows = 3;
-    tarjetaTemporal.appendChild(textarea);
-
-    botonClonado.replaceWith(tarjetaTemporal);
-    textarea.focus();
-
-    const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
-    if (!zonaDrop) return;
-
-    const idDelBloque = zonaDrop.id;
-    const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
-
-    textarea.addEventListener("blur", async () => {
-      const textoEscrito = textarea.value.trim();
-      if (!textoEscrito) {
-        tarjetaTemporal.remove();
-        return;
+      if (isTask) {
+        const checkboxIcon = document.createElement("div");
+        checkboxIcon.className = "mt-0.5 w-3.5 h-3.5 shrink-0 rounded border border-slate-300 opacity-50";
+        tarjetaTemporal.appendChild(checkboxIcon);
       }
 
-      textarea.disabled = true;
-      textarea.classList.add("opacity-50");
+      const textarea = document.createElement("textarea");
+      textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
+      textarea.placeholder = isTask ? "Escribe una tarea..." : "Escribe una nota...";
+      textarea.rows = 3;
+      tarjetaTemporal.appendChild(textarea);
 
-      const datosGuardados = await this.guardarNotaEnBackend(textoEscrito, tipoDeBloque);
+      botonClonado.replaceWith(tarjetaTemporal);
+      textarea.focus();
 
-      if (datosGuardados) {
-        const tarjetaDefinitiva = this.crearElementoTarjeta(
-          datosGuardados.noteId,
-          datosGuardados.blockId,
-          null,
-          textoEscrito
-        );
-        tarjetaTemporal.replaceWith(tarjetaDefinitiva);
-      } else {
-        tarjetaTemporal.remove();
-      }
-    });
-  }
+      const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
+      if (!zonaDrop) return;
+
+      const idDelBloque = zonaDrop.id;
+      const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
+
+      let fueCancelado = false;
+
+      // === Escucha de teclado para Enter y Escape ===
+      textarea.addEventListener("keydown", (e) => {
+        // 1. Enter (sin Shift) para confirmar y guardar
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          textarea.blur(); 
+        } 
+        // 2. Escape para cancelar la creación
+        else if (e.key === "Escape") {
+          e.preventDefault();
+          fueCancelado = true;
+          tarjetaTemporal.remove(); // Elimina la tarjeta inmediatamente del DOM
+        }
+      });
+
+      textarea.addEventListener("blur", async () => {
+        // Si fue cancelado con Escape, evitamos que intente guardar nada
+        if (fueCancelado) return;
+
+        const textoEscrito = textarea.value.trim();
+        if (!textoEscrito) {
+          tarjetaTemporal.remove();
+          return;
+        }
+
+        textarea.disabled = true;
+        textarea.classList.add("opacity-50");
+
+        const datosGuardados = await this.guardarItemEnBackend(textoEscrito, tipoDeBloque, isTask);
+
+        if (datosGuardados) {
+          const tarjetaDefinitiva = this.crearElementoTarjeta(
+            datosGuardados.item, 
+            datosGuardados.blockId
+          );
+          tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+        } else {
+          tarjetaTemporal.remove();
+        }
+      });
+    }
 
   mostrarAvisoLocal(esInvitado) {
     let aviso = this.querySelector("[data-local-warning]");
@@ -420,7 +472,6 @@ class FocoLienzoCanvas extends HTMLElement {
         let bloqueExistente = this.blocksData.find((b) => b.type === localBlock.type);
 
         if (bloqueExistente) {
-          // Fusionamos las notas evitando colisiones de ID
           const notasOnline = bloqueExistente.content.notes || [];
           const notasLocales = localBlock.content.notes || [];
 
@@ -433,7 +484,6 @@ class FocoLienzoCanvas extends HTMLElement {
 
           await blocksService.updateBlock(bloqueExistente.id, nuevoContenido, session.access_token);
         } else {
-          // No existía el bloque de este tipo online, lo instanciamos directo
           await blocksService.saveBlock(localBlock.type, localBlock.content, session.access_token);
         }
       }
@@ -466,54 +516,59 @@ class FocoLienzoCanvas extends HTMLElement {
         onAdd: async function (evento) {
           var elementoAgregado = evento.item;
 
-          // 1. Si soltamos el clon de botón de creación
+          // 1. Detectamos si soltamos un clon de Nota o Tarea
           if (elementoAgregado.classList.contains("foco-crear-nota")) {
-            componenteActual.crearTarjetaNota(elementoAgregado);
+            componenteActual.crearTarjetaItem(elementoAgregado, false); 
+            return;
+          }
+          if (elementoAgregado.classList.contains("foco-crear-tarea")) {
+            componenteActual.crearTarjetaItem(elementoAgregado, true); 
             return;
           }
 
-          // 2. Si arrastramos una tarjeta entre bloques distintos (Transición relacional en la base de datos)
+          // 2. Transición relacional en la base de datos (Arrastrar entre bloques)
           const noteId = elementoAgregado.dataset.noteId;
           const oldBlockId = elementoAgregado.dataset.blockId;
-          const newZoneId = evento.to.id; // ID del contenedor de destino (ej: 'bloque-personal')
+          const newZoneId = evento.to.id;
           const newBlockType = blockRegistry.getBackendType(newZoneId);
 
           if (!noteId || !oldBlockId) return;
 
           try {
             const sesion = await getSession();
-            const textoCard = elementoAgregado.querySelector("p")?.textContent || "";
-            const tituloCard = elementoAgregado.querySelector("h3")?.textContent || null;
-            const notaAMover = { id: noteId, text: textoCard, title: tituloCard };
+            
+            // Buscamos el objeto original en caché para no perder propiedades como 'isTask' y 'checked'
+            const bloqueOrigenData = componenteActual.blocksData.find(b => b.id === oldBlockId);
+            const notaOriginal = (bloqueOrigenData?.content?.notes || []).find(n => n.id === noteId);
+            
+            // Si por algún motivo no estuviera en caché, creamos un fallback leyendo el DOM
+            const notaAMover = notaOriginal ? { ...notaOriginal } : { 
+              id: noteId, 
+              text: elementoAgregado.querySelector("p")?.textContent || "",
+              isTask: false,
+              checked: false 
+            };
 
             if (sesion) {
-              // FLUJO ONLINE (SUPABASE Y REST API)
-              
-              // A. Remover de bloque de origen
               const bloqueOrigen = componenteActual.blocksData.find(b => b.id === oldBlockId);
               if (bloqueOrigen) {
                 bloqueOrigen.content.notes = (bloqueOrigen.content.notes || []).filter(n => n.id !== noteId);
                 await blocksService.updateBlock(oldBlockId, bloqueOrigen.content, sesion.access_token);
               }
 
-              // B. Insertar en bloque de destino
               let bloqueDestino = componenteActual.blocksData.find(b => b.type === newBlockType);
               if (bloqueDestino) {
                 bloqueDestino.content.notes = [...(bloqueDestino.content.notes || []), notaAMover];
                 await blocksService.updateBlock(bloqueDestino.id, bloqueDestino.content, sesion.access_token);
-                elementoAgregado.dataset.blockId = bloqueDestino.id; // Actualizamos el id contenedor de la tarjeta
+                elementoAgregado.dataset.blockId = bloqueDestino.id;
               } else {
-                // Instanciar el bloque destino por primera vez
                 const nuevoContenido = { notes: [notaAMover] };
                 const datosCreados = await blocksService.saveBlock(newBlockType, nuevoContenido, sesion.access_token);
                 componenteActual.blocksData.push(datosCreados);
                 elementoAgregado.dataset.blockId = datosCreados.id;
               }
             } else {
-              // FLUJO OFFLINE (LOCALSTORAGE)
               const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
-
-              // Remover de origen local
               const updatedLocales = locales.map(b => {
                 if (b.id === oldBlockId) {
                   const notes = (b.content.notes || []).filter(n => n.id !== noteId);
@@ -522,7 +577,6 @@ class FocoLienzoCanvas extends HTMLElement {
                 return b;
               });
 
-              // Insertar en destino local
               let destBlock = updatedLocales.find(b => b.type === newBlockType);
               if (destBlock) {
                 destBlock.content.notes = [...(destBlock.content.notes || []), notaAMover];
@@ -537,14 +591,13 @@ class FocoLienzoCanvas extends HTMLElement {
                 updatedLocales.push(destBlock);
                 elementoAgregado.dataset.blockId = newId;
               }
-
               localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
               componenteActual.blocksData = updatedLocales;
             }
           } catch (error) {
             console.error("Error al transferir la nota entre bloques:", error);
-            alert("No se pudo reubicar la nota en la base de datos.");
-            componenteActual.cargarBlocks(); // Recarga para restaurar el estado consistente
+            alert("No se pudo reubicar el elemento en la base de datos.");
+            componenteActual.cargarBlocks();
           }
         }
       });
