@@ -235,18 +235,6 @@ class FocoLienzoCanvas extends HTMLElement {
         }
       });
 
-      checkbox.addEventListener("change", async (e) => {
-        const checkboxEl = e.target;
-        const newState = checkboxEl.checked;
-        
-        checkboxEl.disabled = true;
-        cuerpo.classList.toggle("line-through", newState);
-        cuerpo.classList.toggle("text-slate-400", newState);
-        
-        await this.actualizarEstadoCheckbox(item.id, tarjeta.dataset.blockId, newState);
-        checkboxEl.disabled = false;
-      });
-
       textarea.addEventListener("blur", async () => {
         const nuevoTexto = textarea.value.trim();
         const noteId = tarjeta.dataset.noteId;
@@ -395,53 +383,73 @@ class FocoLienzoCanvas extends HTMLElement {
 
   // Unifica la creación de ambos elementos arrastrados
   crearTarjetaItem(botonClonado, isTask) {
-    const tarjetaTemporal = document.createElement("div");
-    tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 flex items-start gap-2";
+      const tarjetaTemporal = document.createElement("div");
+      tarjetaTemporal.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 flex items-start gap-2";
 
-    if (isTask) {
-       const checkboxIcon = document.createElement("div");
-       checkboxIcon.className = "mt-0.5 w-3.5 h-3.5 shrink-0 rounded border border-slate-300 opacity-50";
-       tarjetaTemporal.appendChild(checkboxIcon);
+      if (isTask) {
+        const checkboxIcon = document.createElement("div");
+        checkboxIcon.className = "mt-0.5 w-3.5 h-3.5 shrink-0 rounded border border-slate-300 opacity-50";
+        tarjetaTemporal.appendChild(checkboxIcon);
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
+      textarea.placeholder = isTask ? "Escribe una tarea..." : "Escribe una nota...";
+      textarea.rows = 3;
+      tarjetaTemporal.appendChild(textarea);
+
+      botonClonado.replaceWith(tarjetaTemporal);
+      textarea.focus();
+
+      const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
+      if (!zonaDrop) return;
+
+      const idDelBloque = zonaDrop.id;
+      const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
+
+      let fueCancelado = false;
+
+      // === Escucha de teclado para Enter y Escape ===
+      textarea.addEventListener("keydown", (e) => {
+        // 1. Enter (sin Shift) para confirmar y guardar
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          textarea.blur(); 
+        } 
+        // 2. Escape para cancelar la creación
+        else if (e.key === "Escape") {
+          e.preventDefault();
+          fueCancelado = true;
+          tarjetaTemporal.remove(); // Elimina la tarjeta inmediatamente del DOM
+        }
+      });
+
+      textarea.addEventListener("blur", async () => {
+        // Si fue cancelado con Escape, evitamos que intente guardar nada
+        if (fueCancelado) return;
+
+        const textoEscrito = textarea.value.trim();
+        if (!textoEscrito) {
+          tarjetaTemporal.remove();
+          return;
+        }
+
+        textarea.disabled = true;
+        textarea.classList.add("opacity-50");
+
+        const datosGuardados = await this.guardarItemEnBackend(textoEscrito, tipoDeBloque, isTask);
+
+        if (datosGuardados) {
+          const tarjetaDefinitiva = this.crearElementoTarjeta(
+            datosGuardados.item, 
+            datosGuardados.blockId
+          );
+          tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+        } else {
+          tarjetaTemporal.remove();
+        }
+      });
     }
-
-    const textarea = document.createElement("textarea");
-    textarea.className = "w-full text-[11px] text-slate-700 bg-transparent outline-none resize-none foco-scrollbar";
-    textarea.placeholder = isTask ? "Escribe una tarea..." : "Escribe una nota...";
-    textarea.rows = 3;
-    tarjetaTemporal.appendChild(textarea);
-
-    botonClonado.replaceWith(tarjetaTemporal);
-    textarea.focus();
-
-    const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
-    if (!zonaDrop) return;
-
-    const idDelBloque = zonaDrop.id;
-    const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
-
-    textarea.addEventListener("blur", async () => {
-      const textoEscrito = textarea.value.trim();
-      if (!textoEscrito) {
-        tarjetaTemporal.remove();
-        return;
-      }
-
-      textarea.disabled = true;
-      textarea.classList.add("opacity-50");
-
-      const datosGuardados = await this.guardarItemEnBackend(textoEscrito, tipoDeBloque, isTask);
-
-      if (datosGuardados) {
-        const tarjetaDefinitiva = this.crearElementoTarjeta(
-          datosGuardados.item, 
-          datosGuardados.blockId
-        );
-        tarjetaTemporal.replaceWith(tarjetaDefinitiva);
-      } else {
-        tarjetaTemporal.remove();
-      }
-    });
-  }
 
   mostrarAvisoLocal(esInvitado) {
     let aviso = this.querySelector("[data-local-warning]");
