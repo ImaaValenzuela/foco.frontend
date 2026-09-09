@@ -2,6 +2,7 @@ import { renderPomodoro } from './productivity/pomodoro.js';
 import { renderHabitTracker } from './productivity/habitTracker.js';
 import { PomodoroManager } from '../managers/pomodoroManager.js';
 import { HabitManager } from '../managers/habitManager.js';
+import { authService } from '../services/auth.service.js'; // Importamos el servicio de auth
 
 /**
  * Componente: FocoProductivitySidebar (Vanilla JS)
@@ -16,14 +17,28 @@ class FocoProductivitySidebar extends HTMLElement {
     this.habitManager = new HabitManager(() => this.render());
   }
 
-  connectedCallback() {
+  // Modificamos a async para manejar la validación de sesión y carga de datos
+  async connectedCallback() {
     this.className = "bg-white border-l border-slate-200 shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
     this.aplicarVisibilidad(localStorage.getItem('foco-productivity-sidebar') !== 'false');
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
     this.onFullscreenChange = () => this.handleFullscreenChange();
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
+    
+    // 1. Render inicial (Muestra la interfaz de inmediato)
     this.render();
+
+    // 2. Disparamos la carga asíncrona desde Supabase
+    try {
+      const session = await authService.getSession();
+      if (session || authService.isGuest()) {
+        await this.habitManager.loadInitialData(); 
+        // loadInitialData() llamará internamente a notify() -> this.render()
+      }
+    } catch (error) {
+      console.error("Error al verificar sesión en el sidebar de productividad:", error);
+    }
   }
 
   aplicarVisibilidad(visible) {
@@ -267,7 +282,8 @@ class FocoProductivitySidebar extends HTMLElement {
       deleteButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const habitId = parseInt(btn.getAttribute('data-habit-id'), 10);
+          // UUID CORRECCIÓN: Tratamos el habitId como un string, sin aplicar parseInt()
+          const habitId = btn.getAttribute('data-habit-id');
           this.habitManager.deleteHabit(habitId);
         });
       });
@@ -276,14 +292,16 @@ class FocoProductivitySidebar extends HTMLElement {
       habitRows.forEach(row => {
         row.addEventListener('click', (e) => {
           if (e.target.tagName === 'INPUT' || e.target.closest('.delete-habit-btn')) return;
-          const habitId = parseInt(row.getAttribute('data-habit-id'), 10);
+          // UUID CORRECCIÓN
+          const habitId = row.getAttribute('data-habit-id');
           this.habitManager.toggleHabit(habitId);
         });
 
         const checkbox = row.querySelector('input[type="checkbox"]');
         if (checkbox) {
           checkbox.addEventListener('change', () => {
-            const habitId = parseInt(row.getAttribute('data-habit-id'), 10);
+            // UUID CORRECCIÓN
+            const habitId = row.getAttribute('data-habit-id');
             this.habitManager.toggleHabit(habitId);
           });
         }
