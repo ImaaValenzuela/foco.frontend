@@ -63,14 +63,23 @@ class FocoSidebarActions extends HTMLElement {
     this.activarCrearNota();
     this.querySelector('[data-action="settings"]').addEventListener('click', () => this.abrirModal('settings'));
     this.querySelector('[data-action="help"]').addEventListener('click', () => this.abrirModal('help'));
-  }
+  } 
 
   abrirModal(tipo) {
     const settings = tipo === 'settings';
     const bloques = ['bloque-objetivos-activos', 'bloque-personal', 'bloque-inspiracion', 'bloque-archivo-vida'];
     const nombres = ['Objetivos activos', 'Bloque personal', 'Inspiración y creatividad', 'Archivo de vida'];
     const estado = JSON.parse(localStorage.getItem('foco-board-visibility') || '{}');
-    const contenido = settings ? `<p class="text-sm text-slate-500 mb-4">Elegí qué partes querés ver en tu espacio de trabajo.</p><div class="space-y-3">${bloques.map((id, i) => `<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>${nombres[i]}</span><input type="checkbox" data-block="${id}" ${estado[id] !== false ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label>`).join('')}<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>Sidebar de productividad</span><input type="checkbox" data-sidebar="productivity" ${localStorage.getItem('foco-productivity-sidebar') !== 'false' ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label></div>` : `<div class="space-y-4 text-sm text-slate-600"><p><strong class="text-slate-800">1. Creá:</strong> arrastrá Nota, Tarea o Lista desde esta barra.</p><p><strong class="text-slate-800">2. Organizá:</strong> mové tus tarjetas entre los bloques.</p><p><strong class="text-slate-800">3. Personalizá:</strong> ocultá bloques o la sidebar derecha desde Ajustes.</p></div>`;
+    
+    const paletaActual = localStorage.getItem('foco-color-palette') || 'preestablecida';
+    const paletas = [
+      { id: 'preestablecida', nombre: 'Preestablecida', colorA: '#22298A', colorB: '#22298A', borde: 'border-foco-blue-deep' },
+      { id: 'vibrante', nombre: 'Vibrante', colorA: '#003566', colorB: '#FF8600', borde: 'border-blue-800' },
+      { id: 'lavanda', nombre: 'Lavanda', colorA: '#5d4e60', colorB: '#D0A3BF', borde: 'border-purple-500' },
+      { id: 'glaciar', nombre: 'Glaciar', colorA: '#003049', colorB: '#BBD0FF', borde: 'border-sky-500' }
+    ];
+
+    const contenido = settings ? `<p class="text-sm text-slate-500 mb-4">Elegí qué partes querés ver en tu espacio de trabajo.</p><div class="space-y-3">${bloques.map((id, i) => `<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>${nombres[i]}</span><input type="checkbox" data-block="${id}" ${estado[id] !== false ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label>`).join('')}<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>Sidebar de productividad</span><input type="checkbox" data-sidebar="productivity" ${localStorage.getItem('foco-productivity-sidebar') !== 'false' ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label></div><div class="mt-5 pt-4 border-t border-slate-100"><p class="text-sm text-slate-500 mb-3">Elegí una paleta de colores para el tablero.</p><div class="flex gap-3">${paletas.map((p) => `<button type="button" data-palette="${p.id}" class="flex-1 rounded-xl border-2 ${paletaActual === p.id ? p.borde : 'border-slate-200'} p-2 text-center"><div class="w-6 h-6 rounded-full mx-auto mb-1" style="background: linear-gradient(90deg, ${p.colorA} 50%, ${p.colorB} 50%);"></div><span class="text-xs font-medium text-slate-700">${p.nombre}</span></button>`).join('')}</div></div>` : `<div class="space-y-4 text-sm text-slate-600"><p><strong class="text-slate-800">1. Creá:</strong> arrastrá Nota, Tarea o Lista desde esta barra.</p><p><strong class="text-slate-800">2. Organizá:</strong> mové tus tarjetas entre los bloques.</p><p><strong class="text-slate-800">3. Personalizá:</strong> ocultá bloques o la sidebar derecha desde Ajustes.</p></div>`;
     const modal = document.createElement('div');
     modal.className = 'foco-modal fixed inset-0 z-50 flex items-center justify-center p-4';
     modal.innerHTML = `<div class="absolute inset-0 bg-slate-900/30" data-close></div><section role="dialog" aria-modal="true" class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-center justify-between mb-5"><h2 class="text-lg font-bold text-foco-blue-deep">${settings ? 'Ajustes del tablero' : 'Cómo usar F.O.C.O.'}</h2><button data-close class="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Cerrar">&times;</button></div>${contenido}<div class="mt-6 flex justify-end"><button data-close class="rounded-lg bg-foco-blue-deep px-4 py-2 text-sm font-semibold text-white">Listo</button></div></section>`;
@@ -85,6 +94,16 @@ class FocoSidebarActions extends HTMLElement {
       localStorage.setItem('foco-productivity-sidebar', String(event.target.checked));
       window.dispatchEvent(new CustomEvent('foco:productivity-visibility-changed', { detail: event.target.checked }));
     });
+    modal.querySelectorAll('[data-palette]').forEach((button) => button.addEventListener('click', (event) => {
+      const selectedPalette = event.currentTarget.dataset.palette;
+      localStorage.setItem('foco-color-palette', selectedPalette);
+      window.dispatchEvent(new CustomEvent('foco:palette-changed', { detail: selectedPalette }));
+      paletas.forEach((p) => {
+        const btn = modal.querySelector(`[data-palette="${p.id}"]`);
+        btn.classList.remove(p.borde, 'border-slate-200');
+        btn.classList.add(p.id === selectedPalette ? p.borde : 'border-slate-200');
+      });
+    }));
     document.body.appendChild(modal);
   }
 

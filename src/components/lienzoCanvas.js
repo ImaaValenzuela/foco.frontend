@@ -15,7 +15,7 @@ class FocoLienzoCanvas extends HTMLElement {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- BLOQUE 1: Objetivos Activos -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
+        <section id="seccion-objetivos-activos" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
           
           <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -32,7 +32,7 @@ class FocoLienzoCanvas extends HTMLElement {
         </section>
 
         <!-- BLOQUE 2: Bloque Personal -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
+        <section id="seccion-personal" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
           
           <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -51,7 +51,7 @@ class FocoLienzoCanvas extends HTMLElement {
         </section>
 
         <!-- BLOQUE 3: Inspiración y Creatividad (Corresponde a "Recursos" del método P.A.R.A) -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
+        <section id="seccion-inspiracion" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
           
           <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -68,7 +68,7 @@ class FocoLienzoCanvas extends HTMLElement {
         </section>
 
         <!-- BLOQUE 4: Archivo de Vida y Bitácoras -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
+        <section id="seccion-archivo-vida" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
           
           <!-- Encabezado del Bloque -->
           <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -92,9 +92,13 @@ class FocoLienzoCanvas extends HTMLElement {
     this.activarDragAndDrop();
     this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
+    this.aplicarPaleta(localStorage.getItem("foco-color-palette") || "preestablecida");
 
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
+
+    this.onPaletteChanged = (event) => this.aplicarPaleta(event.detail);
+    window.addEventListener("foco:palette-changed", this.onPaletteChanged);
 
     supabase?.auth.onAuthStateChange((_event, session) => {
       if (session) this.migrarBlocksLocales(session);
@@ -452,6 +456,38 @@ class FocoLienzoCanvas extends HTMLElement {
       zona.closest("section").classList.toggle("hidden", !visible);
     });
   }
+
+  aplicarPaleta(nombrePaleta) {
+  const paletas = {
+    vibrante: { borde: '#003566', titulo: '#003566', tarjeta: '#90e7ea' },
+    lavanda: { borde: '#5d4e60', titulo: '#5d4e60', tarjeta: '#ebdfef' },
+    glaciar: { borde: '#003049', titulo: '#003049', tarjeta: '#c6e1f3e0' }
+  };
+
+  const paletaElegida = paletas[nombrePaleta];
+
+  this.querySelectorAll("section").forEach((seccion) => {
+    const titulo = seccion.querySelector("h2");
+    const icono = seccion.querySelector("svg");
+    const tarjetas = seccion.querySelectorAll(".foco-tarjeta");
+
+    if (paletaElegida) {
+      seccion.style.borderColor = paletaElegida.borde;
+      if (titulo) titulo.style.color = paletaElegida.titulo;
+      if (icono) icono.style.stroke = paletaElegida.titulo;
+      tarjetas.forEach((tarjeta) => {
+        tarjeta.style.backgroundColor = paletaElegida.tarjeta;
+      });
+    } else {
+      seccion.style.borderColor = "";
+      if (titulo) titulo.style.color = "";
+      if (icono) icono.style.stroke = "";
+      tarjetas.forEach((tarjeta) => {
+        tarjeta.style.backgroundColor = "";
+      });
+    }
+  });
+}
 
   activarDragAndDrop() {
     var listaDeZonas = this.querySelectorAll(".foco-drop-zone");
