@@ -10,10 +10,24 @@ import { authService } from '../services/auth.service.js';
 
 export class HabitManager {
   constructor(onUpdateCallback = null) {
-    this.onUpdate = onUpdateCallback;
-    this.selectedOffset = 0; 
-    this.habitsData = {}; // Estructura local optimista
-  }
+      this.onUpdate = onUpdateCallback;
+      this.selectedOffset = 0; 
+      this.habitsData = {}; // Estructura local optimista
+
+      // Recepción del evento disparado por audioRecorder.js
+      document.addEventListener('foco:refresh-habits', async () => {
+        console.log("F.O.C.O. IA detectó un hábito. Sincronizando Tracker...");
+        
+        // Volvemos a traer los datos reales y frescos de Supabase
+        await this.loadInitialData(); 
+        
+        // Si recibes el evento, asumimos que quieres ver el día actual (offset 0)
+        this.selectedOffset = 0; 
+        
+        // Forzamos el re-render de la UI
+        this.notify(); 
+      });
+    }
 
   getPastDays() {
     const list = [];

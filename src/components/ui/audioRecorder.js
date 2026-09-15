@@ -1,15 +1,12 @@
-// src/components/ui/audioRecorder.js
 import { getSession } from "../../auth.js";
 import { ingestService } from "../../services/ingest.service.js";
 import { emitCustomEvent } from "../../utils/events.js";
-// Importamos el worker usando la sintaxis nativa de Vite
 import WhisperWorker from '../../workers/whisper.worker.js?worker';
 
 class FocoAudioRecorder extends HTMLElement {
   connectedCallback() {
     this.className = "fixed bottom-8 right-8 z-50 flex items-center gap-3";
     
-    // UI del botón
     this.innerHTML = `
       <div id="ai-status" class="hidden bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full shadow-lg transition-all">
         Cargando IA...
@@ -25,37 +22,48 @@ class FocoAudioRecorder extends HTMLElement {
     this.pulse = this.querySelector('#recording-pulse');
     this.statusUI = this.querySelector('#ai-status');
 
+    // BLINDAJE 1: La función se ancla a la memoria de la instancia apenas nace.
+    // Esto evita que el "Hot Module Replacement" de Vite la vuelva invisible.
+    this.showStatus = (msg, timeout = 0) => {
+      if (!this.statusUI) return;
+      this.statusUI.textContent = msg;
+      this.statusUI.classList.remove('hidden');
+      if (timeout > 0) {
+        setTimeout(() => this.statusUI.classList.add('hidden'), timeout);
+      }
+    };
+
     this.isRecording = false;
     this.mediaRecorder = null;
     this.audioChunks = [];
     
-    // Inicializar Worker
     this.worker = new WhisperWorker();
     this.setupWorkerListeners();
-    
-    // Cargar modelo en background
     this.worker.postMessage({ type: 'LOAD_MODEL' });
 
     this.btn.addEventListener('click', () => this.toggleRecording());
   }
 
   setupWorkerListeners() {
+    // BLINDAJE 2: Congelamos el contexto para los eventos asíncronos del Worker
+    const self = this; 
+
     this.worker.addEventListener('message', async (e) => {
       const { status, text, error } = e.data;
 
-      if (status === 'loading') this.showStatus('Cargando Motor IA...');
-      if (status === 'ready') this.showStatus('IA Lista', 2000);
-      if (status === 'transcribing') this.showStatus('Transcribiendo audio (Local)...');
+      if (status === 'loading') self.showStatus('Cargando Motor IA...');
+      if (status === 'ready') self.showStatus('IA Lista', 2000);
+      if (status === 'transcribing') self.showStatus('Transcribiendo audio (Local)...');
       
       if (status === 'success') {
-        this.showStatus('Enviando a F.O.C.O...');
-        console.log("Texto detectado:", text); // Validación Capa 1
-        await this.sendToBackend(text);
+        self.showStatus('Enviando a F.O.C.O...');
+        console.log("Texto detectado:", text); 
+        await self.sendToBackend(text);
       }
 
       if (status === 'error') {
         console.error("Error en Whisper:", error);
-        this.showStatus('Error en transcripción', 3000);
+        self.showStatus('Error en transcripción', 3000);
       }
     });
   }
@@ -70,15 +78,9 @@ class FocoAudioRecorder extends HTMLElement {
 
   async startRecording() {
     try {
-
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
-          noiseSuppression: true, 
-          echoCancellation: true,
-          autoGainControl: true 
-        } 
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true } 
       });
-
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
 
@@ -94,12 +96,10 @@ class FocoAudioRecorder extends HTMLElement {
       this.mediaRecorder.start();
       this.isRecording = true;
       
-      // UI Updates
       this.btn.classList.replace('bg-foco-blue-deep', 'bg-red-500');
       this.btn.classList.replace('hover:bg-blue-800', 'hover:bg-red-600');
       this.pulse.classList.add('animate-ping', 'opacity-100');
-      this.showStatus('Escuchando...');
-
+      this.showStatus('Escuchando...'); // Ya no lanzará undefined
     } catch (err) {
       console.error("Permiso de micrófono denegado:", err);
       this.showStatus('Micrófono denegado', 3000);
@@ -112,49 +112,37 @@ class FocoAudioRecorder extends HTMLElement {
       this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
       this.isRecording = false;
       
-      // UI Updates
       this.btn.classList.replace('bg-red-500', 'bg-foco-blue-deep');
       this.btn.classList.replace('hover:bg-red-600', 'hover:bg-blue-800');
       this.pulse.classList.remove('animate-ping', 'opacity-100');
     }
   }
 
-  // Convierte el Blob a Float32Array a 16kHz exactos (Requisito estricto de Whisper)
   async processAudioBlob(blob) {
     const arrayBuffer = await blob.arrayBuffer();
-    // AudioContext maneja el resampling automáticamente a 16000Hz
     const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    const float32Data = audioBuffer.getChannelData(0); // Canal mono
+    const float32Data = audioBuffer.getChannelData(0);
     
-    // Enviar al Worker
     this.worker.postMessage({ type: 'TRANSCRIBE', audioData: float32Data });
   }
 
   async sendToBackend(text) {
     try {
       const sesion = await getSession();
-      if (!sesion) throw new Error("Debes iniciar sesión para usar la IA");
+      if (!sesion) throw new Error("Debes iniciar sesión");
 
-      // Enviamos el texto al backend para la clasificación BERT/SBERT
       const result = await ingestService.ingestText(text, sesion.access_token);
+      this.showStatus('¡Guardado!', 3000);
       
-      this.showStatus('¡Bloque actualizado!', 3000);
-      
-      // Disparamos un evento global para que lienzoCanvas se recargue
-      emitCustomEvent(document, 'foco:refresh-canvas');
-
+      if (result.type === 'HABIT') {
+        emitCustomEvent(document, 'foco:refresh-habits'); 
+      } else {
+        emitCustomEvent(document, 'foco:refresh-canvas'); 
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error al enviar al backend:", error);
       this.showStatus('Error de conexión', 3000);
-    }
-  }
-
-  showStatus(msg, timeout = 0) {
-    this.statusUI.textContent = msg;
-    this.statusUI.classList.remove('hidden');
-    if (timeout > 0) {
-      setTimeout(() => this.statusUI.classList.add('hidden'), timeout);
     }
   }
 }
