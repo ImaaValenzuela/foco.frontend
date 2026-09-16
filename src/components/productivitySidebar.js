@@ -2,6 +2,7 @@ import { renderPomodoro } from './productivity/pomodoro.js';
 import { renderHabitTracker } from './productivity/habitTracker.js';
 import { PomodoroManager } from '../managers/pomodoroManager.js';
 import { HabitManager } from '../managers/habitManager.js';
+import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from '../managers/paletteManager.js';
 
 /**
  * Componente: FocoProductivitySidebar (Vanilla JS)
@@ -23,6 +24,7 @@ class FocoProductivitySidebar extends HTMLElement {
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
     this.onFullscreenChange = () => this.handleFullscreenChange();
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
+    escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
     this.render();
   }
 
@@ -216,6 +218,7 @@ class FocoProductivitySidebar extends HTMLElement {
     }
 
     this.bindEvents();
+    aplicarPaleta(obtenerPaletaActual());
   }
 
   bindEvents() {

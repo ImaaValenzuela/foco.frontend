@@ -4,6 +4,7 @@ import { blocksService } from "../services/blocks.service.js";
 import { blockRegistry } from "../strategies/blockRegistry.js";
 import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
 import { localStore } from "../services/storage.service.js";
+import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from "../managers/paletteManager.js";
 
 const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
@@ -88,17 +89,16 @@ class FocoLienzoCanvas extends HTMLElement {
       </div>
 
     `;
-        this.blocksData = []; // Caché local para evitar lecturas de red concurrentes
+    this.blocksData = []; // Caché local para evitar lecturas de red concurrentes
     this.activarDragAndDrop();
     this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
-    this.aplicarPaleta(localStorage.getItem("foco-color-palette") || "preestablecida");
+    aplicarPaleta(obtenerPaletaActual());
 
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
 
-    this.onPaletteChanged = (event) => this.aplicarPaleta(event.detail);
-    window.addEventListener("foco:palette-changed", this.onPaletteChanged);
+    escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
 
     supabase?.auth.onAuthStateChange((_event, session) => {
       if (session) this.migrarBlocksLocales(session);
@@ -151,6 +151,7 @@ class FocoLienzoCanvas extends HTMLElement {
         zona.appendChild(tarjeta);
       });
     });
+    aplicarPaleta(obtenerPaletaActual());
   }
 
   crearElementoTarjeta(id, blockId, tituloTexto, cuerpoTexto) {
@@ -397,6 +398,7 @@ class FocoLienzoCanvas extends HTMLElement {
           textoEscrito
         );
         tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+        aplicarPaleta(obtenerPaletaActual());
       } else {
         tarjetaTemporal.remove();
       }
@@ -454,40 +456,8 @@ class FocoLienzoCanvas extends HTMLElement {
     this.querySelectorAll(".foco-drop-zone").forEach((zona) => {
       const visible = estado[zona.id] !== false;
       zona.closest("section").classList.toggle("hidden", !visible);
-    });
+    }); 
   }
-
-  aplicarPaleta(nombrePaleta) {
-  const paletas = {
-    vibrante: { borde: '#003566', titulo: '#003566', tarjeta: '#90e7ea' },
-    lavanda: { borde: '#5d4e60', titulo: '#5d4e60', tarjeta: '#ebdfef' },
-    glaciar: { borde: '#003049', titulo: '#003049', tarjeta: '#c6e1f3e0' }
-  };
-
-  const paletaElegida = paletas[nombrePaleta];
-
-  this.querySelectorAll("section").forEach((seccion) => {
-    const titulo = seccion.querySelector("h2");
-    const icono = seccion.querySelector("svg");
-    const tarjetas = seccion.querySelectorAll(".foco-tarjeta");
-
-    if (paletaElegida) {
-      seccion.style.borderColor = paletaElegida.borde;
-      if (titulo) titulo.style.color = paletaElegida.titulo;
-      if (icono) icono.style.stroke = paletaElegida.titulo;
-      tarjetas.forEach((tarjeta) => {
-        tarjeta.style.backgroundColor = paletaElegida.tarjeta;
-      });
-    } else {
-      seccion.style.borderColor = "";
-      if (titulo) titulo.style.color = "";
-      if (icono) icono.style.stroke = "";
-      tarjetas.forEach((tarjeta) => {
-        tarjeta.style.backgroundColor = "";
-      });
-    }
-  });
-}
 
   activarDragAndDrop() {
     var listaDeZonas = this.querySelectorAll(".foco-drop-zone");

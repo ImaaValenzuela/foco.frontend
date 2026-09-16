@@ -4,6 +4,7 @@
  * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
  */
 import Sortable from "sortablejs";
+import { obtenerPaletas, obtenerPaletaActual, guardarPaleta } from "../managers/paletteManager.js";
 
 class FocoSidebarActions extends HTMLElement {
   connectedCallback() {
@@ -53,7 +54,7 @@ class FocoSidebarActions extends HTMLElement {
       </div>
       <div class="mt-auto flex flex-col-reverse gap-3">
         <button type="button" data-action="settings" class="foco-sidebar-action" aria-label="Abrir ajustes" title="Ajustes">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.5v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.5v-2.5h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.1H15v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
         <button type="button" data-action="help" class="foco-sidebar-action" aria-label="Abrir ayuda" title="Ayuda">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.4 1.6c-.9 1.1-2 1.3-2 2.9"/><path d="M12 17h.01"/></svg>
@@ -71,12 +72,13 @@ class FocoSidebarActions extends HTMLElement {
     const nombres = ['Objetivos activos', 'Bloque personal', 'Inspiración y creatividad', 'Archivo de vida'];
     const estado = JSON.parse(localStorage.getItem('foco-board-visibility') || '{}');
     
-    const paletaActual = localStorage.getItem('foco-color-palette') || 'preestablecida';
+    const paletaActual = obtenerPaletaActual();
+    const coloresPaletas = obtenerPaletas();
     const paletas = [
       { id: 'preestablecida', nombre: 'Preestablecida', colorA: '#22298A', colorB: '#22298A', borde: 'border-foco-blue-deep' },
-      { id: 'vibrante', nombre: 'Vibrante', colorA: '#003566', colorB: '#FF8600', borde: 'border-blue-800' },
-      { id: 'lavanda', nombre: 'Lavanda', colorA: '#5d4e60', colorB: '#D0A3BF', borde: 'border-purple-500' },
-      { id: 'glaciar', nombre: 'Glaciar', colorA: '#003049', colorB: '#BBD0FF', borde: 'border-sky-500' }
+      { id: 'vibrante', nombre: 'Bosque', colorA: coloresPaletas.vibrante.colorA, colorB: coloresPaletas.vibrante.colorB, borde: 'border-green-700' },
+      { id: 'lavanda', nombre: 'Lavanda', colorA: coloresPaletas.lavanda.colorA, colorB: coloresPaletas.lavanda.colorB, borde: 'border-purple-500' },
+      { id: 'glaciar', nombre: 'Glaciar', colorA: coloresPaletas.glaciar.colorA, colorB: coloresPaletas.glaciar.colorB, borde: 'border-sky-500' }
     ];
 
     const contenido = settings ? `<p class="text-sm text-slate-500 mb-4">Elegí qué partes querés ver en tu espacio de trabajo.</p><div class="space-y-3">${bloques.map((id, i) => `<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>${nombres[i]}</span><input type="checkbox" data-block="${id}" ${estado[id] !== false ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label>`).join('')}<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>Sidebar de productividad</span><input type="checkbox" data-sidebar="productivity" ${localStorage.getItem('foco-productivity-sidebar') !== 'false' ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label></div><div class="mt-5 pt-4 border-t border-slate-100"><p class="text-sm text-slate-500 mb-3">Elegí una paleta de colores para el tablero.</p><div class="flex gap-3">${paletas.map((p) => `<button type="button" data-palette="${p.id}" class="flex-1 rounded-xl border-2 ${paletaActual === p.id ? p.borde : 'border-slate-200'} p-2 text-center"><div class="w-6 h-6 rounded-full mx-auto mb-1" style="background: linear-gradient(90deg, ${p.colorA} 50%, ${p.colorB} 50%);"></div><span class="text-xs font-medium text-slate-700">${p.nombre}</span></button>`).join('')}</div></div>` : `<div class="space-y-4 text-sm text-slate-600"><p><strong class="text-slate-800">1. Creá:</strong> arrastrá Nota, Tarea o Lista desde esta barra.</p><p><strong class="text-slate-800">2. Organizá:</strong> mové tus tarjetas entre los bloques.</p><p><strong class="text-slate-800">3. Personalizá:</strong> ocultá bloques o la sidebar derecha desde Ajustes.</p></div>`;
@@ -96,8 +98,7 @@ class FocoSidebarActions extends HTMLElement {
     });
     modal.querySelectorAll('[data-palette]').forEach((button) => button.addEventListener('click', (event) => {
       const selectedPalette = event.currentTarget.dataset.palette;
-      localStorage.setItem('foco-color-palette', selectedPalette);
-      window.dispatchEvent(new CustomEvent('foco:palette-changed', { detail: selectedPalette }));
+      guardarPaleta(selectedPalette);
       paletas.forEach((p) => {
         const btn = modal.querySelector(`[data-palette="${p.id}"]`);
         btn.classList.remove(p.borde, 'border-slate-200');
