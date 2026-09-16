@@ -3,12 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+
   "scripts": {
     "dev": "vite",
-    "dev:full": "concurrently --kill-others-on-fail --raw --names backend,frontend --prefix \"{time} [{name}]\" --prefix-colors blue,magenta \"npm run dev --prefix ../foco.backend\" \"npm run dev\"",
+    "dev:ia": "cd ../foco.backend/src/foco-ia-service && python -m uvicorn main:app --reload --port 5000",
+    "dev:full": "concurrently --kill-others-on-fail --raw --names backend,frontend,ia --prefix \"{time} [{name}]\" --prefix-colors blue,magenta,green \"npm run dev --prefix ../foco.backend\" \"npm run dev\" \"npm run dev:ia\"",
     "build": "vite build",
     "preview": "vite preview"
   },
+  
   "devDependencies": {
     "concurrently": "^9.0.0",
     "vite": "^8.2.0"
