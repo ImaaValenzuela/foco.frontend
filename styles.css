@@ -87,7 +87,10 @@ body {
   color: #22298a;
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
-.foco-sidebar-action:hover { background: #e2e5f5; transform: translateY(-1px); }
+.foco-sidebar-action:hover {
+  background: var(--foco-sidebar-hover-bg, #e2e5f5);
+  transform: translateY(-1px);
+}
 .foco-modal { backdrop-filter: blur(2px); }
 
 /* Efecto active (clic/presionado) */

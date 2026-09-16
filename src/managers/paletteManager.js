@@ -24,7 +24,7 @@ const PALETAS = {
     headerFondo: '#FFFFFF',
     headerLogoFondo: '#dff8ea',
     headerTitulo: '#001207',
-    headerSubtitulo: '#64748b',
+    headerSubtitulo: '#679683',
     headerUsuario: '#001207',
     headerBotonCerrar: '#4e0063',
     headerBotonCerrarFondo: '#eacbf9',
@@ -34,6 +34,7 @@ const PALETAS = {
     sidebarFondo: '#eefdf5',
     sidebarBoton: '#108981',
     sidebarTexto: '#092015',
+    sidebarHoverFondo: '#c0f0d6',
 
     // 3. Lienzo Central
     lienzoFondo: '#f6f6f6',
@@ -95,6 +96,7 @@ const PALETAS = {
     sidebarFondo: '#474973',
     sidebarBoton: '#a69cac',
     sidebarTexto: '#ffffff',
+    sidebarHoverFondo: '#5a5c7b', //'#998b9f', 
 
     // 3. Lienzo Central
     lienzoFondo: '#f7edfb',
@@ -147,7 +149,7 @@ const PALETAS = {
     headerFondo: '#fcfdff',
     headerLogoFondo: '#e9e8fa', //'#b9d6f2',
     headerTitulo: '#14213D',
-    headerSubtitulo: '#64748b',
+    headerSubtitulo: '#597a81',
     headerUsuario: '#14213D',
     headerBotonCerrar: '#ffffff',
     headerBotonCerrarFondo: '#00398e',    // Fondo azul en Cerrar Sesión
@@ -157,6 +159,7 @@ const PALETAS = {
     sidebarFondo: '#14213D',
     sidebarBoton: '#b9d6f2',
     sidebarTexto: '#ffffff',
+    sidebarHoverFondo: '#263045',
 
     // 3. Lienzo Central
     lienzoFondo: '#f6f7f9',
@@ -230,6 +233,25 @@ export function aplicarPaleta(nombrePaleta) {
   aplicarEnProductividad(paleta);
 }
 
+export function aplicarPaletaEnModal(modalElement) {
+  const nombrePaleta = obtenerPaletaActual();
+  if (nombrePaleta === 'preestablecida') return;
+
+  const paleta = PALETAS[nombrePaleta];
+  if (!paleta) return;
+
+  const caja = modalElement.querySelector('section');
+  const titulo = modalElement.querySelector('h2');
+  const botonListo = modalElement.querySelector('.mt-6 button');
+
+  if (caja) caja.style.setProperty('background-color', paleta.bloqueFondo || paleta.productividadFondo || '#ffffff', 'important');
+  if (titulo) titulo.style.setProperty('color', paleta.headerTitulo || paleta.bloqueTitulo || '', 'important');
+  if (botonListo) {
+    botonListo.style.setProperty('background-color', paleta.botonIniciarPomodoro || paleta.colorA || '', 'important');
+    botonListo.style.setProperty('color', '#FFFFFF', 'important');
+  }
+}
+
 // 0. Barra Superior (Header)
 function aplicarEnHeader(paleta) {
   const headerComponent = document.querySelector('foco-header');
@@ -284,6 +306,7 @@ function aplicarEnSidebarIzquierda(paleta) {
   if (!sidebar) return;
 
   sidebar.style.backgroundColor = paleta ? paleta.sidebarFondo : '';
+  sidebar.style.setProperty('--foco-sidebar-hover-bg', paleta ? (paleta.sidebarHoverFondo || paleta.sidebarBoton || '') : ''); //cambia fondo del hover
 
   sidebar.querySelectorAll('.foco-sidebar-action').forEach((boton) => {
     boton.style.color = paleta ? (paleta.sidebarTexto || '#FFFFFF') : '';

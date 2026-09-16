@@ -2,11 +2,8 @@ import { renderPomodoro } from './productivity/pomodoro.js';
 import { renderHabitTracker } from './productivity/habitTracker.js';
 import { PomodoroManager } from '../managers/pomodoroManager.js';
 import { HabitManager } from '../managers/habitManager.js';
-<<<<<<< HEAD
 import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from '../managers/paletteManager.js';
-=======
 import { authService } from '../services/auth.service.js'; // Importamos el servicio de auth
->>>>>>> 7c79cf0917a214ad918c58049b2d97c5305c8225
 
 /**
  * Componente: FocoProductivitySidebar (Vanilla JS)
@@ -29,12 +26,9 @@ class FocoProductivitySidebar extends HTMLElement {
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
     this.onFullscreenChange = () => this.handleFullscreenChange();
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
-<<<<<<< HEAD
     escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
-=======
     
     // 1. Render inicial (Muestra la interfaz de inmediato)
->>>>>>> 7c79cf0917a214ad918c58049b2d97c5305c8225
     this.render();
 
     // 2. Disparamos la carga asíncrona desde Supabase
@@ -100,7 +94,7 @@ class FocoProductivitySidebar extends HTMLElement {
             } else if (modalOverlay) {
               modalOverlay.remove();
             }
-
+            aplicarPaleta(obtenerPaletaActual());
             return;
           }
 
