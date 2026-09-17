@@ -1,6 +1,6 @@
 export function renderPomodoro({ showConfig, configModal, display, status, cycle, breakMinutes, isRunning }) {
   return `
-    <div id="pomodoro-container" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col items-center relative overflow-hidden">
+    <div id="pomodoro-container" class="foco-pomodoro bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col items-center relative overflow-hidden">
       <div id="pomodoro-header" class="w-full flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
         <div class="flex items-center space-x-2 text-foco-blue-deep">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check-icon lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>
