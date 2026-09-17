@@ -11,12 +11,12 @@ const PALETAS = {
   preestablecida: {
     id: 'preestablecida',
     nombre: 'Preestablecida',
-    colorA: '#22298A',
-    colorB: '#FC7206',
+    colorA: '#323888',
+    colorB: '#f39045',
     bordeSelector: 'border-foco-blue-deep'
     // Resetea todo automáticamente al diseño original de Tailwind
   },
-  vibrante: {
+  bosque: {
     id: 'bosque',
     nombre: 'Bosque',
 
@@ -46,14 +46,14 @@ const PALETAS = {
 
     // Íconos individuales de cada bloque
     iconoObjetivosColor: '#31008c',
-    iconoPersonalColor: '#5a0073', //'#108981',
+    iconoPersonalColor: '#5a0073',
     iconoInspiracionColor: '#ff8600',
     iconoArchivoColor: '#204a2e',
     tarjetaFondo: '#f7fffc',
 
     // 4. Barra Lateral Derecha (Productividad)
     productividadFondo: '#f6f6f6',
-    botonToggleProdFondo: '#eefdf5', //'#eecefc',
+    botonToggleProdFondo: '#eefdf5',
 
     // Pomodoro
     pomodoroFondoBloque: '#eefdf5',
@@ -83,20 +83,20 @@ const PALETAS = {
     nombre: 'Lavanda',
 
     // 1. Barra Superior (Header)
-    headerFondo: '#fdf5ff',
+    headerFondo: '#f8ecfe',
     headerLogoFondo: '#e1d7e6',
     headerTitulo: '#392b4a',
     headerSubtitulo: '#7c7689',
     headerUsuario: '#474973',
     headerBotonCerrar: '#ffffff',
-    headerBotonCerrarFondo: '#7b2cbf',    
+    headerBotonCerrarFondo: '#7b2cbf',
     headerBotonCerrarBorde: '#7b2cbf',
 
     // 2. Barra Lateral Izquierda
     sidebarFondo: '#474973',
     sidebarBoton: '#a69cac',
     sidebarTexto: '#ffffff',
-    sidebarHoverFondo: '#5a5c7b', //'#998b9f', 
+    sidebarHoverFondo: '#5a5c7b',
 
     // 3. Lienzo Central
     lienzoFondo: '#f7edfb',
@@ -107,33 +107,33 @@ const PALETAS = {
     bloqueBorde: '#e4daf9',
     bloqueTitulo: '#392b4a',
 
-    // Íconos individuales de cada bloque en Lavanda:
-    iconoObjetivosColor: '#7b2cbf',       // Violeta fuerte
-    iconoPersonalColor: '#ff8600',        // Naranja cálido (diferente)
-    iconoInspiracionColor: '#0e9594',     // Turquesa / jade (diferente)
-    iconoArchivoColor: '#474973',         // Ciruela suave (diferente)
-    tarjetaFondo: '#f6e3ff', //'#fbeeff',
+    // Íconos individuales de cada bloque en Lavanda (con colores propios, no el genérico)
+    iconoObjetivosColor: '#7b2cbf',
+    iconoPersonalColor: '#ff8600',
+    iconoInspiracionColor: '#0e9594',
+    iconoArchivoColor: '#474973',
+    tarjetaFondo: '#f6e3ff',
 
     // 4. Barra Lateral Derecha (Productividad)
-    productividadFondo: '#f8ecfe',//'#fdf5ff',
-    botonToggleProdFondo: '#e4d0ed', //,
+    productividadFondo: '#f8ecfe',
+    botonToggleProdFondo: '#e4d0ed',
 
     // Pomodoro
-    pomodoroFondoBloque: '#f0d6fb', //'#ffffff',//'#e1d7e6', //'#ede3f2',
+    pomodoroFondoBloque: '#f0d6fb',
     pomodoroTituloTexto: '#392b4a',
     timerTexto: '#392b4a',
     botonesConfigProd: '#474973',
-    botonIniciarPomodoro: '#7b2cbf', //'#d5fb3e',
+    botonIniciarPomodoro: '#7b2cbf',
     botonReiniciarPomodoro: '#ffffff',
 
     // Hábitos
-    habitosFondoBloque: '#f0d6fb',//'#ffffff',//'#e1d7e6', //'#f7edfb', //'#f7e7ff', //'#f9f8e9',
+    habitosFondoBloque: '#f0d6fb',
     habitosTituloTexto: '#392b4a',
     calendarioFondo: '#fdf5ff',
     calendarioTextoDias: '#474973',
     diaSeleccionadoFondo: '#7b2cbf',
     diaSeleccionadoTexto: '#ffffff',
-    botonAgregarHabito: '#7b2cbf', //'#d5fb3e',
+    botonAgregarHabito: '#7b2cbf',
     tagHoyHabitos: '#a69cac',
 
     iconosProdBarra: '#474973',
@@ -147,12 +147,12 @@ const PALETAS = {
 
     // 1. Barra Superior (Header)
     headerFondo: '#fcfdff',
-    headerLogoFondo: '#e9e8fa', //'#b9d6f2',
+    headerLogoFondo: '#e9e8fa',
     headerTitulo: '#14213D',
     headerSubtitulo: '#597a81',
     headerUsuario: '#14213D',
     headerBotonCerrar: '#ffffff',
-    headerBotonCerrarFondo: '#00398e',    // Fondo azul en Cerrar Sesión
+    headerBotonCerrarFondo: '#00398e',
     headerBotonCerrarBorde: '#00398e',
     lineaDivisoria: '#3a3a4a',
 
@@ -170,7 +170,7 @@ const PALETAS = {
     bloqueBorde: '#e3e3e3',
     bloqueTitulo: '#14213D',
 
-    // Íconos individuales de cada bloque en Glaciar:
+    // Íconos individuales de cada bloque en Glaciar
     iconoObjetivosColor: '#00398e',
     iconoPersonalColor: '#197278',
     iconoInspiracionColor: '#4895ef',
@@ -215,7 +215,7 @@ const PALETAS = {
     headerSubtitulo: '#6b7280',
     headerUsuario: '#1f2937',
     headerBotonCerrar: '#6b7280',
-    headerBotonCerrarFondo: '#fef7ed',    
+    headerBotonCerrarFondo: '#fef7ed',
     headerBotonCerrarBorde: '#bea59a',
 
     // 2. Barra Lateral Izquierda
@@ -232,7 +232,7 @@ const PALETAS = {
     bloqueBorde: '#e3e3e3',
     bloqueTitulo: '#1f2937',
 
-    // Íconos individuales de cada bloque 
+    // Íconos individuales de cada bloque
     iconoObjetivosColor: '#1f2937',
     iconoPersonalColor: '#1f2937',
     iconoInspiracionColor: '#1f2937',
@@ -267,8 +267,8 @@ const PALETAS = {
     bordeSelector: '#fad6a8',
   },
   cosmos: {
-    id: 'cosmos', //191d32, 11151c, 0e1c26, 
-    nombre: 'Cosmos (Modo Oscuro)', //13232c, 21373f, color bloque: 142135
+    id: 'cosmos',
+    nombre: 'Cosmos (Modo Oscuro)',
 
     // 1. Barra Superior (Header)
     headerFondo: '#13232c',
@@ -277,22 +277,23 @@ const PALETAS = {
     headerSubtitulo: '#728f95',
     headerUsuario: '#fdfdfd',
     headerBotonCerrar: '#ffffff',
-    headerBotonCerrarFondo: '#21373f',   
+    headerBotonCerrarFondo: '#21373f',
     headerBotonCerrarBorde: '#21373f',
 
     // Separadores
-    lineaHeader: '#334155',
-    lineaSidebarIzquierda: '#334155',
-    lineaSidebarDerecha: '#334155',
+    lineaHeader: '#182127',
+    lineaSidebarIzquierda: '#13232c',
+    lineaSidebarDerecha: '#13232c',
+    lineaDivisoria: '#13232c',
 
     // 2. Barra Lateral Izquierda
     sidebarFondo: '#13232c',
     sidebarBoton: '#8f48c3',
     sidebarTexto: '#ffffff',
-    sidebarHoverFondo: '#263045',
+    sidebarHoverFondo: '#855fa0',
 
     // 3. Lienzo Central
-    lienzoFondo: '#0e0f17', // //191d32, 11151c, 0e1c26, 
+    lienzoFondo: '#11151c',
     lienzoPatron: '',
     lienzoPatronSize: '',
     bloqueFondo: '#13232c',
@@ -300,7 +301,6 @@ const PALETAS = {
     bloqueTitulo: '#ffffff',
 
     // Texto de las tarjetas
-    tarjetaFondo: '#263449',
     tarjetaTexto: '#cbd5e1',
     tarjetaPlaceholder: '#64748b',
 
@@ -309,7 +309,7 @@ const PALETAS = {
     scrollBarThumb: '#475569',
     scrollBarThumbHover: '#64748b',
 
-    // Íconos individuales de cada bloque en Glaciar:
+    // Íconos individuales de cada bloque
     iconoObjetivosColor: '#ffffff',
     iconoPersonalColor: '#ffffff',
     iconoInspiracionColor: '#ffffff',
@@ -344,8 +344,8 @@ const PALETAS = {
     bordeSelector: '#8f48c3',
   },
   modoOscuro: {
-    id: 'modoOscuro', //191d32, 11151c, 0e1c26, 
-    nombre: 'Modo oscuro', //13232c, 21373f, color bloque: 142135
+    id: 'modoOscuro',
+    nombre: 'Modo oscuro',
 
     // 1. Barra Superior (Header)
     headerFondo: '#13232c',
@@ -354,23 +354,23 @@ const PALETAS = {
     headerSubtitulo: '#728f95',
     headerUsuario: '#fdfdfd',
     headerBotonCerrar: '#ffffff',
-    headerBotonCerrarFondo: '#21373f',   
+    headerBotonCerrarFondo: '#21373f',
     headerBotonCerrarBorde: '#21373f',
 
     // Separadores
-    lineaHeader: '#334155',
-    lineaSidebarIzquierda: '#334155',
-    lineaSidebarDerecha: '#334155',
-
+    lineaHeader: '#1e2e37',
+    lineaSidebarIzquierda: '#13232c',
+    lineaSidebarDerecha: '#13232c',
+    lineaDivisoria: '#21373f',
 
     // 2. Barra Lateral Izquierda
     sidebarFondo: '#13232c',
     sidebarBoton: '#00398e',
     sidebarTexto: '#ffffff',
-    sidebarHoverFondo: '#f76345',//'#263045',
+    sidebarHoverFondo: '#f76345',
 
     // 3. Lienzo Central
-    lienzoFondo: '#0e0f17', // //191d32, 11151c, 0e1c26, 
+    lienzoFondo: '#11151c',
     lienzoPatron: '',
     lienzoPatronSize: '',
     bloqueFondo: '#13232c',
@@ -378,7 +378,6 @@ const PALETAS = {
     bloqueTitulo: '#ffffff',
 
     // Texto de las tarjetas
-    tarjetaFondo: '#263449',
     tarjetaTexto: '#cbd5e1',
     tarjetaPlaceholder: '#64748b',
 
@@ -387,7 +386,7 @@ const PALETAS = {
     scrollBarThumb: '#475569',
     scrollBarThumbHover: '#64748b',
 
-    // Íconos individuales de cada bloque en Glaciar:
+    // Íconos individuales de cada bloque
     iconoObjetivosColor: '#ffffff',
     iconoPersonalColor: '#ffffff',
     iconoInspiracionColor: '#ffffff',
@@ -396,14 +395,14 @@ const PALETAS = {
 
     // 4. Barra Lateral Derecha (Productividad)
     productividadFondo: '#13232c',
-    botonToggleProdFondo: '#21373f', //'#f76345',
+    botonToggleProdFondo: '#f76345',
 
     // Pomodoro
     pomodoroFondoBloque: '#21373f',
     pomodoroTituloTexto: '#ffffff',
     timerTexto: '#ffffff',
     botonesConfigProd: '#ffffff',
-    botonIniciarPomodoro: '#f55536', //'#00398e',
+    botonIniciarPomodoro: '#f55536',
     botonReiniciarPomodoro: '#ffffff',
 
     // Hábitos
@@ -411,7 +410,7 @@ const PALETAS = {
     habitosTituloTexto: '#ffffff',
     calendarioFondo: '#21373f',
     calendarioTextoDias: '#ffffff',
-    diaSeleccionadoFondo: '#0d3f8b', //'#f55536', //'#52718f', //'#00398e',//'#f55536',
+    diaSeleccionadoFondo: '#0d3f8b',
     diaSeleccionadoTexto: '#ffffff',
     botonAgregarHabito: '#00398e',
     tagHoyHabitos: '#52718f',
@@ -439,9 +438,10 @@ export function escucharCambiosDePaleta(callback) {
   window.addEventListener(EVENTO_CAMBIO, (evento) => callback(evento.detail));
 }
 
+// Resetea la paleta en los 4 grandes bloques de la interfaz.
 export function aplicarPaleta(nombrePaleta) {
-  const paleta = (nombrePaleta && nombrePaleta !== 'preestablecida') 
-    ? PALETAS[nombrePaleta] 
+  const paleta = (nombrePaleta && nombrePaleta !== 'preestablecida')
+    ? PALETAS[nombrePaleta]
     : null;
 
   aplicarEnHeader(paleta);
@@ -487,28 +487,25 @@ function aplicarEnHeader(paleta) {
 
   const fondo = paleta ? paleta.headerFondo : '';
   headerComponent.style.backgroundColor = fondo;
-
   headerComponent.style.borderBottomColor = paleta ? (paleta.lineaHeader || '') : '';
-
   headerComponent.style.borderBottomWidth = paleta ? '1px' : '';
   headerComponent.style.borderBottomStyle = paleta ? 'solid' : '';
 
   const headerInner = headerComponent.querySelector('header');
   if (headerInner) {
     headerInner.style.backgroundColor = fondo;
-    headerInner.style.borderBottomColor = paleta ? (paleta.lineaHeader || 'transparent')  : '';
-
+    headerInner.style.borderBottomColor = paleta ? (paleta.lineaHeader || 'transparent') : '';
     headerInner.style.borderBottomWidth = paleta ? '1px' : '';
     headerInner.style.borderBottomStyle = paleta ? 'solid' : '';
   }
 
-  // Círculo del Logo de FOCO
+  // Circulo del logo de FOCO
   const circuloLogo = headerComponent.querySelector('.rounded-full');
   if (circuloLogo) {
     circuloLogo.style.setProperty('background-color', paleta ? (paleta.headerLogoFondo || '') : '', 'important');
   }
 
-  // Letras "F.O.C.O."
+  // Letras FOCO
   const h1 = headerComponent.querySelector('h1');
   if (h1) {
     h1.style.setProperty('color', paleta ? paleta.headerTitulo : '', 'important');
@@ -518,7 +515,7 @@ function aplicarEnHeader(paleta) {
     }
   }
 
- //Usuario
+  // Usuario
   const nombreUsuario = headerComponent.querySelector('[data-auth-name]');
   if (nombreUsuario) {
     nombreUsuario.style.setProperty('color', paleta ? paleta.headerUsuario : '', 'important');
@@ -541,11 +538,13 @@ function aplicarEnHeader(paleta) {
 function aplicarEnSidebarIzquierda(paleta) {
   const sidebar = document.querySelector('foco-sidebar-actions');
   if (!sidebar) return;
+
   sidebar.style.backgroundColor = paleta ? paleta.sidebarFondo : '';
-  sidebar.style.borderRightColor = paleta ? (paleta.lineaSidebarIzquierda || '')  : '';
+  sidebar.style.borderRightColor = paleta ? (paleta.lineaSidebarIzquierda || '') : '';
   sidebar.style.borderRightWidth = paleta ? '1px' : '';
   sidebar.style.borderRightStyle = paleta ? 'solid' : '';
-  sidebar.style.setProperty('--foco-sidebar-hover-bg', paleta ? (paleta.sidebarHoverFondo || paleta.sidebarBoton || '') : ''); //cambia fondo del hover
+  // Variable CSS usada por el :hover de los botones (definido en styles.css)
+  sidebar.style.setProperty('--foco-sidebar-hover-bg', paleta ? (paleta.sidebarHoverFondo || paleta.sidebarBoton || '') : '');
 
   sidebar.querySelectorAll('.foco-sidebar-action').forEach((boton) => {
     boton.style.color = paleta ? (paleta.sidebarTexto || '#FFFFFF') : '';
@@ -577,7 +576,7 @@ function aplicarEnLienzo(paleta) {
   const lienzo = document.querySelector('foco-lienzo-canvas');
   if (lienzo) {
     lienzo.style.backgroundColor = paleta ? (paleta.lienzoFondo || '') : '';
-    
+
     if (paleta && paleta.lienzoPatron) {
       lienzo.style.backgroundImage = paleta.lienzoPatron;
       lienzo.style.backgroundSize = paleta.lienzoPatronSize || 'auto';
@@ -624,29 +623,26 @@ function aplicarEnLienzo(paleta) {
     tarjetas.forEach((tarjeta) => {
       tarjeta.style.setProperty('background-color', paleta ? paleta.tarjetaFondo : '', 'important');
       tarjeta.querySelectorAll('input, textarea, span, p, div').forEach((elemento) => {
-        elemento.style.setProperty('color',paleta ? (paleta.tarjetaTexto || paleta.bloqueTitulo || '') : '', 'important');
+        elemento.style.setProperty('color', paleta ? (paleta.tarjetaTexto || paleta.bloqueTitulo || '') : '', 'important');
       });
-      tarjeta.querySelectorAll('input::placeholder, textarea::placeholder');
     });
   });
 }
 
-// 3. Barra Lateral Derecha (Productividad y Modal de Configuración)
+// 3. Barra Lateral Derecha (Productividad y Modal de Configuración del Pomodoro)
 function aplicarEnProductividad(paleta) {
   const sidebarDerecha = document.querySelector('foco-productivity-sidebar');
   if (!sidebarDerecha) return;
 
   sidebarDerecha.style.backgroundColor = paleta ? (paleta.productividadFondo || '#FFFFFF') : '';
-
   sidebarDerecha.style.borderLeftColor = paleta ? (paleta.lineaSidebarDerecha || '') : '';
-
   sidebarDerecha.style.borderLeftWidth = paleta ? '1px' : '';
   sidebarDerecha.style.borderLeftStyle = paleta ? 'solid' : '';
 
   const headerSidebar = sidebarDerecha.querySelector('.h-14');
   if (headerSidebar) {
     headerSidebar.style.backgroundColor = paleta ? (paleta.productividadFondo || '#FFFFFF') : '';
-    headerSidebar.style.borderColor = paleta ? 'transparent' : '';
+    headerSidebar.style.setProperty('border-color', paleta ? (paleta.lineaDivisoria || 'transparent') : '', 'important');
   }
 
   // Botón de abrir/cerrar (#toggle-sidebar)
@@ -660,7 +656,7 @@ function aplicarEnProductividad(paleta) {
     }
   }
 
-  // Íconos barra cerrada
+  // Íconos barra cerrada (Pomodoro/Hábitos colapsados)
   sidebarDerecha.querySelectorAll('#quick-pomodoro, #quick-habits').forEach((item) => {
     const color = paleta ? paleta.iconosProdBarra : '';
     item.style.color = color;
@@ -720,7 +716,7 @@ function aplicarEnProductividad(paleta) {
     });
   }
 
-  // Título Hábitos Diarios
+  // Título "Hábitos diarios" (se busca por texto, no por id, ya que el elemento no tiene uno propio)
   sidebarDerecha.querySelectorAll('span, h1, h2, h3, h4, p, div').forEach((el) => {
     const textoLimpio = el.textContent
       ? el.textContent.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
@@ -736,7 +732,7 @@ function aplicarEnProductividad(paleta) {
     }
   });
 
-  // Nombres de cada hábito individual
+  // Nombres de cada hábito individual (se crean dinámicamente al agregar un hábito nuevo)
   sidebarDerecha.querySelectorAll('.habit-row span').forEach((span) => {
     span.style.setProperty('color', paleta ? (paleta.habitosTituloTexto || '') : '', 'important');
   });
@@ -757,7 +753,7 @@ function aplicarEnProductividad(paleta) {
   }
 
   sidebarDerecha.querySelectorAll('.day-selector-btn').forEach((btn) => {
-    const esSeleccionado = btn.classList.contains('bg-foco-orange-accent') || 
+    const esSeleccionado = btn.classList.contains('bg-foco-orange-accent') ||
                            btn.classList.contains('font-bold');
 
     if (!esSeleccionado) {
@@ -810,8 +806,7 @@ function aplicarEnProductividad(paleta) {
     }
   });
 
-  // MODAL DE CONFIGURACIÓN DE TIEMPOS (#config-overlay):
-    const modalConfig = sidebarDerecha.querySelector('#config-overlay') || document.querySelector('#config-overlay');
+  const modalConfig = sidebarDerecha.querySelector('#config-overlay') || document.querySelector('#config-overlay');
   if (modalConfig) {
     const cajaModal = modalConfig.querySelector('.bg-white, [class*="rounded-2xl"]');
     if (cajaModal) {
@@ -837,17 +832,17 @@ function aplicarEnProductividad(paleta) {
 
     const btnCancelarModal = modalConfig.querySelector('#cancel-config');
     if (btnCancelarModal) btnCancelarModal.style.setProperty('color', colorTextoModal, 'important');
-  }
-  const btnGuardarConfig = modalConfig.querySelector('#save-config');
 
-  if (btnGuardarConfig) {
-    let colorGuardar = '';
-    if (paleta && paleta.id === 'lavanda') {
-      colorGuardar = paleta.headerBotonCerrarFondo || paleta.colorB || '';
-    } else {
-      colorGuardar = paleta ? (paleta.botonIniciarPomodoro || paleta.colorB || '') : '';
+    const btnGuardarConfig = modalConfig.querySelector('#save-config');
+    if (btnGuardarConfig) {
+      let colorGuardar = '';
+      if (paleta && paleta.id === 'lavanda') {
+        colorGuardar = paleta.headerBotonCerrarFondo || paleta.colorB || '';
+      } else {
+        colorGuardar = paleta ? (paleta.botonIniciarPomodoro || paleta.colorB || '') : '';
+      }
+      btnGuardarConfig.style.setProperty('background-color', colorGuardar, 'important');
+      btnGuardarConfig.style.color = paleta ? '#FFFFFF' : '';
     }
-    btnGuardarConfig.style.setProperty('background-color', colorGuardar, 'important');
-    btnGuardarConfig.style.color = paleta ? '#FFFFFF' : '';
   }
 }
