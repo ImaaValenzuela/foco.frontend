@@ -2,10 +2,12 @@
  * Manager: PomodoroManager
  * Aísla la lógica de negocio y estado del temporizador Pomodoro.
  * Cumple con SRP desvinculando la gestión de intervalos y estado del ciclo de la capa de presentación (UI).
+ * Integra sincronización asíncrona con el Backend y Motor de Inferencia IA.
  */
 
 import { loadPomodoroConfig, savePomodoroConfig, isValidPomodoroConfig } from '../components/productivity/pomodoroConfig.js';
 import { emitCustomEvent, FOCO_EVENTS } from '../utils/events.js';
+import { authService } from '../services/auth.service.js';
 
 export class PomodoroManager {
   constructor(onUpdateCallback = null) {
@@ -84,6 +86,12 @@ export class PomodoroManager {
 
   handlePhaseEnd() {
     this.pauseTimer();
+    
+    // 1. CAPTURA DE ÉXITO: El ciclo de enfoque llegó a cero naturalmente.
+    if (this.phase === 'focus') {
+      this.saveSessionToBackend(true);
+    }
+
     if (this.phase === 'focus' && this.currentCycle < this.totalCycles) {
       this.phase = 'break';
       this.timeLeft = this.breakMinutes * 60;
@@ -101,6 +109,12 @@ export class PomodoroManager {
 
   resetTimer() {
     this.pauseTimer();
+    
+    // 2. CAPTURA DE ABANDONO: Si reinicia mientras estaba en 'focus' y el tiempo bajó, lo consideramos una interrupción.
+    if (this.phase === 'focus' && this.timeLeft < (this.focusMinutes * 60)) {
+        this.saveSessionToBackend(false);
+    }
+
     this.sessionComplete = false;
     this.currentCycle = 1;
     this.phase = 'focus';
@@ -140,6 +154,59 @@ export class PomodoroManager {
   notify() {
     if (typeof this.onUpdate === 'function') {
       this.onUpdate(this.getState());
+    }
+  }
+
+  // --- NUEVA LÓGICA DE PERSISTENCIA ---
+  /**
+   * Envía la telemetría de la sesión al backend.
+   * Ejecutado bajo el patrón Fire-and-Forget para no bloquear la UI.
+   * @param {boolean} isCompleted Indica si el Pomodoro se completó exitosamente o se interrumpió.
+   */
+async saveSessionToBackend(isCompleted) {
+    try {
+      // 1. Obtener la sesión real a través de tu servicio de autenticación
+      const session = await authService.getSession();
+      
+      // Dependiendo de tu implementación exacta en auth.service.js, 
+      // el token suele estar en session.access_token
+      const token = session?.access_token; 
+
+      if (!token) {
+        console.error('❌ Pomodoro: No hay usuario autenticado (Token nulo).');
+        return;
+      }
+
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+      const payload = {
+        focus_duration: this.focusMinutes,
+        break_duration: this.breakMinutes,
+        is_completed: isCompleted
+      };
+
+      const response = await fetch(`${API_URL}/pomodoros`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      // 2. Validación estricta de la respuesta HTTP
+      if (!response.ok) {
+        // Intentamos parsear el mensaje de error del backend
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Error HTTP ${response.status}: ${errorData.error || response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Sesión Pomodoro persistida en Supabase y evaluada:', data);
+
+    } catch (error) {
+      // Ahora capturará y mostrará explícitamente errores 401, 404 o caídas de red
+      console.error('❌ Error crítico al guardar el Pomodoro:', error.message);
     }
   }
 }
