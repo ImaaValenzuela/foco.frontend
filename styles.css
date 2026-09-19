@@ -111,3 +111,413 @@ body {
 .animate-pulse-soft {
   animation: pulse-soft 3s infinite ease-in-out;
 }
+
+
+/* =========================================================================
+   PALETAS DE COLORES DEL TABLERO
+   Cada paleta define variables CSS que los componentes consumen mediante
+   clases de Tailwind de "valor arbitrario" (ej: bg-[--color-header-bg]).
+   El cambio de paleta se activa poniendo data-palette="..." en <html>.
+   ========================================================================= */
+/*header*/
+:root[data-palette="bosque"] {
+  --color-header-bg: #FFFFFF;
+  --color-header-logo-bg: #dff8ea;
+  --color-header-titulo: #001207;
+  --color-header-subtitulo: #679683;
+  --color-header-usuario: #001207;
+  --color-header-cerrar-texto: #4e0063;
+  --color-header-cerrar-bg: #eacbf9;
+  --color-header-cerrar-borde: #eacbf9;
+  --color-header-borde: #FFFFFF;
+}
+
+:root[data-palette="lavanda"] {
+  --color-header-bg: #f8ecfe;
+  --color-header-logo-bg: #e1d7e6;
+  --color-header-titulo: #392b4a;
+  --color-header-subtitulo: #7c7689;
+  --color-header-usuario: #474973;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #7b2cbf;
+  --color-header-cerrar-borde: #7b2cbf;
+  --color-header-borde: #f8ecfe;
+}
+
+:root[data-palette="glaciar"] {
+  --color-header-bg: #fcfdff;
+  --color-header-logo-bg: #e9e8fa;
+  --color-header-titulo: #14213D;
+  --color-header-subtitulo: #597a81;
+  --color-header-usuario: #14213D;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #00398e;
+  --color-header-cerrar-borde: #00398e;
+  --color-header-borde: #3a3a4a;
+}
+
+:root[data-palette="coral"] {
+  --color-header-bg: #fef7ed;
+  --color-header-logo-bg: #fff4e6;
+  --color-header-titulo: #1f2937;
+  --color-header-subtitulo: #6b7280;
+  --color-header-usuario: #1f2937;
+  --color-header-cerrar-texto: #6b7280;
+  --color-header-cerrar-bg: #fef7ed;
+  --color-header-cerrar-borde: #bea59a;
+  --color-header-borde: #fef7ed;
+}
+
+:root[data-palette="cosmos"] {
+  --color-header-bg: #13232c;
+  --color-header-logo-bg: #1e2e37;
+  --color-header-titulo: #f9f9f9;
+  --color-header-subtitulo: #728f95;
+  --color-header-usuario: #fdfdfd;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #21373f;
+  --color-header-cerrar-borde: #21373f;
+  --color-header-borde: #1e2e37;
+}
+
+:root[data-palette="modoOscuro"] {
+  --color-header-bg: #13232c;
+  --color-header-logo-bg: #1e2e37;
+  --color-header-titulo: #f9f9f9;
+  --color-header-subtitulo: #728f95;
+  --color-header-usuario: #fdfdfd;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #21373f;
+  --color-header-cerrar-borde: #21373f;
+  --color-header-borde: #21373f;
+}
+
+/*sidebar*/
+:root[data-palette="bosque"] {
+  --color-sidebar-bg: #eefdf5;
+  --color-sidebar-borde: #eefdf5;
+  --color-sidebar-texto: #092015;
+  --color-sidebar-boton: #108981;
+}
+
+:root[data-palette="lavanda"] {
+  --color-sidebar-bg: #474973;
+  --color-sidebar-borde: #474973;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #a69cac;
+}
+
+:root[data-palette="glaciar"] {
+  --color-sidebar-bg: #14213D;
+  --color-sidebar-borde: #14213D;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #b9d6f2;
+}
+
+:root[data-palette="coral"] {
+  --color-sidebar-bg: #fce2c0;
+  --color-sidebar-borde: #fce2c0;
+  --color-sidebar-texto: #1f2937;
+  --color-sidebar-boton: #f87171;
+}
+
+:root[data-palette="cosmos"] {
+  --color-sidebar-bg: #13232c;
+  --color-sidebar-borde: #13232c;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #8f48c3;
+}
+
+:root[data-palette="modoOscuro"] {
+  --color-sidebar-bg: #13232c;
+  --color-sidebar-borde: #13232c;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #00398e;
+}
+
+/*bloques*/
+:root[data-palette="bosque"] {
+  --color-lienzo-bg: #f6f6f6;
+  --color-bloque-bg: #ffffff;
+  --color-bloque-borde: #e7e9e9;
+  --color-bloque-titulo: #092015;
+  --color-bloque-divisor: #e7e9e9;
+  --color-icono-objetivos: #31008c;
+  --color-icono-personal: #5a0073;
+  --color-icono-inspiracion: #ff8600;
+  --color-icono-archivo: #204a2e;
+  --color-tarjeta-bg: #f7fffc;
+  --color-tarjeta-texto: #092015;
+}
+
+:root[data-palette="lavanda"] {
+  --color-lienzo-bg: #f7edfb;
+  --color-bloque-bg: #faf1fd;
+  --color-bloque-borde: #e4daf9;
+  --color-bloque-titulo: #392b4a;
+  --color-bloque-divisor: #e4daf9;
+  --color-icono-objetivos: #7b2cbf;
+  --color-icono-personal: #ff8600;
+  --color-icono-inspiracion: #0e9594;
+  --color-icono-archivo: #474973;
+  --color-tarjeta-bg: #f6e3ff;
+  --color-tarjeta-texto: #392b4a;
+}
+
+:root[data-palette="glaciar"] {
+  --color-lienzo-bg: #f6f7f9;
+  --color-bloque-bg: #fbfbfb;
+  --color-bloque-borde: #e3e3e3;
+  --color-bloque-titulo: #14213D;
+  --color-bloque-divisor: #3a3a4a;
+  --color-icono-objetivos: #00398e;
+  --color-icono-personal: #197278;
+  --color-icono-inspiracion: #4895ef;
+  --color-icono-archivo: #14213D;
+  --color-tarjeta-bg: #e9e8fa;
+  --color-tarjeta-texto: #14213D;
+}
+
+:root[data-palette="coral"] {
+  --color-lienzo-bg: #fef7ed;
+  --color-bloque-bg: #fef7ed;
+  --color-bloque-borde: #e3e3e3;
+  --color-bloque-titulo: #1f2937;
+  --color-bloque-divisor: #e3e3e3;
+  --color-icono-objetivos: #1f2937;
+  --color-icono-personal: #1f2937;
+  --color-icono-inspiracion: #1f2937;
+  --color-icono-archivo: #1f2937;
+  --color-tarjeta-bg: #faeddc;
+  --color-tarjeta-texto: #1f2937;
+}
+
+:root[data-palette="cosmos"] {
+  --color-lienzo-bg: #11151c;
+  --color-bloque-bg: #13232c;
+  --color-bloque-borde: #1a242a;
+  --color-bloque-titulo: #ffffff;
+  --color-bloque-divisor: #13232c;
+  --color-icono-objetivos: #ffffff;
+  --color-icono-personal: #ffffff;
+  --color-icono-inspiracion: #ffffff;
+  --color-icono-archivo: #ffffff;
+  --color-tarjeta-bg: #21373f;
+  --color-tarjeta-texto: #cbd5e1;
+}
+
+:root[data-palette="modoOscuro"] {
+  --color-lienzo-bg: #11151c;
+  --color-bloque-bg: #13232c;
+  --color-bloque-borde: #1a242a;
+  --color-bloque-titulo: #ffffff;
+  --color-bloque-divisor: #21373f;
+  --color-icono-objetivos: #ffffff;
+  --color-icono-personal: #ffffff;
+  --color-icono-inspiracion: #ffffff;
+  --color-icono-archivo: #ffffff;
+  --color-tarjeta-bg: #21373f;
+  --color-tarjeta-texto: #cbd5e1;
+}
+
+/* Patrón de puntitos del fondo del lienzo, solo para la paleta Lavanda */
+html[data-palette="lavanda"] foco-lienzo-canvas {
+  background-image:
+    radial-gradient(#ded0e6 1.7px, transparent 2px),
+    radial-gradient(#a69cac 0.2px, transparent 2px);
+  background-size: 36px 36px, 36px 36px;
+  background-position: 0 0, 18px 18px;
+}
+
+/*barra de productividad por paleta*/
+:root[data-palette="bosque"] {
+  --color-prod-bg: #f6f6f6;
+  --color-prod-icono: #092019;
+  --color-prod-toggle-bg: #eefdf5;
+  --color-pomodoro-bg: #eefdf5;
+  --color-pomodoro-titulo: #092015;
+  --color-timer-texto: #000303;
+  --color-btn-config: #092015;
+  --color-btn-iniciar: #108981;
+  --color-btn-reiniciar: #ffffff;
+}
+
+:root[data-palette="lavanda"] {
+  --color-prod-bg: #f8ecfe;
+  --color-prod-icono: #474973;
+  --color-prod-toggle-bg: #e4d0ed;
+  --color-pomodoro-bg: #f0d6fb;
+  --color-pomodoro-titulo: #392b4a;
+  --color-timer-texto: #392b4a;
+  --color-btn-config: #474973;
+  --color-btn-iniciar: #7b2cbf;
+  --color-btn-reiniciar: #ffffff;
+}
+
+:root[data-palette="glaciar"] {
+  --color-prod-bg: #f0f1f2;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #ffffff;
+  --color-pomodoro-bg: #ffffff;
+  --color-pomodoro-titulo: #14213D;
+  --color-timer-texto: #14213D;
+  --color-btn-config: #64748b;
+  --color-btn-iniciar: #00398e;
+  --color-btn-reiniciar: #ffffff;
+}
+
+:root[data-palette="coral"] {
+  --color-prod-bg: #fef7ed;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #faeddc;
+  --color-pomodoro-bg: #fce2c0;
+  --color-pomodoro-titulo: #1f2937;
+  --color-timer-texto: #1f2937;
+  --color-btn-config: #1f2937;
+  --color-btn-iniciar: #f87171;
+  --color-btn-reiniciar: #fef7ed;
+}
+
+:root[data-palette="cosmos"] {
+  --color-prod-bg: #13232c;
+  --color-prod-icono: #ffffff;
+  --color-prod-toggle-bg: #21373f;
+  --color-pomodoro-bg: #21373f;
+  --color-pomodoro-titulo: #ffffff;
+  --color-timer-texto: #ffffff;
+  --color-btn-config: #ffffff;
+  --color-btn-iniciar: #8f48c3;
+  --color-btn-reiniciar: #ffffff;
+}
+
+:root[data-palette="modoOscuro"] {
+  --color-prod-bg: #13232c;
+  --color-prod-icono: #ffffff;
+  --color-prod-toggle-bg: #f76345;
+  --color-pomodoro-bg: #21373f;
+  --color-pomodoro-titulo: #ffffff;
+  --color-timer-texto: #ffffff;
+  --color-btn-config: #ffffff;
+  --color-btn-iniciar: #f55536;
+  --color-btn-reiniciar: #ffffff;
+}
+
+:root[data-palette="bosque"] {
+  --color-prod-bg: #f6f6f6;
+  --color-prod-icono: #092019;
+  --color-prod-toggle-bg: #eefdf5;
+  --color-pomodoro-bg: #eefdf5;
+  --color-pomodoro-titulo: #092015;
+  --color-timer-texto: #000303;
+  --color-btn-config: #092015;
+  --color-btn-iniciar: #108981;
+  --color-btn-reiniciar: #ffffff;
+  --color-habitos-bg: #ffffff;
+  --color-calendario-bg: #ffffff;
+  --color-dia-sel-bg: #eecefc;
+  --color-dia-sel-texto: #090000;
+  --color-dia-texto: #092d25;
+  --color-tag-hoy: #819989;
+  --color-btn-agregar: #108981;
+  --color-habito-texto: #092d25;
+}
+
+:root[data-palette="lavanda"] {
+  --color-prod-bg: #f8ecfe;
+  --color-prod-icono: #474973;
+  --color-prod-toggle-bg: #e4d0ed;
+  --color-pomodoro-bg: #f0d6fb;
+  --color-pomodoro-titulo: #392b4a;
+  --color-timer-texto: #392b4a;
+  --color-btn-config: #474973;
+  --color-btn-iniciar: #7b2cbf;
+  --color-btn-reiniciar: #ffffff;
+  --color-habitos-bg: #f0d6fb;
+  --color-calendario-bg: #fdf5ff;
+  --color-dia-sel-bg: #7b2cbf;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #474973;
+  --color-tag-hoy: #a69cac;
+  --color-btn-agregar: #7b2cbf;
+  --color-habito-texto: #392b4a;
+}
+
+:root[data-palette="glaciar"] {
+  --color-prod-bg: #f0f1f2;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #ffffff;
+  --color-pomodoro-bg: #ffffff;
+  --color-pomodoro-titulo: #14213D;
+  --color-timer-texto: #14213D;
+  --color-btn-config: #64748b;
+  --color-btn-iniciar: #00398e;
+  --color-btn-reiniciar: #ffffff;
+  --color-habitos-bg: #ffffff;
+  --color-calendario-bg: #ffffff;
+  --color-dia-sel-bg: #00398e;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #14213D;
+  --color-tag-hoy: #52718f;
+  --color-btn-agregar: #004e97;
+  --color-habito-texto: #14213D;
+}
+
+:root[data-palette="coral"] {
+  --color-prod-bg: #fef7ed;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #faeddc;
+  --color-pomodoro-bg: #fce2c0;
+  --color-pomodoro-titulo: #1f2937;
+  --color-timer-texto: #1f2937;
+  --color-btn-config: #1f2937;
+  --color-btn-iniciar: #f87171;
+  --color-btn-reiniciar: #fef7ed;
+  --color-habitos-bg: #fef7ed;
+  --color-calendario-bg: #fef7ed;
+  --color-dia-sel-bg: #f87171;
+  --color-dia-sel-texto: #fffefe;
+  --color-dia-texto: #14213D;
+  --color-tag-hoy: #e3b19a;
+  --color-btn-agregar: #f87171;
+  --color-habito-texto: #14213D;
+}
+
+:root[data-palette="cosmos"] {
+  --color-prod-bg: #13232c;
+  --color-prod-icono: #ffffff;
+  --color-prod-toggle-bg: #21373f;
+  --color-pomodoro-bg: #21373f;
+  --color-pomodoro-titulo: #ffffff;
+  --color-timer-texto: #ffffff;
+  --color-btn-config: #ffffff;
+  --color-btn-iniciar: #8f48c3;
+  --color-btn-reiniciar: #ffffff;
+  --color-habitos-bg: #21373f;
+  --color-calendario-bg: #21373f;
+  --color-dia-sel-bg: #8f48c3;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #ffffff;
+  --color-tag-hoy: #52718f;
+  --color-btn-agregar: #8f48c3;
+  --color-habito-texto: #eeedef;
+}
+
+:root[data-palette="modoOscuro"] {
+  --color-prod-bg: #13232c;
+  --color-prod-icono: #ffffff;
+  --color-prod-toggle-bg: #f76345;
+  --color-pomodoro-bg: #21373f;
+  --color-pomodoro-titulo: #ffffff;
+  --color-timer-texto: #ffffff;
+  --color-btn-config: #e9e9e9;
+  --color-btn-iniciar: #f55536;
+  --color-btn-reiniciar: #ffffff;
+  --color-habitos-bg: #21373f;
+  --color-calendario-bg: #21373f;
+  --color-dia-sel-bg: #0d3f8b;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #ffffff;
+  --color-tag-hoy: #52718f;
+  --color-btn-agregar: #00398e;
+  --color-habito-texto: #ffffff;
+}

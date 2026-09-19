@@ -4,53 +4,53 @@
  * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
  */
 import Sortable from "sortablejs";
-import { obtenerPaletas, obtenerPaletaActual, guardarPaleta, aplicarPaletaEnModal } from "../managers/paletteManager.js";
+import { obtenerPaletas, obtenerPaletaActual, guardarPaleta, aplicarPaletaEnModal, escucharCambiosDePaleta } from "../managers/paletteManager.js";
 
 class FocoSidebarActions extends HTMLElement {
   connectedCallback() {
-    this.className = "w-20 h-full bg-foco-gray-sidebar flex flex-col items-center py-6 border-r border-slate-200 select-none";
+    this.className = "w-20 h-full bg-[--color-sidebar-bg,#F1F3F9] flex flex-col items-center py-6 border-r border-[--color-sidebar-borde,theme(colors.slate.200)] select-none";
     this.innerHTML = `
       <div class="flex flex-col items-center gap-5 w-full">
         
         <!-- Botón: Nota -->
         <div class="foco-crear-nota flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Nota">
-          <div class="w-12 h-12 rounded-2xl bg-foco-blue-accent text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#7C83DE] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           </div> 
-          <span class="text-[10px] font-semibold text-foco-blue-deep mt-1 group-hover:text-indigo-700 transition-colors">Nota</span>
+          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Nota</span>
         </div>
 
         <!-- Botón: Tarea -->
         <div class="foco-crear-tarea flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Tarea">
-          <div class="w-12 h-12 rounded-2xl bg-foco-blue-mid text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#5966B2] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Tarea (Checklist) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-icon lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <span class="text-[10px] font-semibold text-foco-blue-deep mt-1 group-hover:text-indigo-700 transition-colors">Tarea</span>
+          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Tarea</span>
         </div>
 
         <!-- Botón: Flecha (Conector Visual) -->
         <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para conectar ideas con una Flecha">
-          <div class="w-12 h-12 rounded-2xl bg-foco-orange-light text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#FDA35D] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Flecha (Derecha) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-right-icon lucide-move-right"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </div>
-          <span class="text-[10px] font-semibold text-foco-orange-accent mt-1 group-hover:text-orange-700 transition-colors">Flecha</span>
+          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-orange-700 transition-colors">Flecha</span>
         </div>
 
         <!-- Botón: Lista -->
         <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Lista">
-          <div class="w-12 h-12 rounded-2xl bg-foco-blue-light text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#C6C9F1] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Lista (Bullet Points) -->
              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
             </svg>
           </div>
-          <span class="text-[10px] font-semibold text-foco-blue-deep mt-1 group-hover:text-indigo-700 transition-colors">Lista</span>
+          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Lista</span>
         </div>
-
+        
       </div>
       <div class="mt-auto flex flex-col-reverse gap-3">
         <button type="button" data-action="settings" class="foco-sidebar-action" aria-label="Abrir ajustes" title="Ajustes">
@@ -87,7 +87,7 @@ class FocoSidebarActions extends HTMLElement {
     const contenido = settings ? `<p class="text-sm text-slate-500 mb-4">Elegí qué partes querés ver en tu espacio de trabajo.</p><div class="space-y-3">${bloques.map((id, i) => `<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>${nombres[i]}</span><input type="checkbox" data-block="${id}" ${estado[id] !== false ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label>`).join('')}<label class="flex items-center justify-between text-sm font-medium text-slate-700"><span>Sidebar de productividad</span><input type="checkbox" data-sidebar="productivity" ${localStorage.getItem('foco-productivity-sidebar') !== 'false' ? 'checked' : ''} class="h-4 w-4 rounded border-slate-300 text-indigo-600"></label></div><div class="mt-5 pt-4 border-t border-slate-100"><p class="text-sm text-slate-500 mb-3">Elegí una paleta de colores para el tablero.</p><div class="grid grid-cols-4 gap-3">${paletas.map((p) => `<button type="button" data-palette="${p.id}" class="h-24 flex flex-col items-center justify-center rounded-xl border-2 ${paletaActual === p.id ? p.borde : 'border-slate-200'} p-2 text-center"><div class="w-6 h-6 rounded-full mb-1" style="background: linear-gradient(90deg, ${p.colorA} 50%, ${p.colorB} 50%);"></div><span class="text-xs font-medium text-slate-700 leading-tight">${p.nombre}</span></button>`).join('')}</div></div>` : `<div class="space-y-4 text-sm text-slate-600"><p><strong class="text-slate-800">1. Creá:</strong> arrastrá Nota, Tarea o Lista desde esta barra.</p><p><strong class="text-slate-800">2. Organizá:</strong> mové tus tarjetas entre los bloques.</p><p><strong class="text-slate-800">3. Personalizá:</strong> ocultá bloques o la sidebar derecha desde Ajustes.</p></div>`;
     const modal = document.createElement('div');
     modal.className = 'foco-modal fixed inset-0 z-50 flex items-center justify-center p-4';
-    modal.innerHTML = `<div class="absolute inset-0 bg-slate-900/30" data-close></div><section role="dialog" aria-modal="true" class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-center justify-between mb-5"><h2 class="text-lg font-bold text-foco-blue-deep">${settings ? 'Ajustes del tablero' : 'Cómo usar F.O.C.O.'}</h2><button data-close class="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Cerrar">&times;</button></div>${contenido}<div class="mt-6 flex justify-end"><button data-close class="rounded-lg bg-foco-blue-deep px-4 py-2 text-sm font-semibold text-white">Listo</button></div></section>`;
+    modal.innerHTML = `<div class="absolute inset-0 bg-slate-900/30" data-close></div><section role="dialog" aria-modal="true" class="relative w-full max-w-md rounded-2xl bg-[--color-bloque-bg,white] p-6 shadow-2xl"><div class="flex items-center justify-between mb-5"><h2 class="text-lg font-bold text-[--color-pomodoro-titulo,#22298A]">${settings ? 'Ajustes del tablero' : 'Cómo usar F.O.C.O.'}</h2><button data-close class="text-2xl leading-none text-[--color-pomodoro-titulo,theme(colors.slate.400)] hover:text-slate-700" aria-label="Cerrar">&times;</button></div><div class="[&_*]:!text-[--color-pomodoro-titulo,theme(colors.slate.500)]">${contenido}</div><div class="mt-6 flex justify-end"><button data-close class="rounded-lg bg-[--color-btn-iniciar,#22298A] px-4 py-2 text-sm font-semibold text-white">Listo</button></div></section>`;
     modal.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => modal.remove()));
     modal.querySelectorAll('[data-block]').forEach((input) => input.addEventListener('change', (event) => {
       const next = JSON.parse(localStorage.getItem('foco-board-visibility') || '{}');
@@ -108,7 +108,6 @@ class FocoSidebarActions extends HTMLElement {
         btn.classList.add(p.id === selectedPalette ? p.borde : 'border-slate-200');
       });
     }));
-    aplicarPaletaEnModal(modal);
     document.body.appendChild(modal);
   }
 

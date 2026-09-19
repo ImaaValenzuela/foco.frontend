@@ -435,7 +435,9 @@ export function guardarPaleta(nombrePaleta) {
 }
 
 export function escucharCambiosDePaleta(callback) {
-  window.addEventListener(EVENTO_CAMBIO, (evento) => callback(evento.detail));
+  const manejador = (evento) => callback(evento.detail);
+  window.addEventListener(EVENTO_CAMBIO, manejador);
+  return () => window.removeEventListener(EVENTO_CAMBIO, manejador);
 }
 
 // Resetea la paleta en los 4 grandes bloques de la interfaz.
@@ -450,88 +452,13 @@ export function aplicarPaleta(nombrePaleta) {
   aplicarEnProductividad(paleta);
 }
 
-export function aplicarPaletaEnModal(modalElement) {
-  const nombrePaleta = obtenerPaletaActual();
-  if (nombrePaleta === 'preestablecida') return;
+// Los modales de Ajustes/Ayuda ya se pintan solos vía CSS variables + data-palette.
+// Esta función queda vacía por compatibilidad, por si algo más la sigue importando.
+export function aplicarPaletaEnModal(modalElement) {}
 
-  const paleta = PALETAS[nombrePaleta];
-  if (!paleta) return;
-
-  const caja = modalElement.querySelector('section');
-  const titulo = modalElement.querySelector('h2');
-  const botonCerrarX = modalElement.querySelector('[data-close].text-2xl');
-  const botonListo = modalElement.querySelector('.mt-6 button');
-
-  const colorTextoModal = paleta.pomodoroTituloTexto || paleta.bloqueTitulo || '#ffffff';
-
-  if (caja) caja.style.setProperty('background-color', paleta.bloqueFondo || paleta.productividadFondo || '#ffffff', 'important');
-  if (titulo) titulo.style.setProperty('color', paleta.headerTitulo || paleta.bloqueTitulo || '', 'important');
-  if (botonCerrarX) botonCerrarX.style.setProperty('color', colorTextoModal, 'important');
-
-  if (caja) {
-    caja.querySelectorAll('p, label, strong, span').forEach((elemento) => {
-      elemento.style.setProperty('color', colorTextoModal, 'important');
-    });
-  }
-
-  if (botonListo) {
-    botonListo.style.setProperty('background-color', paleta.botonIniciarPomodoro || paleta.colorA || '', 'important');
-    botonListo.style.setProperty('color', '#FFFFFF', 'important');
-  }
-}
-
-// 0. Barra Superior (Header)
+// 0. Barra Superior (Header) — migrado a CSS variables + Tailwind
 function aplicarEnHeader(paleta) {
-  const headerComponent = document.querySelector('foco-header');
-  if (!headerComponent) return;
-
-  const fondo = paleta ? paleta.headerFondo : '';
-  headerComponent.style.backgroundColor = fondo;
-  headerComponent.style.borderBottomColor = paleta ? (paleta.lineaHeader || '') : '';
-  headerComponent.style.borderBottomWidth = paleta ? '1px' : '';
-  headerComponent.style.borderBottomStyle = paleta ? 'solid' : '';
-
-  const headerInner = headerComponent.querySelector('header');
-  if (headerInner) {
-    headerInner.style.backgroundColor = fondo;
-    headerInner.style.borderBottomColor = paleta ? (paleta.lineaHeader || 'transparent') : '';
-    headerInner.style.borderBottomWidth = paleta ? '1px' : '';
-    headerInner.style.borderBottomStyle = paleta ? 'solid' : '';
-  }
-
-  // Circulo del logo de FOCO
-  const circuloLogo = headerComponent.querySelector('.rounded-full');
-  if (circuloLogo) {
-    circuloLogo.style.setProperty('background-color', paleta ? (paleta.headerLogoFondo || '') : '', 'important');
-  }
-
-  // Letras FOCO
-  const h1 = headerComponent.querySelector('h1');
-  if (h1) {
-    h1.style.setProperty('color', paleta ? paleta.headerTitulo : '', 'important');
-    const subtitulo = h1.querySelector('span');
-    if (subtitulo) {
-      subtitulo.style.setProperty('color', paleta ? paleta.headerSubtitulo : '', 'important');
-    }
-  }
-
-  // Usuario
-  const nombreUsuario = headerComponent.querySelector('[data-auth-name]');
-  if (nombreUsuario) {
-    nombreUsuario.style.setProperty('color', paleta ? paleta.headerUsuario : '', 'important');
-  }
-
-  // Botón "Cerrar sesión" (Fondo, Texto y Borde)
-  const botonSesion = headerComponent.querySelector('[data-google-action]');
-  if (botonSesion) {
-    const colorTexto = paleta ? (paleta.headerBotonCerrar || '') : '';
-    const colorFondo = paleta ? (paleta.headerBotonCerrarFondo || '') : '';
-    const colorBorde = paleta ? (paleta.headerBotonCerrarBorde || colorTexto || '') : '';
-
-    botonSesion.style.setProperty('color', colorTexto, 'important');
-    botonSesion.style.setProperty('background-color', colorFondo, 'important');
-    botonSesion.style.setProperty('border-color', colorBorde, 'important');
-  }
+  document.documentElement.setAttribute('data-palette', paleta ? paleta.id : 'preestablecida');
 }
 
 // 1. Barra Lateral Izquierda
@@ -571,278 +498,14 @@ function aplicarEnSidebarIzquierda(paleta) {
   });
 }
 
-// 2. Lienzo Central (Fondos, Patrones e Íconos Individuales)
+// 2. Lienzo Central — migrado a CSS variables + Tailwind
 function aplicarEnLienzo(paleta) {
-  const lienzo = document.querySelector('foco-lienzo-canvas');
-  if (lienzo) {
-    lienzo.style.backgroundColor = paleta ? (paleta.lienzoFondo || '') : '';
-
-    if (paleta && paleta.lienzoPatron) {
-      lienzo.style.backgroundImage = paleta.lienzoPatron;
-      lienzo.style.backgroundSize = paleta.lienzoPatronSize || 'auto';
-      lienzo.style.backgroundPosition = paleta.lienzoPatronPosition || '0 0';
-    } else {
-      lienzo.style.backgroundImage = '';
-      lienzo.style.backgroundSize = '';
-      lienzo.style.backgroundPosition = '';
-    }
-  }
-
-  const coloresIconos = {
-    'bloque-objetivos-activos': paleta?.iconoObjetivosColor || paleta?.bloqueIconoColor || paleta?.bloqueTitulo || '',
-    'bloque-personal': paleta?.iconoPersonalColor || paleta?.bloqueIconoColor || paleta?.bloqueTitulo || '',
-    'bloque-inspiracion': paleta?.iconoInspiracionColor || paleta?.bloqueIconoColor || paleta?.bloqueTitulo || '',
-    'bloque-archivo-vida': paleta?.iconoArchivoColor || paleta?.bloqueIconoColor || paleta?.bloqueTitulo || ''
-  };
-
-  document.querySelectorAll('foco-lienzo-canvas section').forEach((seccion) => {
-    const titulo = seccion.querySelector('h2');
-    const icono = seccion.querySelector('svg');
-    const tarjetas = seccion.querySelectorAll('.foco-tarjeta');
-
-    seccion.style.backgroundColor = paleta ? paleta.bloqueFondo : '';
-    seccion.style.borderColor = paleta ? paleta.bloqueBorde : '';
-
-    const divisorTitulo = seccion.querySelector('.border-b.border-slate-100');
-    if (divisorTitulo) {
-      divisorTitulo.style.setProperty('border-color', paleta ? (paleta.lineaDivisoria || '') : '', 'important');
-    }
-
-    const dropZone = seccion.querySelector('.foco-drop-zone');
-    const idBloque = dropZone ? dropZone.id : '';
-
-    if (titulo) {
-      titulo.style.setProperty('color', paleta ? paleta.bloqueTitulo : '', 'important');
-    }
-    if (icono) {
-      const colorIcono = coloresIconos[idBloque] || (paleta ? paleta.bloqueTitulo : '');
-      icono.style.setProperty('stroke', colorIcono, 'important');
-      icono.style.setProperty('color', colorIcono, 'important');
-    }
-
-    tarjetas.forEach((tarjeta) => {
-      tarjeta.style.setProperty('background-color', paleta ? paleta.tarjetaFondo : '', 'important');
-      tarjeta.querySelectorAll('input, textarea, span, p, div').forEach((elemento) => {
-        elemento.style.setProperty('color', paleta ? (paleta.tarjetaTexto || paleta.bloqueTitulo || '') : '', 'important');
-      });
-    });
-  });
+  // El atributo data-palette ya lo setea aplicarEnHeader() sobre <html>,
+  // así que acá no hace falta hacer nada más: el CSS se encarga solo.
 }
 
-// 3. Barra Lateral Derecha (Productividad y Modal de Configuración del Pomodoro)
+// 3. Barra Lateral Derecha (Productividad) — migrado a CSS variables + Tailwind
 function aplicarEnProductividad(paleta) {
-  const sidebarDerecha = document.querySelector('foco-productivity-sidebar');
-  if (!sidebarDerecha) return;
-
-  sidebarDerecha.style.backgroundColor = paleta ? (paleta.productividadFondo || '#FFFFFF') : '';
-  sidebarDerecha.style.borderLeftColor = paleta ? (paleta.lineaSidebarDerecha || '') : '';
-  sidebarDerecha.style.borderLeftWidth = paleta ? '1px' : '';
-  sidebarDerecha.style.borderLeftStyle = paleta ? 'solid' : '';
-
-  const headerSidebar = sidebarDerecha.querySelector('.h-14');
-  if (headerSidebar) {
-    headerSidebar.style.backgroundColor = paleta ? (paleta.productividadFondo || '#FFFFFF') : '';
-    headerSidebar.style.setProperty('border-color', paleta ? (paleta.lineaDivisoria || 'transparent') : '', 'important');
-  }
-
-  // Botón de abrir/cerrar (#toggle-sidebar)
-  const btnToggle = sidebarDerecha.querySelector('#toggle-sidebar');
-  if (btnToggle) {
-    btnToggle.style.setProperty('background-color', paleta ? (paleta.botonToggleProdFondo || '') : '', 'important');
-    btnToggle.style.setProperty('color', paleta ? paleta.iconosProdBarra : '', 'important');
-    const svgToggle = btnToggle.querySelector('svg');
-    if (svgToggle) {
-      svgToggle.style.setProperty('stroke', paleta ? paleta.iconosProdBarra : '', 'important');
-    }
-  }
-
-  // Íconos barra cerrada (Pomodoro/Hábitos colapsados)
-  sidebarDerecha.querySelectorAll('#quick-pomodoro, #quick-habits').forEach((item) => {
-    const color = paleta ? paleta.iconosProdBarra : '';
-    item.style.color = color;
-    const svg = item.querySelector('svg');
-    if (svg) svg.style.stroke = color;
-    const txt = item.querySelector('span');
-    if (txt) txt.style.color = color;
-  });
-
-  // Fondos tarjetas Pomodoro y Hábitos
-  const tarjetaPomodoro = sidebarDerecha.querySelector('#pomodoro-container');
-  if (tarjetaPomodoro) {
-    tarjetaPomodoro.style.setProperty('background-color', paleta ? (paleta.pomodoroFondoBloque || '') : '', 'important');
-    tarjetaPomodoro.style.borderColor = paleta ? (paleta.bloqueBorde || '') : '';
-  }
-
-  const tarjetas = sidebarDerecha.querySelectorAll('.flex-1 > div');
-  tarjetas.forEach((caja) => {
-    if (caja.id !== 'pomodoro-container') {
-      caja.style.setProperty('background-color', paleta ? (paleta.habitosFondoBloque || '') : '', 'important');
-      caja.style.borderColor = paleta ? (paleta.bloqueBorde || '') : '';
-    }
-  });
-
-  // Título Pomodoro
-  const headerPomodoro = sidebarDerecha.querySelector('#pomodoro-header');
-  if (headerPomodoro) {
-    headerPomodoro.style.setProperty('border-color', paleta ? (paleta.lineaDivisoria || '') : '', 'important');
-
-    headerPomodoro.querySelectorAll('span, h1, h2, h3, h4, p').forEach((el) => {
-      if (!el.closest('#open-config') && !el.closest('#expand-pomodoro')) {
-        el.style.setProperty('color', paleta ? paleta.pomodoroTituloTexto : '', 'important');
-      }
-    });
-    headerPomodoro.querySelectorAll('svg').forEach((svg) => {
-      if (!svg.closest('#open-config') && !svg.closest('#expand-pomodoro')) {
-        svg.style.setProperty('stroke', paleta ? paleta.pomodoroTituloTexto : '', 'important');
-      }
-    });
-  }
-
-  const divisorHabitos = sidebarDerecha.querySelector('.border-b.border-slate-100:not(#pomodoro-header)');
-  if (divisorHabitos) {
-    divisorHabitos.style.setProperty('border-color', paleta ? (paleta.lineaDivisoria || '') : '', 'important');
-  }
-
-  // Botones Configurar y Expandir
-  const btnConfig = sidebarDerecha.querySelector('#open-config');
-  if (btnConfig) {
-    btnConfig.style.setProperty('color', paleta ? paleta.botonesConfigProd : '', 'important');
-  }
-  const btnExpand = sidebarDerecha.querySelector('#expand-pomodoro');
-  if (btnExpand) {
-    btnExpand.style.setProperty('color', paleta ? paleta.botonesConfigProd : '', 'important');
-    btnExpand.querySelectorAll('svg').forEach((svg) => {
-      svg.style.setProperty('stroke', paleta ? paleta.botonesConfigProd : '', 'important');
-    });
-  }
-
-  // Título "Hábitos diarios" (se busca por texto, no por id, ya que el elemento no tiene uno propio)
-  sidebarDerecha.querySelectorAll('span, h1, h2, h3, h4, p, div').forEach((el) => {
-    const textoLimpio = el.textContent
-      ? el.textContent.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
-      : '';
-
-    if (textoLimpio === 'HABITOS DIARIOS' && el.children.length === 0) {
-      el.style.setProperty('color', paleta ? paleta.habitosTituloTexto : '', 'important');
-      const headerFila = el.closest('div');
-      const iconoCalendario = headerFila?.querySelector('svg');
-      if (iconoCalendario && !iconoCalendario.closest('button')) {
-        iconoCalendario.style.setProperty('stroke', paleta ? paleta.habitosTituloTexto : '', 'important');
-      }
-    }
-  });
-
-  // Nombres de cada hábito individual (se crean dinámicamente al agregar un hábito nuevo)
-  sidebarDerecha.querySelectorAll('.habit-row span').forEach((span) => {
-    span.style.setProperty('color', paleta ? (paleta.habitosTituloTexto || '') : '', 'important');
-  });
-
-  // Reloj y temporizador
-  const displayReloj = sidebarDerecha.querySelector('#pomodoro-display');
-  if (displayReloj) displayReloj.style.setProperty('color', paleta ? paleta.timerTexto : '', 'important');
-  const statusReloj = sidebarDerecha.querySelector('#pomodoro-status');
-  if (statusReloj) statusReloj.style.setProperty('color', paleta ? paleta.timerTexto : '', 'important');
-  const cycleReloj = sidebarDerecha.querySelector('#pomodoro-cycle');
-  if (cycleReloj) cycleReloj.style.setProperty('color', paleta ? paleta.timerTexto : '', 'important');
-
-  // Calendario semanal
-  const primerBotonDia = sidebarDerecha.querySelector('.day-selector-btn');
-  const contenedorCalendario = primerBotonDia?.parentElement;
-  if (contenedorCalendario) {
-    contenedorCalendario.style.setProperty('background-color', paleta ? (paleta.calendarioFondo || '') : '', 'important');
-  }
-
-  sidebarDerecha.querySelectorAll('.day-selector-btn').forEach((btn) => {
-    const esSeleccionado = btn.classList.contains('bg-foco-orange-accent') ||
-                           btn.classList.contains('font-bold');
-
-    if (!esSeleccionado) {
-      const colorTexto = paleta ? (paleta.calendarioTextoDias || '') : '';
-      btn.querySelectorAll('span').forEach((span) => {
-        span.style.setProperty('color', colorTexto, 'important');
-      });
-    }
-  });
-
-  const diaSeleccionado = sidebarDerecha.querySelector('.day-selector-btn.bg-foco-orange-accent, .day-selector-btn[class*="orange"]');
-  if (diaSeleccionado) {
-    const fondoDia = paleta ? (paleta.diaSeleccionadoFondo || '') : '';
-    const textoDia = paleta ? (paleta.diaSeleccionadoTexto || '#FFFFFF') : '';
-    diaSeleccionado.style.setProperty('background-color', fondoDia, 'important');
-    diaSeleccionado.querySelectorAll('span').forEach((span) => {
-      span.style.setProperty('color', textoDia, 'important');
-    });
-  }
-
-  // Botón Iniciar Pomodoro
-  const botonIniciar = sidebarDerecha.querySelector('#start-pomodoro');
-  if (botonIniciar) {
-    const colorIniciar = paleta ? (paleta.botonIniciarPomodoro || '') : '';
-    botonIniciar.style.setProperty('background-color', colorIniciar, 'important');
-    botonIniciar.style.color = paleta ? '#FFFFFF' : '';
-  }
-
-  // Botón Reiniciar Pomodoro
-  const botonReiniciar = sidebarDerecha.querySelector('#reset-pomodoro');
-  if (botonReiniciar && paleta && paleta.botonReiniciarPomodoro) {
-    botonReiniciar.style.backgroundColor = paleta.botonReiniciarPomodoro;
-  }
-
-  // Botón "+" para añadir hábito
-  const botonAgregarHabito = sidebarDerecha.querySelector('#add-habit-btn');
-  if (botonAgregarHabito) {
-    const colorAgregar = paleta ? (paleta.botonAgregarHabito || '') : '';
-    botonAgregarHabito.style.setProperty('background-color', colorAgregar, 'important');
-    botonAgregarHabito.style.color = paleta ? '#FFFFFF' : '';
-  }
-
-  // Tag "Hoy"
-  sidebarDerecha.querySelectorAll('span').forEach((span) => {
-    if (span.textContent.trim() === 'Hoy' && !span.closest('.day-selector-btn')) {
-      const colorTag = paleta ? (paleta.tagHoyHabitos || '') : '';
-      span.style.setProperty('background-color', colorTag, 'important');
-      span.style.color = paleta ? '#FFFFFF' : '';
-      span.style.borderColor = colorTag;
-    }
-  });
-
-  const modalConfig = sidebarDerecha.querySelector('#config-overlay') || document.querySelector('#config-overlay');
-  if (modalConfig) {
-    const cajaModal = modalConfig.querySelector('.bg-white, [class*="rounded-2xl"]');
-    if (cajaModal) {
-      cajaModal.style.setProperty('background-color', paleta ? (paleta.pomodoroFondoBloque || '#ffffff') : '', 'important');
-    }
-
-    const colorTextoModal = paleta ? (paleta.pomodoroTituloTexto || paleta.bloqueTitulo || '') : '';
-
-    const tituloModal = modalConfig.querySelector('h3');
-    if (tituloModal) tituloModal.style.setProperty('color', colorTextoModal, 'important');
-
-    const btnCerrarModal = modalConfig.querySelector('#close-config');
-    if (btnCerrarModal) btnCerrarModal.style.setProperty('color', colorTextoModal, 'important');
-
-    modalConfig.querySelectorAll('label').forEach((etiqueta) => {
-      etiqueta.style.setProperty('color', colorTextoModal, 'important');
-    });
-
-    modalConfig.querySelectorAll('input').forEach((input) => {
-      input.style.setProperty('color', paleta ? '#000000' : '', 'important');
-      input.style.setProperty('background-color', paleta ? '#ffffff' : '', 'important');
-    });
-
-    const btnCancelarModal = modalConfig.querySelector('#cancel-config');
-    if (btnCancelarModal) btnCancelarModal.style.setProperty('color', colorTextoModal, 'important');
-
-    const btnGuardarConfig = modalConfig.querySelector('#save-config');
-    if (btnGuardarConfig) {
-      let colorGuardar = '';
-      if (paleta && paleta.id === 'lavanda') {
-        colorGuardar = paleta.headerBotonCerrarFondo || paleta.colorB || '';
-      } else {
-        colorGuardar = paleta ? (paleta.botonIniciarPomodoro || paleta.colorB || '') : '';
-      }
-      btnGuardarConfig.style.setProperty('background-color', colorGuardar, 'important');
-      btnGuardarConfig.style.color = paleta ? '#FFFFFF' : '';
-    }
-  }
+  // El atributo data-palette ya lo setea aplicarEnHeader() sobre <html>,
+  // así que acá no hace falta hacer nada más: el CSS se encarga solo.
 }
