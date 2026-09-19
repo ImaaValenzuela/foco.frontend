@@ -5,6 +5,7 @@ import { blockRegistry } from "../strategies/blockRegistry.js";
 import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
 import { localStore } from "../services/storage.service.js";
 import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from "../managers/paletteManager.js";
+import "./ui/audioRecorder.js";
 
 const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
@@ -71,6 +72,12 @@ class FocoLienzoCanvas extends HTMLElement {
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
 
     escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
+    // Escuchamos el evento de éxito del micrófono para recargar los bloques
+    window.addEventListener("foco:refresh-canvas", () => this.cargarBlocks());
+
+    // Inyectamos el botón de micrófono en el Canvas
+    const audioComponent = document.createElement('foco-audio-recorder');
+    this.appendChild(audioComponent);
 
     supabase?.auth.onAuthStateChange((_event, session) => {
       if (session) this.migrarBlocksLocales(session);
