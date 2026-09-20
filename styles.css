@@ -78,19 +78,23 @@ body {
   transform: scale(0.99);
   box-shadow: 0 3px 8px -7px rgba(34, 41, 138, 0.8);
 }
+
+/* Íconos de Ajustes y Ayuda, abajo de la sidebar izquierda.
+   Toman el mismo color que los 4 botones de arriba (--color-sidebar-boton). */
 .foco-sidebar-action {
   width: 3rem;
   height: 3rem;
   display: grid;
   place-items: center;
   border-radius: 0.75rem;
-  color: #22298a;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  color: var(--color-sidebar-texto, #22298a);
+  transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 .foco-sidebar-action:hover {
-  background: var(--foco-sidebar-hover-bg, #e2e5f5);
+  background: var(--color-sidebar-hover, #e3f6ff);
   transform: translateY(-1px);
 }
+
 .foco-modal { backdrop-filter: blur(2px); }
 
 /* Efecto active (clic/presionado) */
@@ -115,12 +119,11 @@ body {
 
 /* =========================================================================
    PALETAS DE COLORES DEL TABLERO
-   Cada paleta define variables CSS que los componentes consumen mediante
-   clases de Tailwind de "valor arbitrario" (ej: bg-[--color-header-bg]).
-   El cambio de paleta se activa poniendo data-palette="..." en <html>.
    ========================================================================= */
-/*header*/
+
+/* ---------- BOSQUE ---------- */
 :root[data-palette="bosque"] {
+  /* Header */
   --color-header-bg: #FFFFFF;
   --color-header-logo-bg: #dff8ea;
   --color-header-titulo: #001207;
@@ -130,113 +133,15 @@ body {
   --color-header-cerrar-bg: #eacbf9;
   --color-header-cerrar-borde: #eacbf9;
   --color-header-borde: #FFFFFF;
-}
 
-:root[data-palette="lavanda"] {
-  --color-header-bg: #f8ecfe;
-  --color-header-logo-bg: #e1d7e6;
-  --color-header-titulo: #392b4a;
-  --color-header-subtitulo: #7c7689;
-  --color-header-usuario: #474973;
-  --color-header-cerrar-texto: #ffffff;
-  --color-header-cerrar-bg: #7b2cbf;
-  --color-header-cerrar-borde: #7b2cbf;
-  --color-header-borde: #f8ecfe;
-}
-
-:root[data-palette="glaciar"] {
-  --color-header-bg: #fcfdff;
-  --color-header-logo-bg: #e9e8fa;
-  --color-header-titulo: #14213D;
-  --color-header-subtitulo: #597a81;
-  --color-header-usuario: #14213D;
-  --color-header-cerrar-texto: #ffffff;
-  --color-header-cerrar-bg: #00398e;
-  --color-header-cerrar-borde: #00398e;
-  --color-header-borde: #3a3a4a;
-}
-
-:root[data-palette="coral"] {
-  --color-header-bg: #fef7ed;
-  --color-header-logo-bg: #fff4e6;
-  --color-header-titulo: #1f2937;
-  --color-header-subtitulo: #6b7280;
-  --color-header-usuario: #1f2937;
-  --color-header-cerrar-texto: #6b7280;
-  --color-header-cerrar-bg: #fef7ed;
-  --color-header-cerrar-borde: #bea59a;
-  --color-header-borde: #fef7ed;
-}
-
-:root[data-palette="cosmos"] {
-  --color-header-bg: #13232c;
-  --color-header-logo-bg: #1e2e37;
-  --color-header-titulo: #f9f9f9;
-  --color-header-subtitulo: #728f95;
-  --color-header-usuario: #fdfdfd;
-  --color-header-cerrar-texto: #ffffff;
-  --color-header-cerrar-bg: #21373f;
-  --color-header-cerrar-borde: #21373f;
-  --color-header-borde: #1e2e37;
-}
-
-:root[data-palette="modoOscuro"] {
-  --color-header-bg: #13232c;
-  --color-header-logo-bg: #1e2e37;
-  --color-header-titulo: #f9f9f9;
-  --color-header-subtitulo: #728f95;
-  --color-header-usuario: #fdfdfd;
-  --color-header-cerrar-texto: #ffffff;
-  --color-header-cerrar-bg: #21373f;
-  --color-header-cerrar-borde: #21373f;
-  --color-header-borde: #21373f;
-}
-
-/*sidebar*/
-:root[data-palette="bosque"] {
+  /* Sidebar izquierda */
   --color-sidebar-bg: #eefdf5;
   --color-sidebar-borde: #eefdf5;
   --color-sidebar-texto: #092015;
   --color-sidebar-boton: #108981;
-}
+  --color-sidebar-hover: #c0f0d6;
 
-:root[data-palette="lavanda"] {
-  --color-sidebar-bg: #474973;
-  --color-sidebar-borde: #474973;
-  --color-sidebar-texto: #ffffff;
-  --color-sidebar-boton: #a69cac;
-}
-
-:root[data-palette="glaciar"] {
-  --color-sidebar-bg: #14213D;
-  --color-sidebar-borde: #14213D;
-  --color-sidebar-texto: #ffffff;
-  --color-sidebar-boton: #b9d6f2;
-}
-
-:root[data-palette="coral"] {
-  --color-sidebar-bg: #fce2c0;
-  --color-sidebar-borde: #fce2c0;
-  --color-sidebar-texto: #1f2937;
-  --color-sidebar-boton: #f87171;
-}
-
-:root[data-palette="cosmos"] {
-  --color-sidebar-bg: #13232c;
-  --color-sidebar-borde: #13232c;
-  --color-sidebar-texto: #ffffff;
-  --color-sidebar-boton: #8f48c3;
-}
-
-:root[data-palette="modoOscuro"] {
-  --color-sidebar-bg: #13232c;
-  --color-sidebar-borde: #13232c;
-  --color-sidebar-texto: #ffffff;
-  --color-sidebar-boton: #00398e;
-}
-
-/*bloques*/
-:root[data-palette="bosque"] {
+  /* Lienzo central (4 bloques) */
   --color-lienzo-bg: #f6f6f6;
   --color-bloque-bg: #ffffff;
   --color-bloque-borde: #e7e9e9;
@@ -248,9 +153,50 @@ body {
   --color-icono-archivo: #204a2e;
   --color-tarjeta-bg: #f7fffc;
   --color-tarjeta-texto: #092015;
+
+  /* Barra de Productividad: Pomodoro */
+  --color-prod-bg: #f6f6f6;
+  --color-prod-icono: #092019;
+  --color-prod-toggle-bg: #eefdf5;
+  --color-pomodoro-bg: #eefdf5;
+  --color-pomodoro-titulo: #092015;
+  --color-timer-texto: #000303;
+  --color-btn-config: #092015;
+  --color-btn-iniciar: #108981;
+  --color-btn-reiniciar: #ffffff;
+
+  /* Barra de Productividad: Hábitos */
+  --color-habitos-bg: #ffffff;
+  --color-calendario-bg: #ffffff;
+  --color-dia-sel-bg: #eecefc;
+  --color-dia-sel-texto: #090000;
+  --color-dia-texto: #092d25;
+  --color-tag-hoy: #819989;
+  --color-btn-agregar: #108981;
+  --color-habito-texto: #092d25;
 }
 
+/* ---------- LAVANDA ---------- */
 :root[data-palette="lavanda"] {
+  /* Header */
+  --color-header-bg: #f8ecfe;
+  --color-header-logo-bg: #e1d7e6;
+  --color-header-titulo: #392b4a;
+  --color-header-subtitulo: #7c7689;
+  --color-header-usuario: #474973;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #7b2cbf;
+  --color-header-cerrar-borde: #7b2cbf;
+  --color-header-borde: #f8ecfe;
+
+  /* Sidebar izquierda */
+  --color-sidebar-bg: #474973;
+  --color-sidebar-borde: #474973;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #a69cac;
+  --color-sidebar-hover: #5a5c7b;
+
+  /* Lienzo central (4 bloques) */
   --color-lienzo-bg: #f7edfb;
   --color-bloque-bg: #faf1fd;
   --color-bloque-borde: #e4daf9;
@@ -262,23 +208,105 @@ body {
   --color-icono-archivo: #474973;
   --color-tarjeta-bg: #f6e3ff;
   --color-tarjeta-texto: #392b4a;
+
+  /* Barra de Productividad: Pomodoro */
+  --color-prod-bg: #f8ecfe;
+  --color-prod-icono: #474973;
+  --color-prod-toggle-bg: #e4d0ed;
+  --color-pomodoro-bg: #f0d6fb;
+  --color-pomodoro-titulo: #392b4a;
+  --color-timer-texto: #392b4a;
+  --color-btn-config: #474973;
+  --color-btn-iniciar: #7b2cbf;
+  --color-btn-reiniciar: #ffffff;
+
+  /* Barra de Productividad: Hábitos */
+  --color-habitos-bg: #f0d6fb;
+  --color-calendario-bg: #fdf5ff;
+  --color-dia-sel-bg: #7b2cbf;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #474973;
+  --color-tag-hoy: #a69cac;
+  --color-btn-agregar: #7b2cbf;
+  --color-habito-texto: #392b4a;
 }
 
+/* ---------- GLACIAR ---------- */
 :root[data-palette="glaciar"] {
+  /* Header */
+  --color-header-bg: #fcfdff;
+  --color-header-logo-bg: #e9e8fa;
+  --color-header-titulo: #14213D;
+  --color-header-subtitulo: #597a81;
+  --color-header-usuario: #14213D;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #00398e;
+  --color-header-cerrar-borde: #00398e;
+  --color-header-borde: #ffffff;
+
+  /* Sidebar izquierda */
+  --color-sidebar-bg: #14213D;
+  --color-sidebar-borde: #14213D;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #b9d6f2;
+  --color-sidebar-hover: #263045;
+
+  /* Lienzo central (4 bloques) */
   --color-lienzo-bg: #f6f7f9;
   --color-bloque-bg: #fbfbfb;
   --color-bloque-borde: #e3e3e3;
   --color-bloque-titulo: #14213D;
-  --color-bloque-divisor: #3a3a4a;
+  --color-bloque-divisor: #d2d2d3;
   --color-icono-objetivos: #00398e;
   --color-icono-personal: #197278;
   --color-icono-inspiracion: #4895ef;
   --color-icono-archivo: #14213D;
   --color-tarjeta-bg: #e9e8fa;
   --color-tarjeta-texto: #14213D;
+
+  /* Barra de Productividad: Pomodoro */
+  --color-prod-bg: #f0f1f2;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #ffffff;
+  --color-pomodoro-bg: #ffffff;
+  --color-pomodoro-titulo: #14213D;
+  --color-timer-texto: #14213D;
+  --color-btn-config: #64748b;
+  --color-btn-iniciar: #00398e;
+  --color-btn-reiniciar: #ffffff;
+
+  /* Barra de Productividad: Hábitos */
+  --color-habitos-bg: #ffffff;
+  --color-calendario-bg: #ffffff;
+  --color-dia-sel-bg: #00398e;
+  --color-dia-sel-texto: #ffffff;
+  --color-dia-texto: #14213D;
+  --color-tag-hoy: #52718f;
+  --color-btn-agregar: #004e97;
+  --color-habito-texto: #14213D;
 }
 
+/* ---------- CORAL ---------- */
 :root[data-palette="coral"] {
+  /* Header */
+  --color-header-bg: #fef7ed;
+  --color-header-logo-bg: #fff4e6;
+  --color-header-titulo: #1f2937;
+  --color-header-subtitulo: #6b7280;
+  --color-header-usuario: #1f2937;
+  --color-header-cerrar-texto: #6b7280;
+  --color-header-cerrar-bg: #fef7ed;
+  --color-header-cerrar-borde: #bea59a;
+  --color-header-borde: #fef7ed;
+
+  /* Sidebar izquierda */
+  --color-sidebar-bg: #fce2c0;
+  --color-sidebar-borde: #fce2c0;
+  --color-sidebar-texto: #1f2937;
+  --color-sidebar-boton: #f87171;
+  --color-sidebar-hover: #ffaaaa;
+
+  /* Lienzo central (4 bloques) */
   --color-lienzo-bg: #fef7ed;
   --color-bloque-bg: #fef7ed;
   --color-bloque-borde: #e3e3e3;
@@ -290,23 +318,50 @@ body {
   --color-icono-archivo: #1f2937;
   --color-tarjeta-bg: #faeddc;
   --color-tarjeta-texto: #1f2937;
+
+  /* Barra de Productividad: Pomodoro */
+  --color-prod-bg: #fef7ed;
+  --color-prod-icono: #14213D;
+  --color-prod-toggle-bg: #faeddc;
+  --color-pomodoro-bg: #fce2c0;
+  --color-pomodoro-titulo: #1f2937;
+  --color-timer-texto: #1f2937;
+  --color-btn-config: #1f2937;
+  --color-btn-iniciar: #f87171;
+  --color-btn-reiniciar: #fef7ed;
+
+  /* Barra de Productividad: Hábitos */
+  --color-habitos-bg: #fef7ed;
+  --color-calendario-bg: #fef7ed;
+  --color-dia-sel-bg: #f87171;
+  --color-dia-sel-texto: #fffefe;
+  --color-dia-texto: #14213D;
+  --color-tag-hoy: #e3b19a;
+  --color-btn-agregar: #f87171;
+  --color-habito-texto: #14213D;
 }
 
+/* ---------- COSMOS (oscura) ---------- */
 :root[data-palette="cosmos"] {
-  --color-lienzo-bg: #11151c;
-  --color-bloque-bg: #13232c;
-  --color-bloque-borde: #1a242a;
-  --color-bloque-titulo: #ffffff;
-  --color-bloque-divisor: #13232c;
-  --color-icono-objetivos: #ffffff;
-  --color-icono-personal: #ffffff;
-  --color-icono-inspiracion: #ffffff;
-  --color-icono-archivo: #ffffff;
-  --color-tarjeta-bg: #21373f;
-  --color-tarjeta-texto: #cbd5e1;
-}
+  /* Header */
+  --color-header-bg: #13232c;
+  --color-header-logo-bg: #1e2e37;
+  --color-header-titulo: #f9f9f9;
+  --color-header-subtitulo: #728f95;
+  --color-header-usuario: #fdfdfd;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #21373f;
+  --color-header-cerrar-borde: #21373f;
+  --color-header-borde: #475569;
 
-:root[data-palette="modoOscuro"] {
+  /* Sidebar izquierda */
+  --color-sidebar-bg: #13232c;
+  --color-sidebar-borde: #13232c;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #8f48c3;
+  --color-sidebar-hover: #855fa0;
+
+  /* Lienzo central (4 bloques) */
   --color-lienzo-bg: #11151c;
   --color-bloque-bg: #13232c;
   --color-bloque-borde: #1a242a;
@@ -318,67 +373,8 @@ body {
   --color-icono-archivo: #ffffff;
   --color-tarjeta-bg: #21373f;
   --color-tarjeta-texto: #cbd5e1;
-}
 
-/* Patrón de puntitos del fondo del lienzo, solo para la paleta Lavanda */
-html[data-palette="lavanda"] foco-lienzo-canvas {
-  background-image:
-    radial-gradient(#ded0e6 1.7px, transparent 2px),
-    radial-gradient(#a69cac 0.2px, transparent 2px);
-  background-size: 36px 36px, 36px 36px;
-  background-position: 0 0, 18px 18px;
-}
-
-/*barra de productividad por paleta*/
-:root[data-palette="bosque"] {
-  --color-prod-bg: #f6f6f6;
-  --color-prod-icono: #092019;
-  --color-prod-toggle-bg: #eefdf5;
-  --color-pomodoro-bg: #eefdf5;
-  --color-pomodoro-titulo: #092015;
-  --color-timer-texto: #000303;
-  --color-btn-config: #092015;
-  --color-btn-iniciar: #108981;
-  --color-btn-reiniciar: #ffffff;
-}
-
-:root[data-palette="lavanda"] {
-  --color-prod-bg: #f8ecfe;
-  --color-prod-icono: #474973;
-  --color-prod-toggle-bg: #e4d0ed;
-  --color-pomodoro-bg: #f0d6fb;
-  --color-pomodoro-titulo: #392b4a;
-  --color-timer-texto: #392b4a;
-  --color-btn-config: #474973;
-  --color-btn-iniciar: #7b2cbf;
-  --color-btn-reiniciar: #ffffff;
-}
-
-:root[data-palette="glaciar"] {
-  --color-prod-bg: #f0f1f2;
-  --color-prod-icono: #14213D;
-  --color-prod-toggle-bg: #ffffff;
-  --color-pomodoro-bg: #ffffff;
-  --color-pomodoro-titulo: #14213D;
-  --color-timer-texto: #14213D;
-  --color-btn-config: #64748b;
-  --color-btn-iniciar: #00398e;
-  --color-btn-reiniciar: #ffffff;
-}
-
-:root[data-palette="coral"] {
-  --color-prod-bg: #fef7ed;
-  --color-prod-icono: #14213D;
-  --color-prod-toggle-bg: #faeddc;
-  --color-pomodoro-bg: #fce2c0;
-  --color-pomodoro-titulo: #1f2937;
-  --color-timer-texto: #1f2937;
-  --color-btn-config: #1f2937;
-  --color-btn-iniciar: #f87171;
-  --color-btn-reiniciar: #fef7ed;
-}
-
-:root[data-palette="cosmos"] {
+  /* Barra de Productividad: Pomodoro */
   --color-prod-bg: #13232c;
   --color-prod-icono: #ffffff;
   --color-prod-toggle-bg: #21373f;
@@ -388,110 +384,8 @@ html[data-palette="lavanda"] foco-lienzo-canvas {
   --color-btn-config: #ffffff;
   --color-btn-iniciar: #8f48c3;
   --color-btn-reiniciar: #ffffff;
-}
 
-:root[data-palette="modoOscuro"] {
-  --color-prod-bg: #13232c;
-  --color-prod-icono: #ffffff;
-  --color-prod-toggle-bg: #f76345;
-  --color-pomodoro-bg: #21373f;
-  --color-pomodoro-titulo: #ffffff;
-  --color-timer-texto: #ffffff;
-  --color-btn-config: #ffffff;
-  --color-btn-iniciar: #f55536;
-  --color-btn-reiniciar: #ffffff;
-}
-
-:root[data-palette="bosque"] {
-  --color-prod-bg: #f6f6f6;
-  --color-prod-icono: #092019;
-  --color-prod-toggle-bg: #eefdf5;
-  --color-pomodoro-bg: #eefdf5;
-  --color-pomodoro-titulo: #092015;
-  --color-timer-texto: #000303;
-  --color-btn-config: #092015;
-  --color-btn-iniciar: #108981;
-  --color-btn-reiniciar: #ffffff;
-  --color-habitos-bg: #ffffff;
-  --color-calendario-bg: #ffffff;
-  --color-dia-sel-bg: #eecefc;
-  --color-dia-sel-texto: #090000;
-  --color-dia-texto: #092d25;
-  --color-tag-hoy: #819989;
-  --color-btn-agregar: #108981;
-  --color-habito-texto: #092d25;
-}
-
-:root[data-palette="lavanda"] {
-  --color-prod-bg: #f8ecfe;
-  --color-prod-icono: #474973;
-  --color-prod-toggle-bg: #e4d0ed;
-  --color-pomodoro-bg: #f0d6fb;
-  --color-pomodoro-titulo: #392b4a;
-  --color-timer-texto: #392b4a;
-  --color-btn-config: #474973;
-  --color-btn-iniciar: #7b2cbf;
-  --color-btn-reiniciar: #ffffff;
-  --color-habitos-bg: #f0d6fb;
-  --color-calendario-bg: #fdf5ff;
-  --color-dia-sel-bg: #7b2cbf;
-  --color-dia-sel-texto: #ffffff;
-  --color-dia-texto: #474973;
-  --color-tag-hoy: #a69cac;
-  --color-btn-agregar: #7b2cbf;
-  --color-habito-texto: #392b4a;
-}
-
-:root[data-palette="glaciar"] {
-  --color-prod-bg: #f0f1f2;
-  --color-prod-icono: #14213D;
-  --color-prod-toggle-bg: #ffffff;
-  --color-pomodoro-bg: #ffffff;
-  --color-pomodoro-titulo: #14213D;
-  --color-timer-texto: #14213D;
-  --color-btn-config: #64748b;
-  --color-btn-iniciar: #00398e;
-  --color-btn-reiniciar: #ffffff;
-  --color-habitos-bg: #ffffff;
-  --color-calendario-bg: #ffffff;
-  --color-dia-sel-bg: #00398e;
-  --color-dia-sel-texto: #ffffff;
-  --color-dia-texto: #14213D;
-  --color-tag-hoy: #52718f;
-  --color-btn-agregar: #004e97;
-  --color-habito-texto: #14213D;
-}
-
-:root[data-palette="coral"] {
-  --color-prod-bg: #fef7ed;
-  --color-prod-icono: #14213D;
-  --color-prod-toggle-bg: #faeddc;
-  --color-pomodoro-bg: #fce2c0;
-  --color-pomodoro-titulo: #1f2937;
-  --color-timer-texto: #1f2937;
-  --color-btn-config: #1f2937;
-  --color-btn-iniciar: #f87171;
-  --color-btn-reiniciar: #fef7ed;
-  --color-habitos-bg: #fef7ed;
-  --color-calendario-bg: #fef7ed;
-  --color-dia-sel-bg: #f87171;
-  --color-dia-sel-texto: #fffefe;
-  --color-dia-texto: #14213D;
-  --color-tag-hoy: #e3b19a;
-  --color-btn-agregar: #f87171;
-  --color-habito-texto: #14213D;
-}
-
-:root[data-palette="cosmos"] {
-  --color-prod-bg: #13232c;
-  --color-prod-icono: #ffffff;
-  --color-prod-toggle-bg: #21373f;
-  --color-pomodoro-bg: #21373f;
-  --color-pomodoro-titulo: #ffffff;
-  --color-timer-texto: #ffffff;
-  --color-btn-config: #ffffff;
-  --color-btn-iniciar: #8f48c3;
-  --color-btn-reiniciar: #ffffff;
+  /* Barra de Productividad: Hábitos */
   --color-habitos-bg: #21373f;
   --color-calendario-bg: #21373f;
   --color-dia-sel-bg: #8f48c3;
@@ -502,7 +396,40 @@ html[data-palette="lavanda"] foco-lienzo-canvas {
   --color-habito-texto: #eeedef;
 }
 
+/* ---------- MODO OSCURO ---------- */
 :root[data-palette="modoOscuro"] {
+  /* Header */
+  --color-header-bg: #13232c;
+  --color-header-logo-bg: #1e2e37;
+  --color-header-titulo: #f9f9f9;
+  --color-header-subtitulo: #728f95;
+  --color-header-usuario: #fdfdfd;
+  --color-header-cerrar-texto: #ffffff;
+  --color-header-cerrar-bg: #21373f;
+  --color-header-cerrar-borde: #21373f;
+  --color-header-borde: #475569;
+
+  /* Sidebar izquierda */
+  --color-sidebar-bg: #13232c;
+  --color-sidebar-borde: #13232c;
+  --color-sidebar-texto: #ffffff;
+  --color-sidebar-boton: #00398e;
+  --color-sidebar-hover: #f76345;
+
+  /* Lienzo central (4 bloques) */
+  --color-lienzo-bg: #11151c;
+  --color-bloque-bg: #13232c;
+  --color-bloque-borde: #1a242a;
+  --color-bloque-titulo: #ffffff;
+  --color-bloque-divisor: #21373f;
+  --color-icono-objetivos: #ffffff;
+  --color-icono-personal: #ffffff;
+  --color-icono-inspiracion: #ffffff;
+  --color-icono-archivo: #ffffff;
+  --color-tarjeta-bg: #21373f;
+  --color-tarjeta-texto: #cbd5e1;
+
+  /* Barra de Productividad: Pomodoro */
   --color-prod-bg: #13232c;
   --color-prod-icono: #ffffff;
   --color-prod-toggle-bg: #f76345;
@@ -512,6 +439,8 @@ html[data-palette="lavanda"] foco-lienzo-canvas {
   --color-btn-config: #e9e9e9;
   --color-btn-iniciar: #f55536;
   --color-btn-reiniciar: #ffffff;
+
+  /* Barra de Productividad: Hábitos */
   --color-habitos-bg: #21373f;
   --color-calendario-bg: #21373f;
   --color-dia-sel-bg: #0d3f8b;
@@ -520,4 +449,19 @@ html[data-palette="lavanda"] foco-lienzo-canvas {
   --color-tag-hoy: #52718f;
   --color-btn-agregar: #00398e;
   --color-habito-texto: #ffffff;
+}
+
+/* Patrón de puntitos del fondo del lienzo, solo para la paleta Lavanda. */
+html[data-palette="lavanda"] foco-lienzo-canvas {
+  background-image:
+    radial-gradient(#ded0e6 1.7px, transparent 2px),
+    radial-gradient(#a69cac 0.2px, transparent 2px);
+  background-size: 36px 36px, 36px 36px;
+  background-position: 0 0, 18px 18px;
+}
+
+
+foco-sidebar-actions .group:hover span {
+  color: var(--color-sidebar-texto) !important;
+  opacity: 0.8; /*efecto suave al apoyar el mouse*/
 }

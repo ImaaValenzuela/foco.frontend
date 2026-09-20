@@ -4,7 +4,7 @@
  * Utiliza Custom Elements de HTML5 (Vanilla JS) para modularizar sin librerías.
  */
 import Sortable from "sortablejs";
-import { obtenerPaletas, obtenerPaletaActual, guardarPaleta, aplicarPaletaEnModal, escucharCambiosDePaleta } from "../managers/paletteManager.js";
+import { obtenerPaletas, obtenerPaletaActual, guardarPaleta } from "../managers/paletteManager.js";
 
 class FocoSidebarActions extends HTMLElement {
   connectedCallback() {

@@ -18,7 +18,7 @@ export function renderPomodoro({ showConfig, configModal, display, status, cycle
         <p id="pomodoro-cycle" class="text-[10px] font-semibold text-[--color-timer-texto,theme(colors.slate.400)]">Ciclo ${cycle} - Descanso: ${breakMinutes} Min</p>
       </div>
       <div id="pomodoro-buttons" class="flex w-full gap-3">
-        <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-[--color-btn-iniciar,#FC7206] hover:bg-foco-orange-light text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">${isRunning ? 'Pausar' : 'Iniciar'}</button>
+        <button id="start-pomodoro" class="flex-grow py-2.5 px-5 bg-[--color-btn-iniciar,#FC7206] hover:brightness-110 text-white text-xs font-extrabold rounded-full shadow-sm hover:shadow active:scale-95 transition-all text-center">${isRunning ? 'Pausar' : 'Iniciar'}</button>
         <button id="reset-pomodoro" class="py-2.5 px-4 bg-[--color-btn-reiniciar,white] hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold rounded-full active:scale-95 transition-all text-center">Reiniciar</button>
       </div>
     </div>`;

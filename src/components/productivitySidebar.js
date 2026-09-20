@@ -20,7 +20,7 @@ class FocoProductivitySidebar extends HTMLElement {
 
   // Modificamos a async para manejar la validación de sesión y carga de datos
   async connectedCallback() {
-    this.className = "bg-[--color-prod-bg,white] border-l border-slate-200 shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
+    this.className = "bg-[--color-prod-bg,white] border-l border-[--color-prod-bg,theme(colors.slate.200)] shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
     this.aplicarVisibilidad(localStorage.getItem('foco-productivity-sidebar') !== 'false');
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
@@ -192,7 +192,7 @@ class FocoProductivitySidebar extends HTMLElement {
         
       this.innerHTML = `
       <div class="h-14 flex items-center justify-between px-4 border-b border-[--color-header-borde,theme(colors.slate.200)] bg-[--color-prod-bg,white]">
-        <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-foco-blue-deep text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
+        <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-[--color-btn-iniciar,#22298A] text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
         </button>
       </div>
@@ -213,20 +213,20 @@ class FocoProductivitySidebar extends HTMLElement {
     } else {
       this.innerHTML = `
         <div class="h-14 flex items-center justify-center border-b border-[--color-header-borde,theme(colors.slate.100)] w-full bg-[--color-prod-bg,white]">
-          <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-foco-blue-deep text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
+          <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-[--color-btn-iniciar,#22298A] text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-close"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
           </button>
         </div>
 
         <div class="flex-grow p-4 flex flex-col items-center select-none text-slate-400 w-full pt-6 space-y-6">
-          <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-foco-blue-deep transition-all group" title="Abrir Pomodoro">
+          <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Pomodoro">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>
-            <span class="text-[8px] font-black mt-1 uppercase tracking-wider group-hover:text-foco-blue-deep">Foco</span>
+            <span class="text-[8px] font-black mt-1 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Foco</span>
           </div>
 
-          <div id="quick-habits" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-foco-blue-deep transition-all group" title="Abrir Tracker de Hábitos">
+          <div id="quick-habits" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Tracker de Hábitos">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></svg>
-            <span class="text-[8px] font-bold mt-1.5 uppercase tracking-wider group-hover:text-foco-blue-deep">Hábitos</span>
+            <span class="text-[8px] font-bold mt-1.5 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Hábitos</span>
           </div>
         </div>
       `;
