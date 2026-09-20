@@ -4,56 +4,57 @@ import { blocksService } from "../services/blocks.service.js";
 import { blockRegistry } from "../strategies/blockRegistry.js";
 import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
 import { localStore } from "../services/storage.service.js";
+import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from "../managers/paletteManager.js";
 import "./ui/audioRecorder.js";
 
 const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
 class FocoLienzoCanvas extends HTMLElement {
   connectedCallback() {
-    this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-slate-100 foco-scrollbar";
+    this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-[--color-lienzo-bg,theme(colors.slate.100)] foco-scrollbar";
     // (Mantenemos la estructura HTML original de los 4 bloques intacta)
     this.innerHTML = `
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- BLOQUE 1: Objetivos Activos -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <section id="seccion-objetivos-activos" class="bg-[--color-bloque-bg,white] rounded-2xl shadow-sm border border-[--color-bloque-borde,theme(colors.slate.200)] p-5 flex flex-col h-[280px]">
+          <div class="flex justify-between items-center pb-3 border-b border-[--color-bloque-divisor,theme(colors.slate.100)]">
             <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide"> Objetivos Activos</h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-icono-objetivos,#22298A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+              <h2 class="text-sm font-bold text-[--color-bloque-titulo,#22298A] uppercase tracking-wide"> Objetivos Activos</h2>
             </div>
           </div>
           <div id="bloque-objetivos-activos" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
         <!-- BLOQUE 2: Bloque Personal -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <section id="seccion-personal" class="bg-[--color-bloque-bg,white] rounded-2xl shadow-sm border border-[--color-bloque-borde,theme(colors.slate.200)] p-5 flex flex-col h-[280px]">
+          <div class="flex justify-between items-center pb-3 border-b border-[--color-bloque-divisor,theme(colors.slate.100)]">
             <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Bloque Personal</h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-icono-personal,#22298A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+              <h2 class="text-sm font-bold text-[--color-bloque-titulo,#22298A] uppercase tracking-wide">Bloque Personal</h2>
             </div>
           </div>
           <div id="bloque-personal" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
-        <!-- BLOQUE 3: Inspiración y Creatividad -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <!-- BLOQUE 3: Inspiración y Creatividad (Corresponde a "Recursos" del método P.A.R.A) -->
+        <section id="seccion-inspiracion" class="bg-[--color-bloque-bg,white] rounded-2xl shadow-sm border border-[--color-bloque-borde,theme(colors.slate.200)] p-5 flex flex-col h-[280px]">
+          <div class="flex justify-between items-center pb-3 border-b border-[--color-bloque-divisor,theme(colors.slate.100)]">
             <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-image-icon lucide-book-image"><path d="m20 13.7-2.1-2.1a2 2 0 0 0-2.8 0L9.7 17"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><circle cx="10" cy="8" r="2"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Inspiración y Creatividad</h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-icono-inspiracion,#22298A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-image-icon lucide-book-image"><path d="m20 13.7-2.1-2.1a2 2 0 0 0-2.8 0L9.7 17"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><circle cx="10" cy="8" r="2"/></svg>
+              <h2 class="text-sm font-bold text-[--color-bloque-titulo,#22298A] uppercase tracking-wide">Inspiración y Creatividad</h2>
             </div>
           </div>
           <div id="bloque-inspiracion" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
         </section>
 
-        <!-- BLOQUE 4: Archivo de Vida -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-[280px]">
-          <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <!-- BLOQUE 4: Archivo de Vida y Bitácoras -->
+        <section id="seccion-archivo-vida" class="bg-[--color-bloque-bg,white] rounded-2xl shadow-sm border border-[--color-bloque-borde,theme(colors.slate.200)] p-5 flex flex-col h-[280px]">
+          <div class="flex justify-between items-center pb-3 border-b border-[--color-bloque-divisor,theme(colors.slate.100)]">
             <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22298A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award-icon lucide-award"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
-              <h2 class="text-sm font-bold text-foco-blue-deep uppercase tracking-wide">Archivo de Vida</h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-icono-archivo,#22298A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award-icon lucide-award"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>
+              <h2 class="text-sm font-bold text-[--color-bloque-titulo,#22298A] uppercase tracking-wide">Archivo de Vida</h2>
             </div>
           </div>
           <div id="bloque-archivo-vida" class="foco-drop-zone flex-1 overflow-y-auto mt-4 pr-1 space-y-3 foco-scrollbar"></div>
@@ -65,10 +66,12 @@ class FocoLienzoCanvas extends HTMLElement {
     this.activarDragAndDrop();
     this.cargarBlocks();
     this.aplicarVisibilidad(JSON.parse(localStorage.getItem("foco-board-visibility") || "{}"));
+    aplicarPaleta(obtenerPaletaActual());
 
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
 
+    escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
     // Escuchamos el evento de éxito del micrófono para recargar los bloques
     window.addEventListener("foco:refresh-canvas", () => this.cargarBlocks());
 
@@ -125,12 +128,13 @@ class FocoLienzoCanvas extends HTMLElement {
         zona.appendChild(tarjeta);
       });
     });
+    aplicarPaleta(obtenerPaletaActual());
   }
 
   // Modificado para recibir un objeto Item (Nota o Tarea) y renderizar dinámicamente
   crearElementoTarjeta(item, blockId) {
     const tarjeta = document.createElement("div");
-    tarjeta.className = "foco-tarjeta p-3 bg-blue-50/50 rounded-xl border border-blue-100/30 relative group transition-all cursor-grab active:cursor-grabbing";
+    tarjeta.className = "foco-tarjeta p-3 bg-[--color-tarjeta-bg,#eff6ff] rounded-xl border border-blue-100/30 relative group transition-all cursor-grab active:cursor-grabbing";
     
     if (item.id) tarjeta.dataset.noteId = item.id;
     if (blockId) tarjeta.dataset.blockId = blockId;
@@ -152,7 +156,7 @@ class FocoLienzoCanvas extends HTMLElement {
 
     if (item.title) {
       const titulo = document.createElement("h3");
-      titulo.className = "text-xs font-bold text-slate-800 mb-1";
+      titulo.className = "text-xs font-bold text-[--color-tarjeta-texto,#1e293b] mb-1";
       titulo.textContent = item.title;
       tarjeta.appendChild(titulo);
     }
@@ -181,7 +185,7 @@ class FocoLienzoCanvas extends HTMLElement {
     }
 
     const cuerpo = document.createElement("p");
-    cuerpo.className = `text-[11px] text-slate-600 flex-1 whitespace-pre-wrap transition-colors ${esTarea && item.checked ? 'line-through text-slate-400' : ''}`;
+    cuerpo.className = `text-[11px] text-[--color-tarjeta-texto,#475569] flex-1 whitespace-pre-wrap transition-colors ${esTarea && item.checked ? 'line-through text-slate-400' : ''}`;
     cuerpo.textContent = item.text;
     
     contenidoFlex.appendChild(cuerpo);
@@ -453,6 +457,7 @@ class FocoLienzoCanvas extends HTMLElement {
             datosGuardados.blockId
           );
           tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+          aplicarPaleta(obtenerPaletaActual());
         } else {
           tarjetaTemporal.remove();
         }
@@ -508,7 +513,7 @@ class FocoLienzoCanvas extends HTMLElement {
     this.querySelectorAll(".foco-drop-zone").forEach((zona) => {
       const visible = estado[zona.id] !== false;
       zona.closest("section").classList.toggle("hidden", !visible);
-    });
+    }); 
   }
 
   activarDragAndDrop() {

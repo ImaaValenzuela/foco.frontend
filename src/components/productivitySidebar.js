@@ -2,6 +2,7 @@ import { renderPomodoro } from './productivity/pomodoro.js';
 import { renderHabitTracker } from './productivity/habitTracker.js';
 import { PomodoroManager } from '../managers/pomodoroManager.js';
 import { HabitManager } from '../managers/habitManager.js';
+import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from '../managers/paletteManager.js';
 import { authService } from '../services/auth.service.js'; // Importamos el servicio de auth
 
 /**
@@ -19,12 +20,13 @@ class FocoProductivitySidebar extends HTMLElement {
 
   // Modificamos a async para manejar la validación de sesión y carga de datos
   async connectedCallback() {
-    this.className = "bg-white border-l border-slate-200 shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
+    this.className = "bg-[--color-prod-bg,white] border-l border-[--color-prod-bg,theme(colors.slate.200)] shadow-xl transition-all duration-300 flex flex-col relative z-10 w-16";
     this.aplicarVisibilidad(localStorage.getItem('foco-productivity-sidebar') !== 'false');
     this.onVisibilityChanged = (event) => this.aplicarVisibilidad(event.detail);
     window.addEventListener('foco:productivity-visibility-changed', this.onVisibilityChanged);
     this.onFullscreenChange = () => this.handleFullscreenChange();
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
+    escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
     
     // 1. Render inicial (Muestra la interfaz de inmediato)
     this.render();
@@ -92,7 +94,7 @@ class FocoProductivitySidebar extends HTMLElement {
             } else if (modalOverlay) {
               modalOverlay.remove();
             }
-
+            aplicarPaleta(obtenerPaletaActual());
             return;
           }
 
@@ -110,7 +112,7 @@ class FocoProductivitySidebar extends HTMLElement {
         return `
           <button
             data-offset="${day.offset}"
-            class="day-selector-btn flex flex-col items-center justify-center flex-grow py-1 px-1.5 rounded-lg transition-all text-center select-none ${isSelected ? 'bg-foco-orange-accent text-white shadow-md font-bold scale-105' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}"
+            class="day-selector-btn flex flex-col items-center justify-center flex-grow py-1 px-1.5 rounded-lg transition-all text-center select-none ${isSelected ? 'bg-[--color-dia-sel-bg,#FC7206] text-[--color-dia-sel-texto,white] shadow-md font-bold scale-105' : 'hover:bg-slate-50 text-[--color-dia-texto,theme(colors.slate.500)] hover:text-slate-800'}"
             title="${day.isToday ? 'Hoy' : `Ver registro del ${day.formattedDate}`}"
           >
             <span class="text-[8px] uppercase tracking-tighter ${textClass}">
@@ -126,7 +128,7 @@ class FocoProductivitySidebar extends HTMLElement {
       // HTML del listado de hábitos
       const isToday = this.habitManager.selectedOffset === 0;
       const habitsHtml = currentHabits.map(habit => {
-        const textClass = habit.completed ? 'line-through text-slate-400 font-normal' : 'font-semibold text-slate-700';
+        const textClass = habit.completed ? 'line-through text-slate-400 font-normal' : 'font-semibold text-[--color-habito-texto,theme(colors.slate.700)]';
         const isDisabled = !isToday ? 'disabled' : '';
         const hoverClass = isToday ? 'cursor-pointer hover:bg-white/70' : 'cursor-not-allowed opacity-75';
 
@@ -175,7 +177,7 @@ class FocoProductivitySidebar extends HTMLElement {
             />
             <button 
               id="add-habit-btn" 
-              class="bg-foco-orange-accent text-white px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm hover:bg-orange-600 transition-all flex items-center justify-center focus:outline-none"
+              class="bg-[--color-btn-agregar,#FC7206] text-white px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm hover:bg-orange-600 transition-all flex items-center justify-center focus:outline-none"
               title="Añadir hábito"
             >
               +
@@ -185,12 +187,12 @@ class FocoProductivitySidebar extends HTMLElement {
         : '';
         
       const statusBadge = isToday
-        ? '<span class="text-[9px] text-foco-orange-accent bg-orange-50 font-bold px-1.5 py-0.5 rounded border border-orange-100">Hoy</span>'
+        ? '<span class="text-[9px] text-white bg-[--color-tag-hoy,#FC7206] font-bold px-1.5 py-0.5 rounded border border-orange-100">Hoy</span>'
         : '<span class="text-[9px] text-slate-500 bg-slate-50 font-bold px-1.5 py-0.5 rounded border border-slate-200">Historial</span>';
-
+        
       this.innerHTML = `
-      <div class="h-14 flex items-center justify-between px-4 border-b border-slate-200 bg-white">
-        <button id="toggle-sidebar" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 hover:text-foco-blue-deep text-slate-500 transition-all border border-slate-200/50 shadow-sm" title="Expandir Productividad">
+      <div class="h-14 flex items-center justify-between px-4 border-b border-[--color-header-borde,theme(colors.slate.200)] bg-[--color-prod-bg,white]">
+        <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-[--color-btn-iniciar,#22298A] text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
         </button>
       </div>
@@ -210,27 +212,28 @@ class FocoProductivitySidebar extends HTMLElement {
       `;
     } else {
       this.innerHTML = `
-        <div class="h-14 flex items-center justify-center border-b border-slate-100 w-full">
-          <button id="toggle-sidebar" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 hover:text-foco-blue-deep text-slate-500 transition-all border border-slate-200/50 shadow-sm" title="Expandir Productividad">
+        <div class="h-14 flex items-center justify-center border-b border-[--color-header-borde,theme(colors.slate.100)] w-full bg-[--color-prod-bg,white]">
+          <button id="toggle-sidebar" class="p-2 rounded-xl bg-[--color-prod-toggle-bg,theme(colors.slate.50)] hover:bg-slate-100 hover:text-[--color-btn-iniciar,#22298A] text-[--color-prod-icono,theme(colors.slate.500)] transition-all border border-[--color-header-borde,theme(colors.slate.200)] shadow-sm" title="Expandir Productividad">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-close"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
           </button>
         </div>
 
         <div class="flex-grow p-4 flex flex-col items-center select-none text-slate-400 w-full pt-6 space-y-6">
-          <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-foco-blue-deep transition-all group" title="Abrir Pomodoro">
+          <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Pomodoro">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>
-            <span class="text-[8px] font-black mt-1 uppercase tracking-wider group-hover:text-foco-blue-deep">Foco</span>
+            <span class="text-[8px] font-black mt-1 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Foco</span>
           </div>
 
-          <div id="quick-habits" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-foco-blue-deep transition-all group" title="Abrir Tracker de Hábitos">
+          <div id="quick-habits" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Tracker de Hábitos">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-check"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></svg>
-            <span class="text-[8px] font-bold mt-1.5 uppercase tracking-wider group-hover:text-foco-blue-deep">Hábitos</span>
+            <span class="text-[8px] font-bold mt-1.5 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Hábitos</span>
           </div>
         </div>
       `;
     }
 
     this.bindEvents();
+    aplicarPaleta(obtenerPaletaActual());
   }
 
   bindEvents() {
@@ -380,8 +383,8 @@ var botonesEl = contenedorPomodoro.querySelector('#pomodoro-buttons');
     }
   }
 
-  renderConfigModal(state) {
-    return `<div id="config-overlay" class="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4"><div class="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6"><div class="flex justify-between mb-4"><h3 class="text-sm font-bold">Configurar tiempos</h3><button id="close-config" type="button" aria-label="Cerrar">X</button></div><div class="space-y-3"><label class="text-xs">Enfoque<input id="input-focus" type="number" min="1" max="180" value="${state.focusMinutes}" class="w-full border rounded px-2 py-1" /></label><label class="text-xs">Descanso<input id="input-break" type="number" min="1" max="60" value="${state.breakMinutes}" class="w-full border rounded px-2 py-1" /></label><label class="text-xs">Ciclos<input id="input-cycles" type="number" min="1" max="12" value="${state.totalCycles}" class="w-full border rounded px-2 py-1" /></label></div><p id="config-error" class="text-xs text-red-600"></p><div class="flex gap-2 mt-4"><button id="save-config" type="button" class="flex-grow bg-foco-orange-accent text-white rounded py-2">Guardar</button><button id="cancel-config" type="button" class="border rounded px-3">Cancelar</button></div></div></div>`;
+    renderConfigModal(state) {
+    return `<div id="config-overlay" class="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4"><div class="bg-[--color-pomodoro-bg,white] rounded-2xl shadow-xl w-full max-w-xs p-6"><div class="flex justify-between mb-4"><h3 class="text-sm font-bold text-[--color-pomodoro-titulo,#1e293b]">Configurar tiempos</h3><button id="close-config" type="button" aria-label="Cerrar" class="text-[--color-pomodoro-titulo,#1e293b]">X</button></div><div class="space-y-3"><label class="text-xs text-[--color-pomodoro-titulo,#1e293b]">Enfoque<input id="input-focus" type="number" min="1" max="180" value="${state.focusMinutes}" class="w-full border rounded px-2 py-1 text-slate-800 bg-white" /></label><label class="text-xs text-[--color-pomodoro-titulo,#1e293b]">Descanso<input id="input-break" type="number" min="1" max="60" value="${state.breakMinutes}" class="w-full border rounded px-2 py-1 text-slate-800 bg-white" /></label><label class="text-xs text-[--color-pomodoro-titulo,#1e293b]">Ciclos<input id="input-cycles" type="number" min="1" max="12" value="${state.totalCycles}" class="w-full border rounded px-2 py-1 text-slate-800 bg-white" /></label></div><p id="config-error" class="text-xs text-red-600"></p><div class="flex gap-2 mt-4"><button id="save-config" type="button" class="flex-grow bg-[--color-btn-iniciar,#FC7206] text-white rounded py-2">Guardar</button><button id="cancel-config" type="button" class="border rounded px-3 text-[--color-pomodoro-titulo,#1e293b]">Cancelar</button></div></div></div>`;
   }
 
   handleSaveConfig() {
