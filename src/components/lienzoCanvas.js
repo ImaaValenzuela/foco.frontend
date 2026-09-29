@@ -174,7 +174,7 @@ class FocoLienzoCanvas extends HTMLElement {
       });
     });
     aplicarPaleta(obtenerPaletaActual());
-    this.solicitarRenderConectores();
+    this.actualizarBadgesDeAsociacion();
   }
 
   // Modificado para recibir un objeto Item (Nota o Tarea) y renderizar dinámicamente
@@ -1052,15 +1052,234 @@ class FocoLienzoCanvas extends HTMLElement {
     });
   }
 
-  solicitarRenderConectores() {
-    if (this.rafConectores) cancelAnimationFrame(this.rafConectores);
-    this.rafConectores = requestAnimationFrame(() => {
-      this.renderizarConectores();
+  obtenerTodasLasConexiones() {
+    return (this.blocksData || []).flatMap((b) => b.content?.connections || []);
+  }
+
+  obtenerNotaPorId(noteId) {
+    for (const block of this.blocksData || []) {
+      const notes = block.content?.notes || [];
+      const found = notes.find((n) => n.id === noteId);
+      if (found) {
+        return {
+          ...found,
+          blockId: block.id,
+          blockType: block.type
+        };
+      }
+    }
+    return null;
+  }
+
+  obtenerConexionesDeTarjeta(noteId) {
+    if (!noteId) return [];
+    const todas = this.obtenerTodasLasConexiones();
+    return todas.filter((c) => c.sourceId === noteId || c.targetId === noteId);
+  }
+
+  actualizarBadgesDeAsociacion() {
+    const tarjetas = this.querySelectorAll(".foco-tarjeta[data-note-id]");
+    tarjetas.forEach((tarjeta) => {
+      const noteId = tarjeta.dataset.noteId;
+      this.renderizarBadgeInfo(tarjeta, noteId);
     });
   }
 
-  obtenerTodasLasConexiones() {
-    return (this.blocksData || []).flatMap((b) => b.content?.connections || []);
+  renderizarBadgeInfo(tarjeta, noteId) {
+    const conexiones = this.obtenerConexionesDeTarjeta(noteId);
+    let badgeWrapper = tarjeta.querySelector(".foco-badge-info-wrapper");
+
+    if (!conexiones || conexiones.length === 0) {
+      if (badgeWrapper) badgeWrapper.remove();
+      return;
+    }
+
+    if (!badgeWrapper) {
+      badgeWrapper = document.createElement("div");
+      badgeWrapper.className = "foco-badge-info-wrapper absolute top-2.5 right-2.5 z-10 group-hover:right-16 transition-all select-none";
+      tarjeta.appendChild(badgeWrapper);
+    }
+
+    badgeWrapper.innerHTML = "";
+
+    const btnInfo = document.createElement("button");
+    btnInfo.type = "button";
+    btnInfo.className = "foco-btn-info flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-300 text-[10px] font-bold shadow-xs hover:scale-110 transition-all cursor-pointer";
+    btnInfo.innerHTML = "i";
+    btnInfo.title = "Tarjeta asociada (pasa el cursor para ver detalles)";
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "foco-info-tooltip hidden absolute right-0 top-6 w-64 p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl z-50 text-[11px] backdrop-blur-sm border border-slate-700 pointer-events-auto";
+
+    const renderTooltip = () => {
+      tooltip.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "flex items-center justify-between pb-1.5 mb-2 border-b border-slate-700/80 font-bold text-orange-400 text-[11px]";
+      header.innerHTML = `<span>🔗 Tarjetas asociadas (${conexiones.length})</span>`;
+      tooltip.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "space-y-1.5 max-h-48 overflow-y-auto foco-scrollbar pr-0.5";
+
+      conexiones.forEach((conn) => {
+        const esOrigen = conn.sourceId === noteId;
+        const otroId = esOrigen ? conn.targetId : conn.sourceId;
+        const otraNota = this.obtenerNotaPorId(otroId);
+
+        const row = document.createElement("div");
+        row.className = "flex items-start justify-between gap-1.5 p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition-colors border border-slate-700/50";
+
+        const info = document.createElement("div");
+        info.className = "flex-1 min-w-0";
+
+        const dir = document.createElement("span");
+        dir.className = "text-[9px] font-semibold block text-orange-300";
+        dir.textContent = esOrigen ? "➔ Vinculada hacia:" : "⬅ Vinculada desde:";
+
+        const textoNota = document.createElement("p");
+        textoNota.className = "text-[11px] text-slate-200 truncate font-medium mt-0.5";
+        textoNota.textContent = otraNota
+          ? (otraNota.title || otraNota.text || "Tarjeta sin título")
+          : "Tarjeta vinculada";
+
+        info.appendChild(dir);
+        info.appendChild(textoNota);
+
+        const btnDesvincular = document.createElement("button");
+        btnDesvincular.className = "text-slate-400 hover:text-red-400 px-1 py-0.5 text-xs font-bold leading-none transition-colors";
+        btnDesvincular.title = "Desvincular asociación";
+        btnDesvincular.innerHTML = "&times;";
+        btnDesvincular.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await this.eliminarConexion(conn.id);
+        });
+
+        row.appendChild(info);
+        row.appendChild(btnDesvincular);
+        list.appendChild(row);
+      });
+
+      tooltip.appendChild(list);
+    };
+
+    renderTooltip();
+
+    badgeWrapper.addEventListener("mouseenter", () => {
+      tooltip.classList.remove("hidden");
+      this.resaltarAsociacionesDeTarjeta(noteId);
+    });
+
+    badgeWrapper.addEventListener("mouseleave", () => {
+      tooltip.classList.add("hidden");
+      this.limpiarResaltadoAsociaciones();
+    });
+
+    badgeWrapper.appendChild(btnInfo);
+    badgeWrapper.appendChild(tooltip);
+  }
+
+  resaltarAsociacionesDeTarjeta(noteId) {
+    this.limpiarResaltadoAsociaciones();
+
+    const conexiones = this.obtenerConexionesDeTarjeta(noteId);
+    if (!conexiones || conexiones.length === 0) return;
+
+    this.tarjetaResaltadaId = noteId;
+
+    const tarjetaPrincipal = this.querySelector(`[data-note-id="${CSS.escape(noteId)}"]`);
+    if (tarjetaPrincipal) {
+      tarjetaPrincipal.classList.add("ring-4", "ring-orange-500", "shadow-2xl");
+    }
+
+    conexiones.forEach((conn) => {
+      const otroId = conn.sourceId === noteId ? conn.targetId : conn.sourceId;
+      const tarjetaAsociada = this.querySelector(`[data-note-id="${CSS.escape(otroId)}"]`);
+      if (tarjetaAsociada) {
+        tarjetaAsociada.classList.add("ring-4", "ring-orange-400", "shadow-xl", "bg-orange-50/40");
+      }
+    });
+
+    this.renderizarFlechasDeResaltado(conexiones);
+  }
+
+  limpiarResaltadoAsociaciones() {
+    this.tarjetaResaltadaId = null;
+
+    const svg = this.querySelector("#foco-canvas-connectors");
+    if (svg) {
+      const defs = svg.querySelector("defs");
+      svg.innerHTML = "";
+      if (defs) svg.appendChild(defs);
+    }
+
+    this.querySelectorAll(".foco-tarjeta").forEach((t) => {
+      t.classList.remove("ring-4", "ring-orange-500", "ring-orange-400", "shadow-2xl", "shadow-xl", "bg-orange-50/40");
+    });
+  }
+
+  renderizarFlechasDeResaltado(conexiones) {
+    const svg = this.querySelector("#foco-canvas-connectors");
+    if (!svg) return;
+
+    const defs = svg.querySelector("defs");
+    svg.innerHTML = "";
+    if (defs) svg.appendChild(defs);
+
+    const canvasRect = this.getBoundingClientRect();
+    const scrollLeft = this.scrollLeft || 0;
+    const scrollTop = this.scrollTop || 0;
+
+    svg.style.width = `${Math.max(this.scrollWidth, this.clientWidth)}px`;
+    svg.style.height = `${Math.max(this.scrollHeight, this.clientHeight)}px`;
+
+    conexiones.forEach((conn) => {
+      const sourceEl = this.querySelector(`[data-note-id="${CSS.escape(conn.sourceId)}"]`);
+      const targetEl = this.querySelector(`[data-note-id="${CSS.escape(conn.targetId)}"]`);
+      if (!sourceEl || !targetEl) return;
+      if (sourceEl.offsetParent === null || targetEl.offsetParent === null) return;
+
+      const r1 = sourceEl.getBoundingClientRect();
+      const r2 = targetEl.getBoundingClientRect();
+
+      const x1 = (r1.left + r1.right) / 2 - canvasRect.left + scrollLeft;
+      const y1 = (r1.top + r1.bottom) / 2 - canvasRect.top + scrollTop;
+      const x2 = (r2.left + r2.right) / 2 - canvasRect.left + scrollLeft;
+      const y2 = (r2.top + r2.bottom) / 2 - canvasRect.top + scrollTop;
+
+      const dx = (x2 - x1) * 0.4;
+      const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+      const glowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      glowPath.setAttribute("d", pathData);
+      glowPath.setAttribute("stroke", "#FC7206");
+      glowPath.setAttribute("stroke-width", "7");
+      glowPath.setAttribute("stroke-opacity", "0.25");
+      glowPath.setAttribute("fill", "none");
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pathData);
+      path.setAttribute("stroke", "#FC7206");
+      path.setAttribute("stroke-width", "3");
+      path.setAttribute("fill", "none");
+      path.setAttribute("marker-end", "url(#arrowhead)");
+      path.setAttribute("stroke-dasharray", "8 4");
+
+      svg.appendChild(glowPath);
+      svg.appendChild(path);
+    });
+  }
+
+  solicitarRenderConectores() {
+    if (this.tarjetaResaltadaId) {
+      if (this.rafConectores) cancelAnimationFrame(this.rafConectores);
+      this.rafConectores = requestAnimationFrame(() => {
+        if (this.tarjetaResaltadaId) {
+          const conexiones = this.obtenerConexionesDeTarjeta(this.tarjetaResaltadaId);
+          this.renderizarFlechasDeResaltado(conexiones);
+        }
+      });
+    }
   }
 
   gestionarClickTarjetaParaFlecha(tarjeta) {
@@ -1101,12 +1320,24 @@ class FocoLienzoCanvas extends HTMLElement {
     if (!Array.isArray(bloque.content.connections)) bloque.content.connections = [];
 
     const yaExiste = bloque.content.connections.some(
-      (c) => c.sourceId === sourceNoteId && c.targetId === targetNoteId
+      (c) => (c.sourceId === sourceNoteId && c.targetId === targetNoteId) ||
+             (c.sourceId === targetNoteId && c.targetId === sourceNoteId)
     );
     if (yaExiste) return;
 
     bloque.content.connections.push(nuevaConexion);
-    this.solicitarRenderConectores();
+    this.actualizarBadgesDeAsociacion();
+
+    // Resaltar visualmente la asociación recién creada durante 1.8 segundos
+    this.resaltarAsociacionesDeTarjeta(sourceNoteId);
+    setTimeout(() => {
+      this.limpiarResaltadoAsociaciones();
+    }, 1800);
+
+    // Finalizar el modo flecha
+    this.arrowMode = false;
+    this.actualizarEstiloCursorModoFlecha();
+    window.dispatchEvent(new CustomEvent("foco:arrow-mode-changed", { detail: { active: false } }));
 
     try {
       const sesion = await getSession();
@@ -1132,7 +1363,8 @@ class FocoLienzoCanvas extends HTMLElement {
       }
     });
 
-    this.solicitarRenderConectores();
+    this.limpiarResaltadoAsociaciones();
+    this.actualizarBadgesDeAsociacion();
 
     if (bloqueModificado) {
       try {
@@ -1162,7 +1394,8 @@ class FocoLienzoCanvas extends HTMLElement {
       }
     });
 
-    this.solicitarRenderConectores();
+    this.limpiarResaltadoAsociaciones();
+    this.actualizarBadgesDeAsociacion();
 
     const sesion = await getSession();
     for (const b of bloquesActualizados) {
@@ -1177,74 +1410,6 @@ class FocoLienzoCanvas extends HTMLElement {
     if (!sesion && bloquesActualizados.length > 0) {
       localStore.setItem(LOCAL_BLOCKS_KEY, this.blocksData);
     }
-  }
-
-  renderizarConectores() {
-    const svg = this.querySelector("#foco-canvas-connectors");
-    if (!svg) return;
-
-    const defs = svg.querySelector("defs");
-    svg.innerHTML = "";
-    if (defs) svg.appendChild(defs);
-
-    const canvasRect = this.getBoundingClientRect();
-    const scrollLeft = this.scrollLeft || 0;
-    const scrollTop = this.scrollTop || 0;
-
-    svg.style.width = `${Math.max(this.scrollWidth, this.clientWidth)}px`;
-    svg.style.height = `${Math.max(this.scrollHeight, this.clientHeight)}px`;
-
-    const conexiones = this.obtenerTodasLasConexiones();
-
-    conexiones.forEach((conn) => {
-      const sourceEl = this.querySelector(`[data-note-id="${CSS.escape(conn.sourceId)}"]`);
-      const targetEl = this.querySelector(`[data-note-id="${CSS.escape(conn.targetId)}"]`);
-      if (!sourceEl || !targetEl) return;
-      if (sourceEl.offsetParent === null || targetEl.offsetParent === null) return;
-
-      const r1 = sourceEl.getBoundingClientRect();
-      const r2 = targetEl.getBoundingClientRect();
-
-      const x1 = (r1.left + r1.right) / 2 - canvasRect.left + scrollLeft;
-      const y1 = (r1.top + r1.bottom) / 2 - canvasRect.top + scrollTop;
-      const x2 = (r2.left + r2.right) / 2 - canvasRect.left + scrollLeft;
-      const y2 = (r2.top + r2.bottom) / 2 - canvasRect.top + scrollTop;
-
-      const dx = (x2 - x1) * 0.4;
-      const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "foco-conector-grupo pointer-events-auto cursor-pointer group");
-
-      const hitPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      hitPath.setAttribute("d", pathData);
-      hitPath.setAttribute("stroke", "transparent");
-      hitPath.setAttribute("stroke-width", "16");
-      hitPath.setAttribute("fill", "none");
-
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", pathData);
-      path.setAttribute("stroke", "#FC7206");
-      path.setAttribute("stroke-width", "2.5");
-      path.setAttribute("stroke-dasharray", "6 3");
-      path.setAttribute("fill", "none");
-      path.setAttribute("marker-end", "url(#arrowhead)");
-      path.setAttribute("class", "transition-all group-hover:stroke-red-500 group-hover:stroke-[3.5px]");
-
-      const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-      title.textContent = "Conexión visual (Clic para eliminar)";
-      g.appendChild(title);
-
-      g.appendChild(hitPath);
-      g.appendChild(path);
-
-      g.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.eliminarConexion(conn.id);
-      });
-
-      svg.appendChild(g);
-    });
   }
 }
 
