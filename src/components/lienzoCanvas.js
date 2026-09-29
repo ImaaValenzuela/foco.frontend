@@ -167,7 +167,9 @@ class FocoLienzoCanvas extends HTMLElement {
       }
 
       notes.forEach((item) => {
-        const tarjeta = (item.type === "list" || Array.isArray(item.items))
+        const esTarea = item.type === "task" || Boolean(item.isTask);
+        const esLista = !esTarea && (item.type === "list" || (Array.isArray(item.items) && item.items.length > 0 && item.type !== "note"));
+        const tarjeta = esLista
           ? this.crearElementoTarjetaLista(item, block.id)
           : this.crearElementoTarjeta(item, block.id);
         zona.appendChild(tarjeta);
@@ -221,14 +223,16 @@ class FocoLienzoCanvas extends HTMLElement {
     const contenidoFlex = document.createElement("div");
     contenidoFlex.className = "flex items-start gap-2 mt-0.5";
     
-    const esTarea = item.isTask === true;
+    const esTarea = item.isTask === true || item.type === "task";
+    item.isTask = esTarea;
+    item.type = esTarea ? "task" : (item.type || "note");
 
     // Generación del Checkbox si es Tarea
     if (esTarea) {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.className = "mt-0.5 cursor-pointer w-3.5 h-3.5 shrink-0 rounded border-slate-300 text-foco-blue-deep focus:ring-foco-blue-deep";
-      checkbox.checked = item.checked || false;
+      checkbox.checked = Boolean(item.checked);
       
       // Listener para actualizar el estado del Check en la Base de Datos
       checkbox.addEventListener("change", async (e) => {
@@ -366,7 +370,7 @@ class FocoLienzoCanvas extends HTMLElement {
         const bloque = this.blocksData.find(b => b.id === blockId);
         if (bloque) {
           const notasActualizadas = (bloque.content.notes || []).map(n => 
-            n.id === noteId ? { ...n, checked: newState } : n
+            n.id === noteId ? { ...n, checked: newState, isTask: true, type: "task" } : n
           );
           const nuevoContenido = { ...bloque.content, notes: notasActualizadas };
           await blocksService.updateBlock(blockId, nuevoContenido, sesion.access_token);
@@ -377,7 +381,7 @@ class FocoLienzoCanvas extends HTMLElement {
         const updatedLocales = locales.map(b => {
           if (b.id === blockId) {
             const notes = (b.content.notes || []).map(n => 
-              n.id === noteId ? { ...n, checked: newState } : n
+              n.id === noteId ? { ...n, checked: newState, isTask: true, type: "task" } : n
             );
             return { ...b, content: { ...b.content, notes } };
           }
@@ -399,7 +403,8 @@ class FocoLienzoCanvas extends HTMLElement {
         id: crypto.randomUUID(),
         text: texto,
         title: null,
-        isTask: isTask,
+        type: isTask ? "task" : "note",
+        isTask: Boolean(isTask),
         checked: false,
         createdAt: new Date().toISOString()
       };
@@ -982,10 +987,15 @@ class FocoLienzoCanvas extends HTMLElement {
             const notaOriginal = (bloqueOrigenData?.content?.notes || []).find(n => n.id === noteId);
             
             // Si por algún motivo no estuviera en caché, creamos un fallback leyendo el DOM
+            const tieneCheckbox = Boolean(elementoAgregado.querySelector('input[type="checkbox"]'));
+            const tieneLista = Boolean(elementoAgregado.querySelector('.lucide-list'));
+            const tipoFallback = tieneCheckbox ? "task" : (tieneLista ? "list" : "note");
+
             const notaAMover = notaOriginal ? { ...notaOriginal } : { 
               id: noteId, 
               text: elementoAgregado.querySelector("p")?.textContent || "",
-              isTask: false,
+              type: tipoFallback,
+              isTask: tieneCheckbox,
               checked: false 
             };
 
@@ -1133,9 +1143,13 @@ class FocoLienzoCanvas extends HTMLElement {
         const info = document.createElement("div");
         info.className = "flex-1 min-w-0";
 
-        const dir = document.createElement("span");
-        dir.className = "text-[9px] font-semibold block text-orange-300";
-        dir.textContent = esOrigen ? "➔ Vinculada hacia:" : "⬅ Vinculada desde:";
+        const tipoEtiqueta = otraNota?.type === "list"
+          ? "Lista"
+          : (otraNota?.type === "task" || otraNota?.isTask ? "Tarea" : "Nota");
+
+        const dir = document.createElement("div");
+        dir.className = "flex items-center gap-1.5 text-[9px] font-semibold text-orange-300";
+        dir.innerHTML = `<span>${esOrigen ? "➔ Vinculada hacia:" : "⬅ Vinculada desde:"}</span><span class="px-1 py-0.2 rounded bg-slate-700/80 text-orange-200 text-[8px] uppercase tracking-wider">${tipoEtiqueta}</span>`;
 
         const textoNota = document.createElement("p");
         textoNota.className = "text-[11px] text-slate-200 truncate font-medium mt-0.5";
