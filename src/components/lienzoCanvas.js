@@ -167,8 +167,9 @@ class FocoLienzoCanvas extends HTMLElement {
       }
 
       notes.forEach((item) => {
-        // Ahora pasamos el objeto ítem completo para poder leer isTask y checked
-        const tarjeta = this.crearElementoTarjeta(item, block.id);
+        const tarjeta = (item.type === "list" || Array.isArray(item.items))
+          ? this.crearElementoTarjetaLista(item, block.id)
+          : this.crearElementoTarjeta(item, block.id);
         zona.appendChild(tarjeta);
       });
     });
@@ -515,11 +516,373 @@ class FocoLienzoCanvas extends HTMLElement {
           );
           tarjetaTemporal.replaceWith(tarjetaDefinitiva);
           aplicarPaleta(obtenerPaletaActual());
+          this.solicitarRenderConectores();
         } else {
           tarjetaTemporal.remove();
         }
       });
     }
+
+  // Instancia el borrador interactivo para nombrar y crear una lista arrastrada
+  crearTarjetaLista(botonClonado) {
+    const tarjetaTemporal = document.createElement("div");
+    tarjetaTemporal.className = "foco-tarjeta p-3 bg-indigo-50/70 rounded-xl border border-indigo-200 shadow-xs flex flex-col gap-2";
+
+    const encabezado = document.createElement("div");
+    encabezado.className = "flex items-center gap-1.5 text-indigo-700 font-semibold text-xs";
+    encabezado.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
+      <span>Nueva Lista</span>
+    `;
+
+    const inputTitulo = document.createElement("input");
+    inputTitulo.type = "text";
+    inputTitulo.placeholder = "Título de la lista (Enter para guardar)...";
+    inputTitulo.className = "w-full text-xs font-semibold text-slate-700 bg-white border border-indigo-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-400";
+
+    tarjetaTemporal.appendChild(encabezado);
+    tarjetaTemporal.appendChild(inputTitulo);
+
+    botonClonado.replaceWith(tarjetaTemporal);
+    inputTitulo.focus();
+
+    const zonaDrop = tarjetaTemporal.closest(".foco-drop-zone");
+    if (!zonaDrop) return;
+    const idDelBloque = zonaDrop.id;
+    const tipoDeBloque = blockRegistry.getBackendType(idDelBloque);
+
+    let cancelado = false;
+
+    inputTitulo.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        inputTitulo.blur();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancelado = true;
+        tarjetaTemporal.remove();
+      }
+    });
+
+    inputTitulo.addEventListener("blur", async () => {
+      if (cancelado) return;
+      const tituloEscrito = inputTitulo.value.trim();
+      if (!tituloEscrito) {
+        tarjetaTemporal.remove();
+        return;
+      }
+
+      inputTitulo.disabled = true;
+      inputTitulo.classList.add("opacity-50");
+
+      const nuevaLista = {
+        id: crypto.randomUUID(),
+        title: tituloEscrito,
+        text: tituloEscrito,
+        type: "list",
+        isTask: false,
+        checked: false,
+        items: [],
+        createdAt: new Date().toISOString()
+      };
+
+      const guardado = await this.guardarItemListaEnBackend(nuevaLista, tipoDeBloque);
+
+      if (guardado) {
+        const tarjetaDefinitiva = this.crearElementoTarjetaLista(guardado.item, guardado.blockId);
+        tarjetaTemporal.replaceWith(tarjetaDefinitiva);
+        aplicarPaleta(obtenerPaletaActual());
+        this.solicitarRenderConectores();
+      } else {
+        tarjetaTemporal.remove();
+      }
+    });
+  }
+
+  // Persiste la estructura de una lista nueva en el backend o localStorage
+  async guardarItemListaEnBackend(nuevaLista, tipoDeBloque) {
+    try {
+      const sesion = await getSession();
+
+      if (!sesion) {
+        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+        let bloqueLocal = locales.find((b) => b.type === tipoDeBloque);
+
+        if (bloqueLocal) {
+          bloqueLocal.content.notes = [...(bloqueLocal.content.notes || []), nuevaLista];
+        } else {
+          bloqueLocal = {
+            id: crypto.randomUUID(),
+            type: tipoDeBloque,
+            content: { notes: [nuevaLista] }
+          };
+          locales.push(bloqueLocal);
+        }
+
+        localStore.setItem(LOCAL_BLOCKS_KEY, locales);
+        this.blocksData = locales;
+        this.mostrarAvisoLocal(true);
+
+        return { noteId: nuevaLista.id, blockId: bloqueLocal.id, item: nuevaLista };
+      }
+
+      let bloqueExistente = this.blocksData.find((b) => b.type === tipoDeBloque);
+
+      if (bloqueExistente) {
+        const notasActualizadas = [...(bloqueExistente.content.notes || []), nuevaLista];
+        const nuevoContenido = { ...bloqueExistente.content, notes: notasActualizadas };
+
+        await blocksService.updateBlock(bloqueExistente.id, nuevoContenido, sesion.access_token);
+        bloqueExistente.content = nuevoContenido;
+
+        return { noteId: nuevaLista.id, blockId: bloqueExistente.id, item: nuevaLista };
+      } else {
+        const nuevoContenido = { notes: [nuevaLista] };
+        const datosCreados = await blocksService.saveBlock(tipoDeBloque, nuevoContenido, sesion.access_token);
+
+        this.blocksData.push(datosCreados);
+        emitCustomEvent(this, FOCO_EVENTS.BLOCK_SAVED, {
+          type: tipoDeBloque,
+          content: nuevaLista.title,
+          data: datosCreados
+        });
+
+        return { noteId: nuevaLista.id, blockId: datosCreados.id, item: nuevaLista };
+      }
+    } catch (error) {
+      console.error("Error al guardar la lista en backend:", error);
+      return null;
+    }
+  }
+
+  // Renderiza el componente de lista dinámica con sus checkboxes y sub-ítems
+  crearElementoTarjetaLista(item, blockId) {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "foco-tarjeta p-3.5 bg-[--color-tarjeta-bg,#eff6ff] rounded-xl border border-blue-100/40 relative group transition-all cursor-grab active:cursor-grabbing shadow-xs";
+
+    if (item.id) tarjeta.dataset.noteId = item.id;
+    if (blockId) tarjeta.dataset.blockId = blockId;
+
+    tarjeta.addEventListener("click", (e) => {
+      if (e.target.closest("button") || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        return;
+      }
+      if (this.arrowMode) {
+        e.stopPropagation();
+        this.gestionarClickTarjetaParaFlecha(tarjeta);
+      }
+    });
+
+    const controles = document.createElement("div");
+    controles.className = "absolute top-2 right-2.5 hidden group-hover:flex flex-row items-center gap-2 bg-blue-50/90 rounded px-2 py-1 shadow-sm z-10";
+
+    const btnEditar = document.createElement("button");
+    btnEditar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
+    btnEditar.title = "Editar título de la lista";
+    btnEditar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-blue-600 transition-colors"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+
+    const btnEliminar = document.createElement("button");
+    btnEliminar.className = "flex items-center justify-center shrink-0 p-0.5 hover:scale-105 transition-transform";
+    btnEliminar.title = "Eliminar lista";
+    btnEliminar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-red-600 transition-colors"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+
+    controles.appendChild(btnEditar);
+    controles.appendChild(btnEliminar);
+    tarjeta.appendChild(controles);
+
+    const headerDiv = document.createElement("div");
+    headerDiv.className = "flex items-center gap-1.5 mb-2.5 pr-14";
+
+    const iconoLista = document.createElement("span");
+    iconoLista.className = "text-indigo-600 text-xs shrink-0 select-none";
+    iconoLista.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>`;
+
+    const tituloEl = document.createElement("h3");
+    tituloEl.className = "text-xs font-bold text-[--color-tarjeta-texto,#1e293b] truncate";
+    tituloEl.textContent = item.title || "Lista";
+
+    headerDiv.appendChild(iconoLista);
+    headerDiv.appendChild(tituloEl);
+    tarjeta.appendChild(headerDiv);
+
+    const itemsContainer = document.createElement("div");
+    itemsContainer.className = "space-y-1.5";
+    tarjeta.appendChild(itemsContainer);
+
+    const renderItems = () => {
+      itemsContainer.innerHTML = "";
+      item.items = item.items || [];
+
+      item.items.forEach((subItem, index) => {
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2 group/item px-1 py-0.5 rounded hover:bg-white/60 transition-colors";
+
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.checked = Boolean(subItem.checked);
+        chk.className = "cursor-pointer w-3.5 h-3.5 shrink-0 rounded border-slate-300 text-foco-blue-deep focus:ring-foco-blue-deep";
+
+        const txt = document.createElement("span");
+        txt.className = `text-[11px] flex-1 break-words select-text ${subItem.checked ? "line-through text-slate-400" : "text-[--color-tarjeta-texto,#334155]"}`;
+        txt.textContent = subItem.text;
+
+        chk.addEventListener("change", async (e) => {
+          subItem.checked = e.target.checked;
+          txt.classList.toggle("line-through", subItem.checked);
+          txt.classList.toggle("text-slate-400", subItem.checked);
+          await this.persistirCambiosLista(item, tarjeta.dataset.blockId);
+        });
+
+        const btnBorrarSub = document.createElement("button");
+        btnBorrarSub.className = "opacity-0 group-hover/item:opacity-100 text-slate-400 hover:text-red-500 text-xs px-1 leading-none transition-opacity";
+        btnBorrarSub.innerHTML = "&times;";
+        btnBorrarSub.title = "Eliminar ítem";
+        btnBorrarSub.addEventListener("click", async () => {
+          item.items.splice(index, 1);
+          renderItems();
+          this.solicitarRenderConectores();
+          await this.persistirCambiosLista(item, tarjeta.dataset.blockId);
+        });
+
+        row.appendChild(chk);
+        row.appendChild(txt);
+        row.appendChild(btnBorrarSub);
+        itemsContainer.appendChild(row);
+      });
+    };
+
+    renderItems();
+
+    const inputNuevoSub = document.createElement("input");
+    inputNuevoSub.type = "text";
+    inputNuevoSub.placeholder = "+ Agregar ítem (Enter)...";
+    inputNuevoSub.className = "mt-2 w-full text-[10px] bg-white/70 border border-slate-200/80 rounded px-2 py-1 outline-none text-slate-700 placeholder-slate-400 focus:bg-white focus:border-indigo-300 transition-all";
+
+    inputNuevoSub.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const texto = inputNuevoSub.value.trim();
+        if (texto) {
+          item.items = item.items || [];
+          item.items.push({
+            id: crypto.randomUUID(),
+            text: texto,
+            checked: false
+          });
+          inputNuevoSub.value = "";
+          renderItems();
+          this.solicitarRenderConectores();
+          await this.persistirCambiosLista(item, tarjeta.dataset.blockId);
+        }
+      }
+    });
+
+    tarjeta.appendChild(inputNuevoSub);
+
+    btnEliminar.addEventListener("click", async () => {
+      const noteId = tarjeta.dataset.noteId;
+      const bId = tarjeta.dataset.blockId;
+      tarjeta.style.opacity = "0.5";
+
+      try {
+        const sesion = await getSession();
+        if (sesion && bId) {
+          const bloque = this.blocksData.find((b) => b.id === bId);
+          if (bloque) {
+            bloque.content.notes = (bloque.content.notes || []).filter((n) => n.id !== noteId);
+            await blocksService.updateBlock(bId, bloque.content, sesion.access_token);
+          }
+        } else {
+          const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+          const updatedLocales = locales.map((b) => {
+            if (b.id === bId) {
+              const notes = (b.content.notes || []).filter((n) => n.id !== noteId);
+              return { ...b, content: { ...b.content, notes } };
+            }
+            return b;
+          });
+          localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+          this.blocksData = updatedLocales;
+        }
+        await this.eliminarConexionesDeTarjeta(noteId);
+        tarjeta.remove();
+        this.solicitarRenderConectores();
+      } catch (error) {
+        console.error("Error al eliminar la lista:", error);
+        tarjeta.style.opacity = "1";
+        alert("No se pudo eliminar la lista.");
+      }
+    });
+
+    btnEditar.addEventListener("click", () => {
+      const inputEdicion = document.createElement("input");
+      inputEdicion.type = "text";
+      inputEdicion.className = "w-full text-xs font-bold text-slate-800 bg-white border border-indigo-300 rounded px-1.5 py-0.5 outline-none";
+      inputEdicion.value = item.title || "";
+
+      headerDiv.classList.add("hidden");
+      headerDiv.after(inputEdicion);
+      inputEdicion.focus();
+
+      const finalizarEdicion = async () => {
+        const nuevoTitulo = inputEdicion.value.trim();
+        inputEdicion.remove();
+        headerDiv.classList.remove("hidden");
+
+        if (nuevoTitulo && nuevoTitulo !== item.title) {
+          item.title = nuevoTitulo;
+          tituloEl.textContent = nuevoTitulo;
+          await this.persistirCambiosLista(item, tarjeta.dataset.blockId);
+        }
+      };
+
+      inputEdicion.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          inputEdicion.blur();
+        } else if (e.key === "Escape") {
+          inputEdicion.value = item.title || "";
+          inputEdicion.blur();
+        }
+      });
+
+      inputEdicion.addEventListener("blur", finalizarEdicion);
+    });
+
+    return tarjeta;
+  }
+
+  async persistirCambiosLista(item, blockId) {
+    item.text = [item.title, ...(item.items || []).map((i) => i.text)].filter(Boolean).join(" - ");
+
+    try {
+      const sesion = await getSession();
+      if (sesion && blockId) {
+        const bloque = this.blocksData.find((b) => b.id === blockId);
+        if (bloque) {
+          bloque.content.notes = (bloque.content.notes || []).map((n) =>
+            n.id === item.id ? item : n
+          );
+          await blocksService.updateBlock(blockId, bloque.content, sesion.access_token);
+        }
+      } else {
+        const locales = localStore.getItem(LOCAL_BLOCKS_KEY) || [];
+        const updatedLocales = locales.map((b) => {
+          if (b.id === blockId) {
+            const notes = (b.content.notes || []).map((n) =>
+              n.id === item.id ? item : n
+            );
+            return { ...b, content: { ...b.content, notes } };
+          }
+          return b;
+        });
+        localStore.setItem(LOCAL_BLOCKS_KEY, updatedLocales);
+        this.blocksData = updatedLocales;
+      }
+    } catch (error) {
+      console.error("Error al persistir cambios en la lista:", error);
+    }
+  }
 
   mostrarAvisoLocal(esInvitado) {
     let aviso = this.querySelector("[data-local-warning]");
@@ -596,6 +959,10 @@ class FocoLienzoCanvas extends HTMLElement {
           }
           if (elementoAgregado.classList.contains("foco-crear-tarea")) {
             componenteActual.crearTarjetaItem(elementoAgregado, true); 
+            return;
+          }
+          if (elementoAgregado.classList.contains("foco-crear-lista")) {
+            componenteActual.crearTarjetaLista(elementoAgregado);
             return;
           }
 
