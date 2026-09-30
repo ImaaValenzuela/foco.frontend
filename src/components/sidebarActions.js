@@ -24,29 +24,25 @@ class FocoSidebarActions extends HTMLElement {
         <div class="foco-crear-tarea flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Tarea">
           <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#5966B2] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Tarea (Checklist) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-icon lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
           </div>
           <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Tarea</span>
         </div>
 
         <!-- Botón: Flecha (Conector Visual) -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para conectar ideas con una Flecha">
-          <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#FDA35D] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
+        <div id="btn-herramienta-flecha" class="foco-herramienta-flecha flex flex-col items-center group cursor-pointer select-none" title="Hacé clic para conectar dos tarjetas con una Flecha">
+          <div id="btn-flecha-circulo" class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#FDA35D] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Flecha (Derecha) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-right-icon lucide-move-right"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-right"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>
           </div>
           <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-orange-700 transition-colors">Flecha</span>
         </div>
 
         <!-- Botón: Lista -->
-        <div class="flex flex-col items-center group cursor-grab active:cursor-grabbing" title="Arrastrá para crear una Lista">
+        <div class="foco-crear-lista flex flex-col items-center group cursor-grab active:cursor-grabbing select-none" title="Arrastrá para crear una Lista">
           <div class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#C6C9F1] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
             <!-- Icono SVG de Lista (Bullet Points) -->
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
           </div>
           <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Lista</span>
         </div>
@@ -62,6 +58,7 @@ class FocoSidebarActions extends HTMLElement {
       </div>
     `;
     this.activarCrearNota();
+    this.activarBotonFlecha();
     this.querySelector('[data-action="settings"]').addEventListener('click', () => this.abrirModal('settings'));
     this.querySelector('[data-action="help"]').addEventListener('click', () => this.abrirModal('help'));
   } 
@@ -111,21 +108,42 @@ class FocoSidebarActions extends HTMLElement {
     document.body.appendChild(modal);
   }
 
-  // Activa SortableJS sobre el botón "Nota", configurado para que al arrastrarlo
-  // se cree una copia en el destino, sin mover ni eliminar el botón original.
+  // Activa SortableJS sobre los botones arrastrables (Nota, Tarea, Lista),
+  // configurado para que al arrastrarlos se cree una copia en el destino.
   activarCrearNota() {
-      var contenedorBotones = this.querySelector(".flex.flex-col.items-center.gap-5");
-      Sortable.create(contenedorBotones, {
-        group: {
-          name: "foco-tarjetas",
-          pull: "clone",
-          put: false
-        },
-        sort: false,
-        draggable: ".foco-crear-nota, .foco-crear-tarea" // Se añade la nueva clase
-      });
-    }
+    var contenedorBotones = this.querySelector(".flex.flex-col.items-center.gap-5");
+    Sortable.create(contenedorBotones, {
+      group: {
+        name: "foco-tarjetas",
+        pull: "clone",
+        put: false
+      },
+      sort: false,
+      draggable: ".foco-crear-nota, .foco-crear-tarea, .foco-crear-lista"
+    });
   }
+
+  // Activa el toggle del modo de conexión con flecha
+  activarBotonFlecha() {
+    const btnFlecha = this.querySelector("#btn-herramienta-flecha");
+    const circuloFlecha = this.querySelector("#btn-flecha-circulo");
+    if (!btnFlecha || !circuloFlecha) return;
+
+    btnFlecha.addEventListener("click", () => {
+      const activo = circuloFlecha.classList.toggle("ring-4");
+      circuloFlecha.classList.toggle("ring-orange-400", activo);
+      circuloFlecha.classList.toggle("shadow-lg", activo);
+      window.dispatchEvent(new CustomEvent("foco:toggle-arrow-mode", { detail: { active: activo } }));
+    });
+
+    window.addEventListener("foco:arrow-mode-changed", (event) => {
+      const activo = Boolean(event.detail?.active);
+      circuloFlecha.classList.toggle("ring-4", activo);
+      circuloFlecha.classList.toggle("ring-orange-400", activo);
+      circuloFlecha.classList.toggle("shadow-lg", activo);
+    });
+  }
+}
 
 // Registro en el navegador
 customElements.define('foco-sidebar-actions', FocoSidebarActions);
