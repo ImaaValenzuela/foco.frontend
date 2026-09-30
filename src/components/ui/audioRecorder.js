@@ -133,7 +133,7 @@ class FocoAudioRecorder extends HTMLElement {
       if (!sesion) throw new Error("Debes iniciar sesión");
 
       const result = await ingestService.ingestText(text, sesion.access_token);
-      this.showStatus('¡Guardado!', 3000);
+      this.showStatus(result.message || '¡Guardado!', 3000);
       
       if (result.type === 'HABIT') {
         emitCustomEvent(document, 'foco:refresh-habits'); 
