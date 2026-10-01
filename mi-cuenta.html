@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F.O.C.O. - Mi Cuenta</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Configuración oficial de Tailwind para F.O.C.O. -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            foco: {
+              blue: {
+                deep: '#22298A',
+                accent: '#7C83DE',
+                mid: '#5966B2',
+                light: '#C6C9F1',
+                gray: '#DDE2F2',
+              },
+              orange: {
+                accent: '#FC7206',
+                light: '#FDA35D',
+              },
+              gray: {
+                sidebar: '#F1F3F9',
+              }
+            }
+          },
+          fontFamily: {
+            sans: ['Archivo', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    body {
+      background: linear-gradient(135deg, #FFDECD 0%, #DDE2F2 50%, #C3CBE5 100%);
+      font-family: 'Archivo', 'Inter', sans-serif;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      border-radius: 9999px;
+      outline: none;
+      background: #E2E8F0;
+    }
+
+    .slider-orange::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FC7206;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgb(252 114 6 / 0.4);
+      transition: transform 0.1s ease;
+    }
+    .slider-orange::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-blue::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #22298A;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgb(34 41 138 / 0.4);
+      transition: transform 0.1s ease;
+    }
+    .slider-blue::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+  </style>
+
+  <script type="module" src="/src/components/header.js"></script>
+  <script type="module" src="/src/components/miCuenta.js"></script>
+</head>
+<body class="min-h-screen flex flex-col font-sans text-slate-800 antialiased">
+
+  <!-- Header Superior con Campanita y Perfil -->
+  <foco-header></foco-header>
+
+  <!-- Contenedor Principal -->
+  <main class="flex-1 flex justify-center items-start p-4 md:p-8 lg:p-10">
+    <div class="max-w-4xl w-full bg-white/95 backdrop-blur-md shadow-2xl rounded-3xl border border-white/20 p-6 md:p-10 transition-all">
+      
+      <!-- Título de la página -->
+      <div class="border-b border-slate-100 pb-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-foco-blue-deep tracking-tight">
+            Mi Cuenta
+          </h1>
+          <p class="text-xs md:text-sm text-slate-500 mt-1">
+            Personalizá tus datos, tu presupuesto diario de rutina y las motivaciones que guían al motor de IA.
+          </p>
+        </div>
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-xs font-bold text-foco-blue-deep hover:text-foco-orange-accent transition-colors bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl w-fit"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver al Lienzo
+        </a>
+      </div>
+
+      <form id="account-form" class="space-y-8">
+
+        <!-- SECCIÓN 1: DATOS PERSONALES -->
+        <div class="space-y-4">
+          <h2 class="text-base font-bold text-foco-blue-deep flex items-center gap-2 uppercase tracking-wide">
+            <span class="w-2 h-2 rounded-full bg-foco-orange-accent"></span>
+            Información Personal
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="account-name" class="text-xs font-bold text-slate-600">Nombre Completo</label>
+              <input
+                type="text"
+                id="account-name"
+                name="name"
+                required
+                placeholder="Tu nombre"
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-foco-blue-deep focus:ring-2 focus:ring-foco-blue-deep/20 transition-all text-slate-800"
+              >
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="account-email" class="text-xs font-bold text-slate-600">Correo Electrónico</label>
+              <input
+                type="email"
+                id="account-email"
+                disabled
+                class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed"
+                title="El correo no puede modificarse directamente"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 2: PRESUPUESTO DIARIO DE RUTINA -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-foco-blue-deep flex items-center gap-2 uppercase tracking-wide">
+              <span class="w-2 h-2 rounded-full bg-foco-orange-accent"></span>
+              Presupuesto Horario de Rutina
+            </h2>
+            <span id="hours-indicator" class="text-xs font-bold px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+              Total asignado: <span id="hours-total">0</span>/24 hrs
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/80">
+            <!-- Estudio -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-foco-orange-accent"></span> Estudio
+                </span>
+                <span id="study-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+              </div>
+              <input
+                type="range"
+                id="study"
+                min="0" max="8" value="0"
+                class="w-full slider-orange cursor-pointer"
+              >
+            </div>
+
+            <!-- Trabajo -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-foco-blue-deep"></span> Trabajo
+                </span>
+                <span id="work-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+              </div>
+              <input
+                type="range"
+                id="work"
+                min="0" max="8" value="0"
+                class="w-full slider-blue cursor-pointer"
+              >
+            </div>
+
+            <!-- Tareas de Rutina -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-foco-orange-accent"></span> Rutina personal
+                </span>
+                <span id="routine-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+              </div>
+              <input
+                type="range"
+                id="routine"
+                min="0" max="8" value="0"
+                class="w-full slider-orange cursor-pointer"
+              >
+            </div>
+
+            <!-- Ocio -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-foco-blue-deep"></span> Ocio y descanso
+                </span>
+                <span id="leisure-val" class="text-foco-blue-deep font-bold">0 hrs</span>
+              </div>
+              <input
+                type="range"
+                id="leisure"
+                min="0" max="8" value="0"
+                class="w-full slider-blue cursor-pointer"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: INTERESES -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-foco-blue-deep flex items-center gap-2 uppercase tracking-wide">
+              <span class="w-2 h-2 rounded-full bg-foco-orange-accent"></span>
+              Intereses Principales
+            </h2>
+            <span class="text-xs text-slate-500 font-semibold">
+              <span id="interests-count" class="font-bold text-foco-blue-deep">0</span>/6 seleccionados
+            </span>
+          </div>
+
+          <div id="interests-container" class="flex flex-wrap gap-2.5 p-4 bg-slate-50/60 rounded-2xl border border-slate-200/80">
+            <button type="button" id="tag-yoga_mindfulness" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Yoga, Meditación y Mindfulness
+            </button>
+            <button type="button" id="tag-team_sports" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Deportes de Equipo
+            </button>
+            <button type="button" id="tag-healthy_nutrition" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Nutrición y Cocina Saludable
+            </button>
+            <button type="button" id="tag-entrepreneurship" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Emprendimiento / Startups
+            </button>
+            <button type="button" id="tag-career_planning" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Planificación de Carrera / Búsqueda Laboral
+            </button>
+            <button type="button" id="tag-personal_finance" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Finanzas Personales e Inversiones
+            </button>
+            <button type="button" id="tag-academic_research" class="interest-tag flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-full transition-all border border-slate-200">
+              Proyectos de Investigación Académica
+            </button>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 4: MOTIVACIONES BOOLEANAS -->
+        <div class="space-y-4">
+          <h2 class="text-base font-bold text-foco-blue-deep flex items-center gap-2 uppercase tracking-wide">
+            <span class="w-2 h-2 rounded-full bg-foco-orange-accent"></span>
+            Motivaciones y Enfoque Cognitivo
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="flex items-start p-4 bg-slate-50/60 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all gap-3">
+              <input type="checkbox" id="mot_create_habits" class="w-5 h-5 mt-0.5 text-foco-blue-deep rounded focus:ring-foco-blue-deep">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Crear hábitos duraderos</span>
+                <p class="text-[11px] text-slate-500 mt-0.5">Sugerencias y seguimiento visual en el hábito diario.</p>
+              </div>
+            </label>
+
+            <label class="flex items-start p-4 bg-slate-50/60 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all gap-3">
+              <input type="checkbox" id="mot_avoid_dispersion" class="w-5 h-5 mt-0.5 text-foco-blue-deep rounded focus:ring-foco-blue-deep">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Evitar la dispersión / Procrastinación</span>
+                <p class="text-[11px] text-slate-500 mt-0.5">Prioriza sesiones Pomodoro y recordatorios de foco activo.</p>
+              </div>
+            </label>
+
+            <label class="flex items-start p-4 bg-slate-50/60 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all gap-3">
+              <input type="checkbox" id="mot_organization" class="w-5 h-5 mt-0.5 text-foco-blue-deep rounded focus:ring-foco-blue-deep">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Organización y centralización</span>
+                <p class="text-[11px] text-slate-500 mt-0.5">Estructura tareas y notas conectadas en el lienzo central.</p>
+              </div>
+            </label>
+
+            <label class="flex items-start p-4 bg-slate-50/60 hover:bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer transition-all gap-3">
+              <input type="checkbox" id="mot_reduce_fatigue" class="w-5 h-5 mt-0.5 text-foco-blue-deep rounded focus:ring-foco-blue-deep">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Reducir la fatiga cognitiva / Estrés</span>
+                <p class="text-[11px] text-slate-500 mt-0.5">Prioriza descarga rápida de ideas para liberar la memoria de trabajo.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- BOTÓN DE ENVÍO -->
+        <div class="border-t border-slate-100 pt-6 flex justify-end">
+          <button
+            type="submit"
+            id="save-profile-btn"
+            class="px-8 py-3.5 bg-foco-orange-accent hover:bg-orange-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-600/30 transition-all active:scale-95 flex items-center gap-2"
+          >
+            Guardar Cambios
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </main>
+
+  <!-- Toast de Notificación / Alerta para Mi Cuenta -->
+  <div
+    id="account-toast"
+    class="fixed bottom-6 right-6 max-w-sm w-84 p-4 rounded-2xl shadow-2xl flex items-start gap-3 z-50 transition-all duration-300 border text-sm opacity-0 pointer-events-none translate-y-8 bg-white"
+  >
+    <div id="toast-icon" class="flex-shrink-0 mt-0.5"></div>
+    <div class="flex-1">
+      <h4 id="toast-title" class="font-bold text-xs">Alerta</h4>
+      <p id="toast-message" class="text-xs mt-0.5"></p>
+    </div>
+    <button onclick="closeAccountToast()" class="text-slate-400 hover:text-slate-600 focus:outline-none">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+</body>
+</html>
