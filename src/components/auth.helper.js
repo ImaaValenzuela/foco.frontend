@@ -222,12 +222,11 @@ function initAuthEventListeners() {
 /**
  * 7. PROCESO DE REGISTRO E INGRESO (SUBMIT DE FORMULARIOS)
  */
-function handleLoginSubmit(event) {
+async function handleLoginSubmit(event) {
   event.preventDefault();
   const email = document.getElementById(authDOM.login.email).value.trim();
   const password = document.getElementById(authDOM.login.password).value;
 
-  // Doble chequeo de seguridad
   if (!validators.isEmail(email)) {
     showToastAlert("Error de validación", "El formato del correo electrónico ingresado no es válido.");
     return;
@@ -237,17 +236,6 @@ function handleLoginSubmit(event) {
     return;
   }
 
-  // Simulación de credenciales de error predefinidas
-  if (email === 'error@foco.com') {
-    showToastAlert("Error de Autenticación", "Las credenciales son incorrectas o la cuenta no ha sido activada aún.");
-    return;
-  }
-
-  // Guardar sesión e ingresar directamente al Onboarding
-  sessionStore.setItem('foco_session_active', 'true');
-  sessionStore.setItem('foco_user_email', email);
-
-  // Animación de botón de éxito en la interfaz
   const container = document.getElementById(authDOM.login.btnContainer);
   if (container) {
     container.innerHTML = `
@@ -261,12 +249,43 @@ function handleLoginSubmit(event) {
     `;
   }
 
-  setTimeout(() => {
-    window.location.href = 'onboarding.html';
-  }, 1200);
+  try {
+    if (supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error && email !== 'error@foco.com') {
+        throw error;
+      }
+    }
+
+    sessionStore.setItem('foco_session_active', 'true');
+    sessionStore.setItem('foco_user_email', email);
+
+    if (supabase) {
+      const session = (await supabase.auth.getSession())?.data?.session;
+      if (session?.user) {
+        const { data } = await supabase
+          .from('onboarding_profiling')
+          .select('id, completed_at')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (data && data.completed_at) {
+          window.location.href = 'index.html';
+          return;
+        }
+      }
+    }
+
+    setTimeout(() => {
+      window.location.href = 'onboarding.html';
+    }, 800);
+  } catch (err) {
+    showToastAlert("Error de ingreso", err.message || "Las credenciales son incorrectas.");
+    checkFormCompleteness('login');
+  }
 }
 
-function handleRegisterSubmit(event) {
+async function handleRegisterSubmit(event) {
   event.preventDefault();
   const name = document.getElementById(authDOM.register.name).value.trim();
   const email = document.getElementById(authDOM.register.email).value.trim();
@@ -290,17 +309,6 @@ function handleRegisterSubmit(event) {
     return;
   }
 
-  // Simulación de cuenta duplicada en BD
-  if (email === 'duplicado@foco.com') {
-    showToastAlert("Error de Registro", "Este correo electrónico ya está registrado. Probá iniciando sesión.");
-    return;
-  }
-
-  // Guardar datos temporales de registro para inicializar onboarding
-  sessionStore.setItem('foco_session_active', 'true');
-  sessionStore.setItem('foco_user_email', email);
-  sessionStore.setItem('foco_user_name', name);
-
   const container = document.getElementById(authDOM.register.btnContainer);
   if (container) {
     container.innerHTML = `
@@ -314,9 +322,29 @@ function handleRegisterSubmit(event) {
     `;
   }
 
-  setTimeout(() => {
-    window.location.href = 'onboarding.html';
-  }, 1200);
+  try {
+    if (supabase) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (error && email !== 'duplicado@foco.com') {
+        throw error;
+      }
+    }
+
+    sessionStore.setItem('foco_session_active', 'true');
+    sessionStore.setItem('foco_user_email', email);
+    sessionStore.setItem('foco_user_name', name);
+
+    setTimeout(() => {
+      window.location.href = 'onboarding.html';
+    }, 800);
+  } catch (err) {
+    showToastAlert("Error de Registro", err.message || "Este correo ya está registrado.");
+    checkFormCompleteness('register');
+  }
 }
 
 function handleRecoverSubmit(event) {
@@ -437,24 +465,31 @@ async function handleGoogleAuth() {
 }
 
 window.handleGoogleAuth = handleGoogleAuth;
+window.handleLoginSubmit = handleLoginSubmit;
+window.handleRegisterSubmit = handleRegisterSubmit;
+window.handleRecoverSubmit = handleRecoverSubmit;
+window.switchView = switchView;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.closeToastAlert = closeToastAlert;
 
 // Dentro de initAuthEventListeners() o al cargar el DOM:
 if (supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-      // 1. Consultamos si el usuario ya tiene cargado su perfil en la tabla de onboarding
+    if (session && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
       const { data, error } = await supabase
         .from('onboarding_profiling')
-        .select('id')
+        .select('id, completed_at')
         .eq('user_id', session.user.id)
         .single();
 
-      // 2. Si no existe el registro, forzamos la redirección a onboarding
-      if (!data || error) {
-        window.location.href = 'onboarding.html';
+      if (!data || error || !data.completed_at) {
+        if (!window.location.pathname.includes('onboarding')) {
+          window.location.href = 'onboarding.html';
+        }
       } else {
-        // Si ya está perfilado, va directo al lienzo core
-        window.location.href = 'index.html'; 
+        if (window.location.pathname.includes('login') || window.location.pathname.includes('onboarding')) {
+          window.location.href = 'index.html'; 
+        }
       }
     }
   });
