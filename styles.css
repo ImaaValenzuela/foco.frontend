@@ -121,8 +121,28 @@ body {
    PALETAS DE COLORES DEL TABLERO
    ========================================================================= */
 
+/* Variables de Asociación Visual (Valores por defecto / Preestablecida) */
+:root {
+  --color-asociacion-primario: #323888;
+  --color-asociacion-acento: #f39045;
+  --color-asociacion-suave: #eef2ff;
+  --color-asociacion-borde: #c7d2fe;
+}
+
+:root[data-palette="preestablecida"] {
+  --color-asociacion-primario: #323888;
+  --color-asociacion-acento: #f39045;
+  --color-asociacion-suave: #eef2ff;
+  --color-asociacion-borde: #c7d2fe;
+}
+
 /* ---------- BOSQUE ---------- */
 :root[data-palette="bosque"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #108981;
+  --color-asociacion-acento: #168a67;
+  --color-asociacion-suave: #ecfdf5;
+  --color-asociacion-borde: #a7f3d0;
   /* Header */
   --color-header-bg: #FFFFFF;
   --color-header-logo-bg: #dff8ea;
@@ -178,6 +198,12 @@ body {
 
 /* ---------- LAVANDA ---------- */
 :root[data-palette="lavanda"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #7b2cbf;
+  --color-asociacion-acento: #474973;
+  --color-asociacion-suave: #faf5ff;
+  --color-asociacion-borde: #ddd6fe;
+
   /* Header */
   --color-header-bg: #f8ecfe;
   --color-header-logo-bg: #e1d7e6;
@@ -233,6 +259,12 @@ body {
 
 /* ---------- GLACIAR ---------- */
 :root[data-palette="glaciar"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #00398e;
+  --color-asociacion-acento: #4895ef;
+  --color-asociacion-suave: #eff6ff;
+  --color-asociacion-borde: #bfdbfe;
+
   /* Header */
   --color-header-bg: #fcfdff;
   --color-header-logo-bg: #e9e8fa;
@@ -288,6 +320,12 @@ body {
 
 /* ---------- CORAL ---------- */
 :root[data-palette="coral"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #f87171;
+  --color-asociacion-acento: #ea580c;
+  --color-asociacion-suave: #fff1f2;
+  --color-asociacion-borde: #fecdd3;
+
   /* Header */
   --color-header-bg: #fef7ed;
   --color-header-logo-bg: #fff4e6;
@@ -343,6 +381,12 @@ body {
 
 /* ---------- COSMOS (oscura) ---------- */
 :root[data-palette="cosmos"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #8f48c3;
+  --color-asociacion-acento: #c084fc;
+  --color-asociacion-suave: rgba(143, 72, 195, 0.2);
+  --color-asociacion-borde: #8f48c3;
+
   /* Header */
   --color-header-bg: #13232c;
   --color-header-logo-bg: #1e2e37;
@@ -398,6 +442,12 @@ body {
 
 /* ---------- MODO OSCURO ---------- */
 :root[data-palette="modoOscuro"] {
+  /* Asociación visual */
+  --color-asociacion-primario: #f55536;
+  --color-asociacion-acento: #00398e;
+  --color-asociacion-suave: rgba(245, 85, 54, 0.2);
+  --color-asociacion-borde: #f55536;
+
   /* Header */
   --color-header-bg: #13232c;
   --color-header-logo-bg: #1e2e37;
@@ -464,4 +514,31 @@ html[data-palette="lavanda"] foco-lienzo-canvas {
 foco-sidebar-actions .group:hover span {
   color: var(--color-sidebar-texto) !important;
   opacity: 0.8; /*efecto suave al apoyar el mouse*/
+}
+
+/* =========================================================================
+   ESTILOS DE ASOCIACIÓN VISUAL DE ACCIONES (POR COLOR DE PALETA)
+   ========================================================================= */
+.foco-tarjeta-asociada-activa {
+  box-shadow: 0 0 0 3px var(--color-asociacion-primario), 0 12px 24px -6px rgba(0, 0, 0, 0.18) !important;
+  border-color: var(--color-asociacion-primario) !important;
+  transform: translateY(-2px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 10;
+}
+
+.foco-tarjeta-asociada-vinculada {
+  box-shadow: 0 0 0 3px var(--color-asociacion-acento), 0 8px 18px -4px rgba(0, 0, 0, 0.14) !important;
+  border-color: var(--color-asociacion-acento) !important;
+  background-color: var(--color-asociacion-suave) !important;
+  transform: translateY(-1px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 9;
+}
+
+.foco-tarjeta-asociando-origen {
+  box-shadow: 0 0 0 3px var(--color-asociacion-primario), 0 0 16px var(--color-asociacion-primario) !important;
+  border-color: var(--color-asociacion-primario) !important;
+  animation: pulse-soft 2s infinite ease-in-out;
+  z-index: 15;
 }

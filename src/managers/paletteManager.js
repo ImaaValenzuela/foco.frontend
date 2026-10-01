@@ -104,6 +104,23 @@ export function aplicarPaleta(nombrePaleta) {
 }
 
 /**
+ * Retorna los colores de asociación visual correspondientes a la paleta activa
+ */
+export function obtenerColorAsociacion(nombrePaleta) {
+  const paletaId = nombrePaleta || obtenerPaletaActual();
+  const mapaColores = {
+    preestablecida: { primario: '#323888', acento: '#f39045', suave: '#eef2ff', borde: '#c7d2fe' },
+    bosque: { primario: '#108981', acento: '#168a67', suave: '#ecfdf5', borde: '#a7f3d0' },
+    lavanda: { primario: '#7b2cbf', acento: '#474973', suave: '#faf5ff', borde: '#ddd6fe' },
+    glaciar: { primario: '#00398e', acento: '#4895ef', suave: '#eff6ff', borde: '#bfdbfe' },
+    coral: { primario: '#f87171', acento: '#ea580c', suave: '#fff1f2', borde: '#fecdd3' },
+    cosmos: { primario: '#8f48c3', acento: '#c084fc', suave: 'rgba(143, 72, 195, 0.2)', borde: '#8f48c3' },
+    modoOscuro: { primario: '#f55536', acento: '#00398e', suave: 'rgba(245, 85, 54, 0.2)', borde: '#f55536' }
+  };
+  return mapaColores[paletaId] || mapaColores.preestablecida;
+}
+
+/**
  * Sincroniza la paleta al cargar la app
  * Aplica localStorage de inmediato. Si hay sesión en Supabase con paleta guardada en la BD, la sincroniza.
  */
