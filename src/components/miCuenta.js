@@ -1,4 +1,4 @@
-import { getSession, signOut } from '../auth.js';
+import { getSession, signOut, supabase } from '../auth.js';
 import { profileService } from '../services/profile.service.js';
 import { localStore } from '../services/storage.service.js';
 
@@ -108,15 +108,27 @@ function toggleInterest(interestId, element) {
 
 async function loadUserData() {
   try {
-    const data = await profileService.getProfile();
-    const user = data.user || {};
-    const profiling = data.profiling || {};
+    let data = null;
+    try {
+      data = await profileService.getProfile();
+    } catch (err) {
+      console.warn('Error al cargar datos de perfil desde la API:', err.message);
+    }
+
+    const session = await getSession().catch(() => null);
+    const localData = localStore.getItem('foco_onboarding_data') || {};
+
+    const user = data?.user || {
+      name: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || '',
+      email: session?.user?.email || '',
+    };
+    const profiling = data?.profiling || localData || {};
 
     // 1. Datos personales
     const nameInput = document.getElementById('account-name');
     const emailInput = document.getElementById('account-email');
-    if (nameInput) nameInput.value = user.name || '';
-    if (emailInput) emailInput.value = user.email || '';
+    if (nameInput) nameInput.value = user.name || session?.user?.user_metadata?.full_name || '';
+    if (emailInput) emailInput.value = user.email || session?.user?.email || '';
 
     // 2. Sliders de rutina
     if (document.getElementById('study')) document.getElementById('study').value = profiling.study_hours_daily ?? 0;
@@ -128,6 +140,8 @@ async function loadUserData() {
 
     // 3. Intereses
     selectedInterests = Array.isArray(profiling.interests) ? [...profiling.interests] : [];
+    const container = document.getElementById('interests-container');
+
     document.querySelectorAll('.interest-tag').forEach((btn) => {
       const id = btn.id.replace('tag-', '');
       if (selectedInterests.includes(id)) {
@@ -138,6 +152,17 @@ async function loadUserData() {
         btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
       }
     });
+
+    // Reordenar para que los seleccionados aparezcan primero en el contenedor (idéntico a onboarding)
+    if (container) {
+      for (let i = selectedInterests.length - 1; i >= 0; i--) {
+        const btn = document.getElementById(`tag-${selectedInterests[i]}`);
+        if (btn) {
+          container.insertBefore(btn, container.firstChild);
+        }
+      }
+    }
+
     const countLabel = document.getElementById('interests-count');
     if (countLabel) countLabel.textContent = selectedInterests.length;
 
@@ -209,7 +234,23 @@ async function handleSaveProfile(e) {
   try {
     const res = await profileService.updateProfile(payload);
     localStore.setItem('foco_onboarding_data', payload);
-    showToast('¡Guardado con éxito!', 'Tu información y preferencias se han actualizado en Supabase.', 'success');
+
+    if (supabase) {
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: payload.name,
+            name: payload.name,
+            interests: payload.interests,
+            onboarding_completed: true,
+          },
+        });
+      } catch (sbErr) {
+        console.warn('Advertencia al sincronizar metadatos con Supabase:', sbErr);
+      }
+    }
+
+    showToast('¡Guardado con éxito!', 'Tu información y preferencias se han actualizado correctamente.', 'success');
   } catch (err) {
     console.error('Error guardando perfil:', err);
     showToast('Error de guardado', err.message || 'No se pudo guardar la información.', 'error');

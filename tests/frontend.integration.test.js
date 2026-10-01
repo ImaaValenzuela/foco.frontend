@@ -289,6 +289,45 @@ describe('Suite de Pruebas de Integración (Frontend - UI, Header, Notificacione
       expect(res.message).toBe('Perfil actualizado con éxito');
       expect(res.user.name).toBe('Jane Foster Modificada');
     });
+
+    it('2.2.3: mi-cuenta.html contiene los 24 intereses de onboarding.html sin iconos SVG y con IDs consistentes', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const onboardingHtml = fs.readFileSync(path.resolve(process.cwd(), 'onboarding.html'), 'utf-8');
+      const miCuentaHtml = fs.readFileSync(path.resolve(process.cwd(), 'mi-cuenta.html'), 'utf-8');
+
+      // Extraer IDs de intereses en onboarding.html
+      const onboardingMatches = [...onboardingHtml.matchAll(/id="(tag-[a-z0-9_]+)"/g)].map(m => m[1]);
+      const miCuentaMatches = [...miCuentaHtml.matchAll(/id="(tag-[a-z0-9_]+)"/g)].map(m => m[1]);
+
+      // Deben coincidir exactamente los 24 intereses y en el mismo orden
+      expect(onboardingMatches.length).toBe(24);
+      expect(miCuentaMatches.length).toBe(24);
+      expect(miCuentaMatches).toEqual(onboardingMatches);
+
+      // Verificar que los botones en mi-cuenta no tienen iconos SVG
+      const containerMatch = miCuentaHtml.match(/<div id="interests-container"[^>]*>([\s\S]*?)<\/div>/);
+      expect(containerMatch).not.toBeNull();
+      const containerContent = containerMatch ? containerMatch[1] : '';
+      expect(containerContent).not.toContain('<svg');
+    });
+
+    it('2.2.4: El toast de notificación de guardado en miCuenta.js es general y no contiene la palabra "Supabase"', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const miCuentaJs = fs.readFileSync(path.resolve(process.cwd(), 'src/components/miCuenta.js'), 'utf-8');
+
+      // Asegurar que no contenga 'Supabase' en showToast
+      const toastMatches = [...miCuentaJs.matchAll(/showToast\([^)]+\)/g)].map(m => m[0]);
+      for (const toastCall of toastMatches) {
+        expect(toastCall.toLowerCase()).not.toContain('supabase');
+      }
+
+      // Asegurar mensaje claro y amigable de guardado
+      expect(miCuentaJs).toContain('Tu información y preferencias se han actualizado correctamente.');
+    });
   });
 
   describe('Test 2.3: Flujo de Cierre de Sesión (Logout)', () => {
