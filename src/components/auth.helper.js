@@ -2,10 +2,13 @@
  * F.O.C.O. - Módulo de Autenticación y Validación de Clientes
  * Centraliza las reglas de negocio de la Épica 1 (Autenticación e Inducción)
  */
-import { sessionStore } from '../services/storage.service.js';
+import { sessionStore, localStore } from '../services/storage.service.js';
 import { validators } from '../utils/validators.js';
 import { showToastAlert, closeToastAlert } from './ui/toast.js';
-import { supabase } from '../auth.js';
+import { supabase, getSession } from '../auth.js';
+import { profileService } from '../services/profile.service.js';
+
+let isNavigating = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inicialización de escuchadores en tiempo real
@@ -217,6 +220,39 @@ function initAuthEventListeners() {
   const recEmail = document.getElementById(authDOM.recover.email);
   recEmail?.addEventListener('input', () => checkFormCompleteness('recover'));
   recEmail?.addEventListener('blur', () => validateFieldOnBlur(authDOM.recover.email, 'error-recover-email', 'email'));
+
+  // Si ya existe sesión previa activa, verificar persistencia de onboarding y redirigir
+  checkExistingSession();
+}
+
+/**
+ * Determina y redirige según el estado de onboarding del usuario
+ */
+async function redirectByOnboardingState(session) {
+  if (isNavigating) return;
+
+  const completed = await profileService.checkOnboardingCompleted(session);
+  isNavigating = true;
+
+  if (completed) {
+    window.location.href = 'index.html';
+  } else {
+    window.location.href = 'onboarding.html';
+  }
+}
+
+/**
+ * Verifica si hay una sesión activa persistida al cargar la vista de login
+ */
+async function checkExistingSession() {
+  try {
+    const session = await getSession();
+    if (session?.user) {
+      await redirectByOnboardingState(session);
+    }
+  } catch (e) {
+    console.warn('Error al verificar sesión existente:', e);
+  }
 }
 
 /**
@@ -260,25 +296,8 @@ async function handleLoginSubmit(event) {
     sessionStore.setItem('foco_session_active', 'true');
     sessionStore.setItem('foco_user_email', email);
 
-    if (supabase) {
-      const session = (await supabase.auth.getSession())?.data?.session;
-      if (session?.user) {
-        const { data } = await supabase
-          .from('onboarding_profiling')
-          .select('id, completed_at')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (data && data.completed_at) {
-          window.location.href = 'index.html';
-          return;
-        }
-      }
-    }
-
-    setTimeout(() => {
-      window.location.href = 'onboarding.html';
-    }, 800);
+    const session = await getSession();
+    await redirectByOnboardingState(session);
   } catch (err) {
     showToastAlert("Error de ingreso", err.message || "Las credenciales son incorrectas.");
     checkFormCompleteness('login');
@@ -452,8 +471,8 @@ async function handleGoogleAuth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Al tener éxito, Google redirecciona al usuario al Onboarding
-        redirectTo: window.location.origin + '/onboarding.html' 
+        // Al tener éxito, Google redirecciona a login.html donde se evalúa el estado del onboarding
+        redirectTo: window.location.origin + '/login.html' 
       }
     });
     
@@ -476,19 +495,17 @@ window.closeToastAlert = closeToastAlert;
 if (supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-      const { data, error } = await supabase
-        .from('onboarding_profiling')
-        .select('id, completed_at')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (!data || error || !data.completed_at) {
-        if (!window.location.pathname.includes('onboarding')) {
-          window.location.href = 'onboarding.html';
+      if (isNavigating) return;
+      const completed = await profileService.checkOnboardingCompleted(session);
+      if (completed) {
+        if (window.location.pathname.includes('login') || window.location.pathname.includes('onboarding')) {
+          isNavigating = true;
+          window.location.href = 'index.html'; 
         }
       } else {
-        if (window.location.pathname.includes('login') || window.location.pathname.includes('onboarding')) {
-          window.location.href = 'index.html'; 
+        if (!window.location.pathname.includes('onboarding')) {
+          isNavigating = true;
+          window.location.href = 'onboarding.html';
         }
       }
     }

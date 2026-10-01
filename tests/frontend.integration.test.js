@@ -64,6 +64,7 @@ vi.mock('../src/services/profile.service.js', () => {
       getProfile: vi.fn(),
       updateProfile: vi.fn(),
       getOnboardingStatus: vi.fn(),
+      checkOnboardingCompleted: vi.fn().mockResolvedValue(true),
     },
   };
 });
@@ -156,6 +157,7 @@ describe('Suite de Pruebas de Integración (Frontend - UI, Header, Notificacione
 
       const miCuentaLink = header.querySelector('#menu-mi-cuenta');
       const logoutBtn = header.querySelector('#menu-logout-btn');
+      const onboardingLink = header.querySelector('#menu-onboarding');
 
       expect(miCuentaLink).not.toBeNull();
       expect(miCuentaLink?.getAttribute('href')).toBe('/mi-cuenta.html');
@@ -163,6 +165,10 @@ describe('Suite de Pruebas de Integración (Frontend - UI, Header, Notificacione
 
       expect(logoutBtn).not.toBeNull();
       expect(logoutBtn?.textContent).toContain('Cerrar Sesión');
+
+      // Validar que la opción redundante "Calibrar Rutina" fue eliminada y solo quedan las 2 opciones
+      expect(onboardingLink).toBeNull();
+      expect(dropdown?.textContent).not.toContain('Calibrar Rutina');
     });
   });
 
@@ -314,6 +320,52 @@ describe('Suite de Pruebas de Integración (Frontend - UI, Header, Notificacione
       expect(signOut).toHaveBeenCalled();
       expect(sessionStorage.getItem('foco_session_active')).toBeNull();
       expect(localStorage.getItem('foco_onboarding_data')).toBeNull();
+    });
+  });
+
+  describe('Test 2.4: Persistencia y Redirección de Onboarding en Autenticación', () => {
+    it('2.4.1: checkOnboardingCompleted detecta datos existentes en localStorage', async () => {
+      const { ProfileService } = await vi.importActual('../src/services/profile.service.js');
+      const service = new ProfileService();
+
+      localStorage.setItem('foco_onboarding_data', JSON.stringify({ study_hours_daily: 4 }));
+      const completed = await service.checkOnboardingCompleted();
+      expect(completed).toBe(true);
+    });
+
+    it('2.4.2: checkOnboardingCompleted consulta a API status cuando no hay caché local', async () => {
+      const { ProfileService } = await vi.importActual('../src/services/profile.service.js');
+      const service = new ProfileService();
+
+      localStorage.removeItem('foco_onboarding_data');
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          completed: true,
+          profiling: { study_hours_daily: 4, completed_at: '2026-10-01' },
+        }),
+      });
+
+      const completed = await service.checkOnboardingCompleted();
+      expect(completed).toBe(true);
+      expect(localStorage.getItem('foco_onboarding_data')).not.toBeNull();
+    });
+
+    it('2.4.3: checkOnboardingCompleted retorna false si el usuario no tiene onboarding en API ni en local', async () => {
+      const { ProfileService } = await vi.importActual('../src/services/profile.service.js');
+      const service = new ProfileService();
+
+      localStorage.removeItem('foco_onboarding_data');
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          completed: false,
+          profiling: null,
+        }),
+      });
+
+      const completed = await service.checkOnboardingCompleted();
+      expect(completed).toBe(false);
     });
   });
 });
