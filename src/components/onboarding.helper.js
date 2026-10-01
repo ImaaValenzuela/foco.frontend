@@ -4,11 +4,12 @@
  */
 import { localStore } from '../services/storage.service.js';
 import { getSession } from '../auth.js';
-
+import { profileService } from '../services/profile.service.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   initOnboarding();
 });
+
 
 // Cache global de elementos del DOM de Onboarding
 const onboardingDOM = {
@@ -46,7 +47,21 @@ const onboardingState = {
 /**
  * Inicialización y enrutamiento de escuchadores
  */
-function initOnboarding() {
+async function initOnboarding() {
+  // Verificar si el usuario ya tiene sesión y onboarding completado
+  try {
+    const session = await getSession();
+    if (session?.user) {
+      const completed = await profileService.checkOnboardingCompleted(session);
+      if (completed) {
+        window.location.href = 'index.html';
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Error comprobando sesión en onboarding:', err);
+  }
+
   // Bind de sliders
   const sliders = Object.values(onboardingDOM.sliders).map(id => document.getElementById(id));
   sliders.forEach(slider => {
