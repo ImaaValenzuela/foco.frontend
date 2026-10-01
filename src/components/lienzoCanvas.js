@@ -14,15 +14,6 @@ class FocoLienzoCanvas extends HTMLElement {
     this.className = "flex-1 p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-[--color-lienzo-bg,theme(colors.slate.100)] foco-scrollbar relative";
     // (Mantenemos la estructura HTML original de los 4 bloques intacta)
     this.innerHTML = `
-      <!-- Capa de Conectores SVG (Flechas) -->
-      <svg id="foco-canvas-connectors" class="pointer-events-none absolute inset-0 z-20 w-full h-full overflow-visible" style="min-width: 100%; min-height: 100%;">
-        <defs>
-          <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-            <polygon points="0 0, 9 3.5, 0 7" fill="#FC7206" />
-          </marker>
-        </defs>
-      </svg>
-
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
         
         <!-- BLOQUE 1: Objetivos Activos -->
@@ -82,40 +73,40 @@ class FocoLienzoCanvas extends HTMLElement {
 
     this.onVisibilityChanged = (event) => {
       this.aplicarVisibilidad(event.detail);
-      this.solicitarRenderConectores();
     };
     window.addEventListener("foco:visibility-changed", this.onVisibilityChanged);
 
     this.onToggleArrowMode = (e) => {
       this.arrowMode = Boolean(e.detail?.active);
       if (!this.arrowMode && this.selectedSourceCard) {
-        this.selectedSourceCard.classList.remove("ring-4", "ring-orange-400", "shadow-xl");
+        this.selectedSourceCard.classList.remove("foco-tarjeta-asociando-origen", "ring-4", "ring-orange-400", "shadow-xl");
         this.selectedSourceCard = null;
       }
       this.actualizarEstiloCursorModoFlecha();
     };
     window.addEventListener("foco:toggle-arrow-mode", this.onToggleArrowMode);
+    window.addEventListener("foco:toggle-associate-mode", this.onToggleArrowMode);
 
     this.onKeyDownCanvas = (e) => {
       if (e.key === "Escape" && this.arrowMode) {
         this.arrowMode = false;
         if (this.selectedSourceCard) {
-          this.selectedSourceCard.classList.remove("ring-4", "ring-orange-400", "shadow-xl");
+          this.selectedSourceCard.classList.remove("foco-tarjeta-asociando-origen", "ring-4", "ring-orange-400", "shadow-xl");
           this.selectedSourceCard = null;
         }
         this.actualizarEstiloCursorModoFlecha();
         window.dispatchEvent(new CustomEvent("foco:arrow-mode-changed", { detail: { active: false } }));
+        window.dispatchEvent(new CustomEvent("foco:associate-mode-changed", { detail: { active: false } }));
       }
     };
     window.addEventListener("keydown", this.onKeyDownCanvas);
 
-    this.addEventListener("scroll", () => this.solicitarRenderConectores(), { passive: true });
-    window.addEventListener("resize", () => this.solicitarRenderConectores(), { passive: true });
-    this.querySelectorAll(".foco-drop-zone").forEach((z) => {
-      z.addEventListener("scroll", () => this.solicitarRenderConectores(), { passive: true });
+    escucharCambiosDePaleta((nombrePaleta) => {
+      aplicarPaleta(nombrePaleta);
+      if (this.tarjetaResaltadaId) {
+        this.resaltarAsociacionesDeTarjeta(this.tarjetaResaltadaId);
+      }
     });
-
-    escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
     // Escuchamos el evento de éxito del micrófono para recargar los bloques
     window.addEventListener("foco:refresh-canvas", () => this.cargarBlocks());
 
@@ -1049,7 +1040,6 @@ class FocoLienzoCanvas extends HTMLElement {
             alert("No se pudo reubicar el elemento en la base de datos.");
             componenteActual.cargarBlocks();
           }
-          componenteActual.solicitarRenderConectores();
         }
       });
     }
@@ -1114,83 +1104,163 @@ class FocoLienzoCanvas extends HTMLElement {
 
     const btnInfo = document.createElement("button");
     btnInfo.type = "button";
-    btnInfo.className = "foco-btn-info flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-300 text-[10px] font-bold shadow-xs hover:scale-110 transition-all cursor-pointer";
+    btnInfo.className = "foco-btn-info flex items-center justify-center w-5 h-5 rounded-full bg-[--color-asociacion-suave,#eef2ff] text-[--color-asociacion-primario,#323888] hover:bg-[--color-asociacion-primario,#323888] hover:text-white border border-[--color-asociacion-borde,#c7d2fe] text-[10px] font-bold shadow-xs hover:scale-110 transition-all cursor-pointer";
     btnInfo.innerHTML = "i";
-    btnInfo.title = "Tarjeta asociada (pasa el cursor para ver detalles)";
+    btnInfo.title = `Tarjeta asociada (${conexiones.length}) - Clic para ver información de asociaciones`;
 
-    const tooltip = document.createElement("div");
-    tooltip.className = "foco-info-tooltip hidden absolute right-0 top-6 w-64 p-3 bg-slate-900/95 text-white rounded-xl shadow-2xl z-50 text-[11px] backdrop-blur-sm border border-slate-700 pointer-events-auto";
+    btnInfo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.abrirModalAsociaciones(noteId);
+    });
 
-    const renderTooltip = () => {
-      tooltip.innerHTML = "";
-
-      const header = document.createElement("div");
-      header.className = "flex items-center justify-between pb-1.5 mb-2 border-b border-slate-700/80 font-bold text-orange-400 text-[11px]";
-      header.innerHTML = `<span>🔗 Tarjetas asociadas (${conexiones.length})</span>`;
-      tooltip.appendChild(header);
-
-      const list = document.createElement("div");
-      list.className = "space-y-1.5 max-h-48 overflow-y-auto foco-scrollbar pr-0.5";
-
-      conexiones.forEach((conn) => {
-        const esOrigen = conn.sourceId === noteId;
-        const otroId = esOrigen ? conn.targetId : conn.sourceId;
-        const otraNota = this.obtenerNotaPorId(otroId);
-
-        const row = document.createElement("div");
-        row.className = "flex items-start justify-between gap-1.5 p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition-colors border border-slate-700/50";
-
-        const info = document.createElement("div");
-        info.className = "flex-1 min-w-0";
-
-        const tipoEtiqueta = otraNota?.type === "list"
-          ? "Lista"
-          : (otraNota?.type === "task" || otraNota?.isTask ? "Tarea" : "Nota");
-
-        const dir = document.createElement("div");
-        dir.className = "flex items-center gap-1.5 text-[9px] font-semibold text-orange-300";
-        dir.innerHTML = `<span>${esOrigen ? "➔ Vinculada hacia:" : "⬅ Vinculada desde:"}</span><span class="px-1 py-0.2 rounded bg-slate-700/80 text-orange-200 text-[8px] uppercase tracking-wider">${tipoEtiqueta}</span>`;
-
-        const textoNota = document.createElement("p");
-        textoNota.className = "text-[11px] text-slate-200 truncate font-medium mt-0.5";
-        textoNota.textContent = otraNota
-          ? (otraNota.title || otraNota.text || "Tarjeta sin título")
-          : "Tarjeta vinculada";
-
-        info.appendChild(dir);
-        info.appendChild(textoNota);
-
-        const btnDesvincular = document.createElement("button");
-        btnDesvincular.className = "text-slate-400 hover:text-red-400 px-1 py-0.5 text-xs font-bold leading-none transition-colors";
-        btnDesvincular.title = "Desvincular asociación";
-        btnDesvincular.innerHTML = "&times;";
-        btnDesvincular.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          await this.eliminarConexion(conn.id);
-        });
-
-        row.appendChild(info);
-        row.appendChild(btnDesvincular);
-        list.appendChild(row);
-      });
-
-      tooltip.appendChild(list);
-    };
-
-    renderTooltip();
-
-    badgeWrapper.addEventListener("mouseenter", () => {
-      tooltip.classList.remove("hidden");
+    btnInfo.addEventListener("mouseenter", () => {
       this.resaltarAsociacionesDeTarjeta(noteId);
     });
 
-    badgeWrapper.addEventListener("mouseleave", () => {
-      tooltip.classList.add("hidden");
-      this.limpiarResaltadoAsociaciones();
+    btnInfo.addEventListener("mouseleave", () => {
+      if (!document.querySelector(`.foco-modal-asociaciones[data-active-note-id="${CSS.escape(noteId)}"]`)) {
+        this.limpiarResaltadoAsociaciones();
+      }
     });
 
     badgeWrapper.appendChild(btnInfo);
-    badgeWrapper.appendChild(tooltip);
+  }
+
+  abrirModalAsociaciones(noteId) {
+    // Si ya existe un modal de asociaciones abierto, eliminarlo antes
+    const modalExistente = document.querySelector(".foco-modal-asociaciones");
+    if (modalExistente) modalExistente.remove();
+
+    const conexiones = this.obtenerConexionesDeTarjeta(noteId);
+    if (!conexiones || conexiones.length === 0) return;
+
+    this.resaltarAsociacionesDeTarjeta(noteId);
+
+    const notaActual = this.obtenerNotaPorId(noteId);
+    const tituloActual = notaActual
+      ? (notaActual.title || notaActual.text || "Tarjeta sin título")
+      : "Tarjeta seleccionada";
+
+    const modal = document.createElement("div");
+    modal.className = "foco-modal foco-modal-asociaciones fixed inset-0 z-[100] flex items-center justify-center p-4";
+    modal.dataset.activeNoteId = noteId;
+
+    const renderContenidoModal = () => {
+      const conns = this.obtenerConexionesDeTarjeta(noteId);
+      if (!conns || conns.length === 0) {
+        cerrarModal();
+        return;
+      }
+
+      modal.innerHTML = `
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" data-close></div>
+        <section role="dialog" aria-modal="true" class="relative w-full max-w-lg rounded-2xl bg-[--color-bloque-bg,white] p-6 shadow-2xl border border-[--color-asociacion-borde,theme(colors.slate.200)] z-10 flex flex-col max-h-[85vh]">
+          
+          <!-- Encabezado -->
+          <div class="flex items-center justify-between pb-3 border-b border-[--color-bloque-divisor,theme(colors.slate.200)]">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-[--color-asociacion-suave,#eef2ff] text-[--color-asociacion-primario,#323888] flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base font-bold text-[--color-bloque-titulo,#22298A]">Acciones Asociadas</h2>
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-[--color-asociacion-suave,#eef2ff] text-[--color-asociacion-primario,#323888] border border-[--color-asociacion-borde,#c7d2fe]">
+                    ${conns.length}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5 truncate max-w-xs" title="${tituloActual}">
+                  Vinculadas a: <span class="font-medium text-slate-700">${tituloActual}</span>
+                </p>
+              </div>
+            </div>
+            <button data-close class="text-2xl leading-none text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Cerrar">&times;</button>
+          </div>
+
+          <!-- Lista de Asociaciones -->
+          <div class="mt-4 flex-1 overflow-y-auto pr-1 space-y-2.5 foco-scrollbar">
+            ${conns.map((conn) => {
+              const esOrigen = conn.sourceId === noteId;
+              const otroId = esOrigen ? conn.targetId : conn.sourceId;
+              const otraNota = this.obtenerNotaPorId(otroId);
+
+              const tipo = otraNota?.type === "list"
+                ? "Lista"
+                : (otraNota?.type === "task" || otraNota?.isTask ? "Tarea" : "Nota");
+
+              const tituloOtro = otraNota
+                ? (otraNota.title || otraNota.text || "Tarjeta sin título")
+                : "Tarjeta vinculada";
+
+              const tipoColorClase = tipo === "Tarea"
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : (tipo === "Lista"
+                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200");
+
+              return `
+                <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 hover:bg-slate-100/80 transition-all border border-slate-200/80 group">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${tipoColorClase}">
+                        ${tipo}
+                      </span>
+                      <span class="text-[11px] font-semibold text-[--color-asociacion-primario,#323888] flex items-center gap-1">
+                        ${esOrigen ? "➔ Vinculada hacia" : "⬅ Vinculada desde"}
+                      </span>
+                    </div>
+                    <p class="text-xs font-medium text-slate-800 break-words line-clamp-2">
+                      ${tituloOtro}
+                    </p>
+                  </div>
+                  <button type="button" data-desvincular-id="${conn.id}" class="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all flex-shrink-0" title="Desvincular acción">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-unlink"><path d="m18.84 12.25 1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="m5.16 11.75-1.72 1.71a5 5 0 0 0 7.07 7.07l1.72-1.71"/><line x1="2" x2="6" y1="2" y2="6"/><line x1="22" x2="18" y1="22" y2="18"/></svg>
+                    <span>Desvincular</span>
+                  </button>
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <!-- Pie del Modal -->
+          <div class="mt-5 pt-3 border-t border-[--color-bloque-divisor,theme(colors.slate.200)] flex justify-end">
+            <button data-close class="rounded-xl bg-[--color-asociacion-primario,#323888] hover:opacity-90 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all">
+              Listo
+            </button>
+          </div>
+        </section>
+      `;
+
+      // Event listeners dentro del modal
+      modal.querySelectorAll("[data-close]").forEach((btn) => {
+        btn.addEventListener("click", cerrarModal);
+      });
+
+      modal.querySelectorAll("[data-desvincular-id]").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const connId = btn.dataset.desvincularId;
+          await this.eliminarConexion(connId);
+          renderContenidoModal();
+        });
+      });
+    };
+
+    const cerrarModal = () => {
+      document.removeEventListener("keydown", onKeyDown);
+      this.limpiarResaltadoAsociaciones();
+      modal.remove();
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        cerrarModal();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    renderContenidoModal();
+    document.body.appendChild(modal);
   }
 
   resaltarAsociacionesDeTarjeta(noteId) {
@@ -1203,97 +1273,34 @@ class FocoLienzoCanvas extends HTMLElement {
 
     const tarjetaPrincipal = this.querySelector(`[data-note-id="${CSS.escape(noteId)}"]`);
     if (tarjetaPrincipal) {
-      tarjetaPrincipal.classList.add("ring-4", "ring-orange-500", "shadow-2xl");
+      tarjetaPrincipal.classList.add("foco-tarjeta-asociada-activa");
     }
 
     conexiones.forEach((conn) => {
       const otroId = conn.sourceId === noteId ? conn.targetId : conn.sourceId;
       const tarjetaAsociada = this.querySelector(`[data-note-id="${CSS.escape(otroId)}"]`);
       if (tarjetaAsociada) {
-        tarjetaAsociada.classList.add("ring-4", "ring-orange-400", "shadow-xl", "bg-orange-50/40");
+        tarjetaAsociada.classList.add("foco-tarjeta-asociada-vinculada");
       }
     });
-
-    this.renderizarFlechasDeResaltado(conexiones);
   }
 
   limpiarResaltadoAsociaciones() {
     this.tarjetaResaltadaId = null;
 
-    const svg = this.querySelector("#foco-canvas-connectors");
-    if (svg) {
-      const defs = svg.querySelector("defs");
-      svg.innerHTML = "";
-      if (defs) svg.appendChild(defs);
-    }
-
     this.querySelectorAll(".foco-tarjeta").forEach((t) => {
-      t.classList.remove("ring-4", "ring-orange-500", "ring-orange-400", "shadow-2xl", "shadow-xl", "bg-orange-50/40");
+      t.classList.remove(
+        "foco-tarjeta-asociada-activa",
+        "foco-tarjeta-asociada-vinculada",
+        "foco-tarjeta-asociando-origen",
+        "ring-4",
+        "ring-orange-500",
+        "ring-orange-400",
+        "shadow-2xl",
+        "shadow-xl",
+        "bg-orange-50/40"
+      );
     });
-  }
-
-  renderizarFlechasDeResaltado(conexiones) {
-    const svg = this.querySelector("#foco-canvas-connectors");
-    if (!svg) return;
-
-    const defs = svg.querySelector("defs");
-    svg.innerHTML = "";
-    if (defs) svg.appendChild(defs);
-
-    const canvasRect = this.getBoundingClientRect();
-    const scrollLeft = this.scrollLeft || 0;
-    const scrollTop = this.scrollTop || 0;
-
-    svg.style.width = `${Math.max(this.scrollWidth, this.clientWidth)}px`;
-    svg.style.height = `${Math.max(this.scrollHeight, this.clientHeight)}px`;
-
-    conexiones.forEach((conn) => {
-      const sourceEl = this.querySelector(`[data-note-id="${CSS.escape(conn.sourceId)}"]`);
-      const targetEl = this.querySelector(`[data-note-id="${CSS.escape(conn.targetId)}"]`);
-      if (!sourceEl || !targetEl) return;
-      if (sourceEl.offsetParent === null || targetEl.offsetParent === null) return;
-
-      const r1 = sourceEl.getBoundingClientRect();
-      const r2 = targetEl.getBoundingClientRect();
-
-      const x1 = (r1.left + r1.right) / 2 - canvasRect.left + scrollLeft;
-      const y1 = (r1.top + r1.bottom) / 2 - canvasRect.top + scrollTop;
-      const x2 = (r2.left + r2.right) / 2 - canvasRect.left + scrollLeft;
-      const y2 = (r2.top + r2.bottom) / 2 - canvasRect.top + scrollTop;
-
-      const dx = (x2 - x1) * 0.4;
-      const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-
-      const glowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      glowPath.setAttribute("d", pathData);
-      glowPath.setAttribute("stroke", "#FC7206");
-      glowPath.setAttribute("stroke-width", "7");
-      glowPath.setAttribute("stroke-opacity", "0.25");
-      glowPath.setAttribute("fill", "none");
-
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", pathData);
-      path.setAttribute("stroke", "#FC7206");
-      path.setAttribute("stroke-width", "3");
-      path.setAttribute("fill", "none");
-      path.setAttribute("marker-end", "url(#arrowhead)");
-      path.setAttribute("stroke-dasharray", "8 4");
-
-      svg.appendChild(glowPath);
-      svg.appendChild(path);
-    });
-  }
-
-  solicitarRenderConectores() {
-    if (this.tarjetaResaltadaId) {
-      if (this.rafConectores) cancelAnimationFrame(this.rafConectores);
-      this.rafConectores = requestAnimationFrame(() => {
-        if (this.tarjetaResaltadaId) {
-          const conexiones = this.obtenerConexionesDeTarjeta(this.tarjetaResaltadaId);
-          this.renderizarFlechasDeResaltado(conexiones);
-        }
-      });
-    }
   }
 
   gestionarClickTarjetaParaFlecha(tarjeta) {
@@ -1304,11 +1311,11 @@ class FocoLienzoCanvas extends HTMLElement {
 
     if (!this.selectedSourceCard) {
       this.selectedSourceCard = tarjeta;
-      tarjeta.classList.add("ring-4", "ring-orange-400", "shadow-xl");
+      tarjeta.classList.add("foco-tarjeta-asociando-origen");
     } else {
       const sourceNoteId = this.selectedSourceCard.dataset.noteId;
       const sourceBlockId = this.selectedSourceCard.dataset.blockId;
-      this.selectedSourceCard.classList.remove("ring-4", "ring-orange-400", "shadow-xl");
+      this.selectedSourceCard.classList.remove("foco-tarjeta-asociando-origen");
       this.selectedSourceCard = null;
 
       if (sourceNoteId !== noteId) {
@@ -1348,10 +1355,11 @@ class FocoLienzoCanvas extends HTMLElement {
       this.limpiarResaltadoAsociaciones();
     }, 1800);
 
-    // Finalizar el modo flecha
+    // Finalizar el modo de asociación
     this.arrowMode = false;
     this.actualizarEstiloCursorModoFlecha();
     window.dispatchEvent(new CustomEvent("foco:arrow-mode-changed", { detail: { active: false } }));
+    window.dispatchEvent(new CustomEvent("foco:associate-mode-changed", { detail: { active: false } }));
 
     try {
       const sesion = await getSession();
@@ -1361,7 +1369,7 @@ class FocoLienzoCanvas extends HTMLElement {
         localStore.setItem(LOCAL_BLOCKS_KEY, this.blocksData);
       }
     } catch (err) {
-      console.error("Error al persistir conexión de flecha:", err);
+      console.error("Error al persistir asociación:", err);
     }
   }
 

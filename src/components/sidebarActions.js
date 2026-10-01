@@ -29,13 +29,13 @@ class FocoSidebarActions extends HTMLElement {
           <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Tarea</span>
         </div>
 
-        <!-- Botón: Flecha (Conector Visual) -->
-        <div id="btn-herramienta-flecha" class="foco-herramienta-flecha flex flex-col items-center group cursor-pointer select-none" title="Hacé clic para conectar dos tarjetas con una Flecha">
+        <!-- Botón: Asociar (Vínculo Visual) -->
+        <div id="btn-herramienta-flecha" class="foco-herramienta-flecha flex flex-col items-center group cursor-pointer select-none" title="Hacé clic para asociar dos acciones (notas, tareas, listas)">
           <div id="btn-flecha-circulo" class="w-12 h-12 rounded-2xl bg-[--color-sidebar-boton,#FDA35D] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all">
-            <!-- Icono SVG de Flecha (Derecha) -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-right"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>
+            <!-- Icono SVG de Asociación / Vínculo (Lucide Link) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </div>
-          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-orange-700 transition-colors">Flecha</span>
+          <span class="text-[10px] font-semibold text-[--color-sidebar-texto,#22298A] mt-1 group-hover:text-indigo-700 transition-colors">Asociar</span>
         </div>
 
         <!-- Botón: Lista -->
@@ -123,7 +123,7 @@ class FocoSidebarActions extends HTMLElement {
     });
   }
 
-  // Activa el toggle del modo de conexión con flecha
+  // Activa el toggle del modo de asociación de acciones
   activarBotonFlecha() {
     const btnFlecha = this.querySelector("#btn-herramienta-flecha");
     const circuloFlecha = this.querySelector("#btn-flecha-circulo");
@@ -131,16 +131,23 @@ class FocoSidebarActions extends HTMLElement {
 
     btnFlecha.addEventListener("click", () => {
       const activo = circuloFlecha.classList.toggle("ring-4");
-      circuloFlecha.classList.toggle("ring-orange-400", activo);
+      circuloFlecha.classList.toggle("ring-[--color-asociacion-primario,#323888]", activo);
       circuloFlecha.classList.toggle("shadow-lg", activo);
       window.dispatchEvent(new CustomEvent("foco:toggle-arrow-mode", { detail: { active: activo } }));
+      window.dispatchEvent(new CustomEvent("foco:toggle-associate-mode", { detail: { active: activo } }));
     });
 
-    window.addEventListener("foco:arrow-mode-changed", (event) => {
-      const activo = Boolean(event.detail?.active);
+    const actualizarEstadoBoton = (activo) => {
       circuloFlecha.classList.toggle("ring-4", activo);
-      circuloFlecha.classList.toggle("ring-orange-400", activo);
+      circuloFlecha.classList.toggle("ring-[--color-asociacion-primario,#323888]", activo);
       circuloFlecha.classList.toggle("shadow-lg", activo);
+    };
+
+    window.addEventListener("foco:arrow-mode-changed", (event) => {
+      actualizarEstadoBoton(Boolean(event.detail?.active));
+    });
+    window.addEventListener("foco:associate-mode-changed", (event) => {
+      actualizarEstadoBoton(Boolean(event.detail?.active));
     });
   }
 }
