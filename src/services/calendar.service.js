@@ -47,11 +47,23 @@ export class CalendarService {
     return res.json();
   }
 
-  async getEvents(date, authToken) {
+  async getEvents(params, authToken) {
     if (!authToken) return [];
 
-    const url = date
-      ? `${this.baseUrl}/calendar/events?date=${encodeURIComponent(date)}`
+    let query = '';
+    if (typeof params === 'string') {
+      query = `date=${encodeURIComponent(params)}`;
+    } else if (params && typeof params === 'object') {
+      const qp = new URLSearchParams();
+      if (params.date) qp.append('date', params.date);
+      if (params.timeMin) qp.append('timeMin', params.timeMin);
+      if (params.timeMax) qp.append('timeMax', params.timeMax);
+      if (params.timeZone) qp.append('timeZone', params.timeZone);
+      query = qp.toString();
+    }
+
+    const url = query
+      ? `${this.baseUrl}/calendar/events?${query}`
       : `${this.baseUrl}/calendar/events`;
 
     const res = await fetch(url, {

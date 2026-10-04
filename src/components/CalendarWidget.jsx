@@ -3,6 +3,57 @@
  * Renderiza el widget de agenda diaria y zona de caída (Drop Zone) para arrastrar tarjetas desde el lienzo.
  */
 
+/**
+ * Normaliza y formatea eventos de Google Calendar soportando eventos de todo el día (date)
+ * y eventos con horario fijo (dateTime), evitando errores de parsing o desfases.
+ */
+export function formatCalendarEvent(rawEvent) {
+  if (!rawEvent) return null;
+
+  const isAllDay = Boolean(
+    rawEvent.allDay ||
+    (rawEvent.start && typeof rawEvent.start === 'object' && rawEvent.start.date && !rawEvent.start.dateTime) ||
+    (typeof rawEvent.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawEvent.start.trim()))
+  );
+
+  let startValue = null;
+  if (typeof rawEvent.start === 'object' && rawEvent.start !== null) {
+    startValue = rawEvent.start.dateTime || rawEvent.start.date;
+  } else if (typeof rawEvent.start === 'string') {
+    startValue = rawEvent.start;
+  }
+
+  let timeText = 'Todo el día';
+  if (!isAllDay && startValue) {
+    const d = new Date(startValue);
+    if (!isNaN(d.getTime())) {
+      timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+
+  let endValue = null;
+  if (typeof rawEvent.end === 'object' && rawEvent.end !== null) {
+    endValue = rawEvent.end.dateTime || rawEvent.end.date;
+  } else if (typeof rawEvent.end === 'string') {
+    endValue = rawEvent.end;
+  }
+
+  const title = rawEvent.title || rawEvent.summary || 'Sin título';
+  const description = rawEvent.description || '';
+  const htmlLink = rawEvent.htmlLink || rawEvent.link || '';
+
+  return {
+    id: rawEvent.id || Math.random().toString(36).substring(2),
+    title,
+    description,
+    start: startValue,
+    end: endValue,
+    allDay: isAllDay,
+    timeText,
+    htmlLink
+  };
+}
+
 export function renderCalendarWidget(state = {}) {
   const {
     isConnected = false,
@@ -13,22 +64,16 @@ export function renderCalendarWidget(state = {}) {
     draggedCardData = null
   } = state;
 
-  // 1. Estado de Conexión (Badge y Acciones)
-  const connectionBadge = isConnected
-    ? `
-      <div class="flex items-center space-x-1 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="font-medium">Sincronizado</span>
-      </div>
-    `
-    : `
-      <div class="flex items-center space-x-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-        <span class="font-medium">Sin conectar</span>
-      </div>
-    `;
+  // Fecha local para el formulario de agendamiento
+  const todayLocal = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  })();
 
-  // 2. Contenido Principal según el estado
+  // 1. Contenido Principal según el estado
   let contentHtml = '';
 
   if (!isConnected) {
@@ -68,19 +113,16 @@ export function renderCalendarWidget(state = {}) {
     `;
   } else {
     // Listado timeline de eventos del día
-    const eventsList = events.map(event => {
-      let timeText = 'Todo el día';
-      if (!event.allDay && event.start) {
-        const d = new Date(event.start);
-        timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      }
+    const eventsList = events.map(rawEvent => {
+      const event = formatCalendarEvent(rawEvent);
+      if (!event) return '';
 
       const linkAttr = event.htmlLink ? `href="${event.htmlLink}" target="_blank" rel="noopener noreferrer"` : '';
 
       return `
         <a ${linkAttr} class="flex items-start space-x-2.5 p-2 rounded-xl bg-white hover:bg-orange-50/50 border border-slate-200/70 hover:border-orange-200 transition-all group block shadow-2xs">
           <div class="flex flex-col items-center justify-center min-w-[42px] px-1 py-0.5 rounded bg-slate-100 group-hover:bg-orange-100 text-slate-600 group-hover:text-orange-700 transition-colors">
-            <span class="text-[10px] font-bold">${timeText}</span>
+            <span class="text-[10px] font-bold">${event.timeText}</span>
           </div>
           <div class="flex-1 min-w-0">
             <h4 class="text-xs font-semibold text-slate-800 truncate group-hover:text-orange-600 transition-colors">
@@ -96,7 +138,7 @@ export function renderCalendarWidget(state = {}) {
     contentHtml = `<div class="space-y-1.5 max-h-48 overflow-y-auto foco-scrollbar pr-0.5">${eventsList}</div>`;
   }
 
-  // 3. Modal liviano para confirmar agendamiento tras Drag & Drop
+  // 2. Modal liviano para confirmar agendamiento tras Drag & Drop
   const modalHtml = isModalOpen && draggedCardData ? `
     <div id="calendar-schedule-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in">
       <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 space-y-4">
@@ -117,7 +159,7 @@ export function renderCalendarWidget(state = {}) {
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-slate-500 font-medium mb-1">Fecha</label>
-              <input id="modal-event-date" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-foco-orange-accent text-slate-700" />
+              <input id="modal-event-date" type="date" value="${todayLocal}" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-foco-orange-accent text-slate-700" />
             </div>
             <div>
               <label class="block text-slate-500 font-medium mb-1">Hora inicio</label>
@@ -144,13 +186,12 @@ export function renderCalendarWidget(state = {}) {
       <div class="w-full flex justify-between items-center border-b border-[--color-header-borde,theme(colors.slate.100)] pb-2">
         <div class="flex items-center space-x-2 text-[--color-pomodoro-titulo,#22298A]">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
-          <span class="text-xs font-bold uppercase tracking-wide">Agenda Google Calendar</span>
+          <span class="text-xs font-bold uppercase tracking-wide">Google Calendar</span>
         </div>
-        <div class="flex items-center space-x-1.5">
-          ${connectionBadge}
+        <div class="flex items-center">
           ${isConnected ? `
-            <button id="btn-refresh-calendar" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors" title="Actualizar agenda">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${isLoading ? 'animate-spin' : ''}"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <button id="btn-refresh-calendar" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors" title="Sincronizar agenda">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${isLoading ? 'animate-spin text-orange-500' : ''}"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
             </button>
           ` : ''}
         </div>
@@ -168,4 +209,5 @@ export function renderCalendarWidget(state = {}) {
   `;
 }
 
+export const GoogleCalendarWidget = renderCalendarWidget;
 export default renderCalendarWidget;

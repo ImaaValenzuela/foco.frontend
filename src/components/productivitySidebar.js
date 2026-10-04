@@ -270,7 +270,7 @@ class FocoProductivitySidebar extends HTMLElement {
 
     // Google Calendar: Conexión y Actualización
     this.querySelector('#btn-connect-calendar')?.addEventListener('click', () => this.calendarManager.connectGoogleCalendar());
-    this.querySelector('#btn-refresh-calendar')?.addEventListener('click', () => this.calendarManager.loadEvents(false));
+    this.querySelector('#btn-refresh-calendar')?.addEventListener('click', () => this.calendarManager.fetchTodayEvents(false));
 
     // Modal de agendamiento Drag & Drop
     this.querySelector('#modal-close-btn')?.addEventListener('click', () => this.calendarManager.closeScheduleModal());
@@ -281,7 +281,14 @@ class FocoProductivitySidebar extends HTMLElement {
       const timeInput = this.querySelector('#modal-event-time');
 
       const title = titleInput?.value.trim() || 'Tarea de FOCO';
-      const dateVal = dateInput?.value || new Date().toISOString().split('T')[0];
+      const todayDefault = (() => {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      })();
+      const dateVal = dateInput?.value || todayDefault;
       const timeVal = timeInput?.value || '10:00';
 
       const startDateTime = new Date(`${dateVal}T${timeVal}:00`).toISOString();
@@ -340,6 +347,7 @@ class FocoProductivitySidebar extends HTMLElement {
 
         if (cardData) {
           this.calendarManager.openScheduleModal(cardData);
+          this.calendarManager.fetchTodayEvents(true);
         }
       });
     }

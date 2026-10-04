@@ -105,17 +105,45 @@ describe('Frontend Google Calendar Integration Suite', () => {
         })
       );
     });
+    it('getEvents soporta objeto con date, timeMin, timeMax y timeZone', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          events: [{ id: 'evt-today', title: 'Planificación Sprint' }]
+        })
+      });
+
+      const res = await calendarService.getEvents({
+        date: '2026-10-04',
+        timeMin: '2026-10-04T03:00:00.000Z',
+        timeMax: '2026-10-05T02:59:59.999Z',
+        timeZone: 'America/Argentina/Buenos_Aires'
+      }, 'jwt-token-123');
+
+      expect(res).toHaveLength(1);
+      expect(res[0].id).toBe('evt-today');
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('http://localhost:4000/api/calendar/events?date=2026-10-04&timeMin=2026-10-04T03%3A00%3A00.000Z&timeMax=2026-10-05T02%3A59%3A59.999Z&timeZone=America%2FArgentina%2FBuenos_Aires'),
+        expect.any(Object)
+      );
+    });
   });
 
   describe('3. CalendarWidget Rendering & Drop Zone', () => {
-    it('renderiza botón de conexión cuando isConnected es false', () => {
+    it('renderiza botón de conexión cuando isConnected es false y no contiene badges de texto', () => {
       const html = renderCalendarWidget({ isConnected: false });
-      expect(html).toContain('Sin conectar');
+      expect(html).not.toContain('Sin conectar');
+      expect(html).not.toContain('Sin conexión');
+      expect(html).not.toContain('Sincronizado');
+      expect(html).not.toContain('Sincronizando');
       expect(html).toContain('Conectar Google Calendar');
       expect(html).toContain('foco-calendar-dropzone');
+      expect(html).toContain('Google Calendar');
+      expect(html).not.toContain('Agenda Google Calendar');
     });
 
-    it('renderiza listado de eventos cuando isConnected es true y hay eventos', () => {
+    it('renderiza listado de eventos cuando isConnected es true y hay eventos, sin badges de texto', () => {
       const mockEvents = [
         {
           id: 'ev-1',
@@ -131,9 +159,51 @@ describe('Frontend Google Calendar Integration Suite', () => {
         events: mockEvents
       });
 
-      expect(html).toContain('Sincronizado');
+      expect(html).not.toContain('Sincronizado');
+      expect(html).not.toContain('Sincronizando');
+      expect(html).not.toContain('Sin conectar');
+      expect(html).not.toContain('Sin conexión');
+      expect(html).toContain('btn-refresh-calendar');
       expect(html).toContain('Daily Standup');
-      expect(html).toContain('Agenda Google Calendar');
+      expect(html).toContain('Google Calendar');
+      expect(html).not.toContain('Agenda Google Calendar');
+    });
+
+    it('parsea correctamente eventos con dateTime, date (all day) y estructura nativa de Google', async () => {
+      const { formatCalendarEvent } = await import('../src/components/CalendarWidget.jsx');
+
+      // 1. Evento con dateTime fijo
+      const fixedEvent = formatCalendarEvent({
+        id: '1',
+        title: 'Reunión 1:1',
+        start: '2026-10-04T14:00:00.000Z',
+        allDay: false
+      });
+      expect(fixedEvent.title).toBe('Reunión 1:1');
+      expect(fixedEvent.allDay).toBe(false);
+      expect(fixedEvent.timeText).not.toBe('Todo el día');
+
+      // 2. Evento de todo el día con start.date
+      const allDayEvent = formatCalendarEvent({
+        id: '2',
+        summary: 'Feriado Nacional',
+        start: { date: '2026-10-04' },
+        end: { date: '2026-10-05' }
+      });
+      expect(allDayEvent.title).toBe('Feriado Nacional');
+      expect(allDayEvent.allDay).toBe(true);
+      expect(allDayEvent.timeText).toBe('Todo el día');
+
+      // 3. Evento nativo de Google con start.dateTime
+      const nativeGoogleEvent = formatCalendarEvent({
+        id: '3',
+        summary: 'Demo con Cliente',
+        start: { dateTime: '2026-10-04T18:00:00-03:00' },
+        end: { dateTime: '2026-10-04T19:00:00-03:00' }
+      });
+      expect(nativeGoogleEvent.title).toBe('Demo con Cliente');
+      expect(nativeGoogleEvent.allDay).toBe(false);
+      expect(nativeGoogleEvent.timeText).not.toBe('Todo el día');
     });
 
     it('renderiza modal de confirmación cuando isModalOpen es true y hay tarjeta arrastrada', () => {
@@ -190,6 +260,32 @@ describe('Frontend Google Calendar Integration Suite', () => {
 
       document.removeEventListener('foco:calendar-event-created', eventListenerSpy);
       global.fetch = originalFetch;
+      manager.destroy();
+    });
+
+    it('fetchTodayEvents consulta calendarService.getEvents con timeMin, timeMax y timeZone locales', async () => {
+      const manager = new CalendarManager();
+      const { authService } = await import('../src/services/auth.service.js');
+      vi.spyOn(authService, 'getToken').mockResolvedValue('test-token');
+
+      const { calendarService } = await import('../src/services/calendar.service.js');
+      const getEventsSpy = vi.spyOn(calendarService, 'getEvents').mockResolvedValue([
+        { id: 'ev-today', title: 'Reunión' }
+      ]);
+
+      await manager.fetchTodayEvents();
+
+      expect(getEventsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+          timeMin: expect.any(String),
+          timeMax: expect.any(String),
+          timeZone: expect.any(String)
+        }),
+        'test-token'
+      );
+
+      getEventsSpy.mockRestore();
       manager.destroy();
     });
   });

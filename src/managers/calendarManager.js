@@ -23,8 +23,9 @@ export class CalendarManager {
     this.authSubscription = null;
 
     // Escuchar eventos globales de sincronización
-    this.onRefreshHandler = () => this.loadEvents(true);
+    this.onRefreshHandler = () => this.fetchTodayEvents(true);
     document.addEventListener('foco:refresh-calendar', this.onRefreshHandler);
+    document.addEventListener('foco:calendar-event-created', this.onRefreshHandler);
   }
 
   notify() {
@@ -75,7 +76,7 @@ export class CalendarManager {
         this.hasRefreshToken = Boolean(status.hasRefreshToken);
 
         if (this.isConnected) {
-          await this.loadEvents(false);
+          await this.fetchTodayEvents(false);
         }
       } else {
         this.isConnected = false;
@@ -86,19 +87,40 @@ export class CalendarManager {
 
       // 4. Escuchar cambios de autenticación para reaccionar a login con Google
       const { data } = authService.onAuthStateChange(async (event, newSession) => {
+        if (event === 'SIGNED_OUT') {
+          this.isConnected = false;
+          this.events = [];
+          this.notify();
+          return;
+        }
+
         if (newSession && (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED')) {
+          const authToken = newSession.access_token;
           if (newSession.provider_token || newSession.provider_refresh_token) {
             try {
               await calendarService.saveTokens({
                 provider_token: newSession.provider_token,
                 provider_refresh_token: newSession.provider_refresh_token,
                 expires_at: newSession.expires_at
-              }, newSession.access_token);
+              }, authToken);
               this.isConnected = true;
-              await this.loadEvents(true);
             } catch (e) {
               console.warn('Error sincronizando tokens tras login:', e);
             }
+          }
+
+          if (authToken) {
+            try {
+              const status = await calendarService.getStatus(authToken);
+              this.isConnected = Boolean(status.connected);
+              this.hasRefreshToken = Boolean(status.hasRefreshToken);
+            } catch (err) {
+              console.warn('Error verificando estado tras auth change:', err);
+            }
+          }
+
+          if (this.isConnected) {
+            await this.fetchTodayEvents(true);
           }
         }
       });
@@ -113,6 +135,13 @@ export class CalendarManager {
     }
   }
 
+  /**
+   * Consulta y sincroniza los eventos de hoy desde la API de Google Calendar.
+   */
+  async fetchTodayEvents(silent = false) {
+    return this.loadEvents(silent);
+  }
+
   async loadEvents(silent = false) {
     if (!silent) {
       this.isLoading = true;
@@ -123,8 +152,28 @@ export class CalendarManager {
       const token = await authService.getToken();
       if (!token) return;
 
-      const dateStr = this.selectedDate.toISOString().split('T')[0];
-      const events = await calendarService.getEvents(dateStr, token);
+      const target = this.selectedDate instanceof Date ? this.selectedDate : new Date();
+      const year = target.getFullYear();
+      const month = target.getMonth();
+      const day = target.getDate();
+
+      // Rango del día considerando el offset de zona horaria local del usuario
+      const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+      const pad = (n) => String(n).padStart(2, '0');
+      const localDateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
+
+      const timeMin = startOfDay.toISOString();
+      const timeMax = endOfDay.toISOString();
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+      const events = await calendarService.getEvents({
+        date: localDateStr,
+        timeMin,
+        timeMax,
+        timeZone
+      }, token);
+
       this.events = Array.isArray(events) ? events : [];
       this.lastSynced = new Date();
       this.error = null;
@@ -189,7 +238,7 @@ export class CalendarManager {
       }, token);
 
       this.closeScheduleModal();
-      await this.loadEvents(true);
+      await this.fetchTodayEvents(false);
 
       document.dispatchEvent(new CustomEvent('foco:calendar-event-created', {
         detail: { event: res.event, card: cardData }
@@ -216,5 +265,6 @@ export class CalendarManager {
       this.authSubscription.unsubscribe();
     }
     document.removeEventListener('foco:refresh-calendar', this.onRefreshHandler);
+    document.removeEventListener('foco:calendar-event-created', this.onRefreshHandler);
   }
 }
