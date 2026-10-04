@@ -1,13 +1,15 @@
 import { renderPomodoro } from './productivity/pomodoro.js';
 import { renderHabitTracker } from './productivity/habitTracker.js';
+import { renderCalendarWidget } from './CalendarWidget.jsx';
 import { PomodoroManager } from '../managers/pomodoroManager.js';
 import { HabitManager } from '../managers/habitManager.js';
+import { CalendarManager } from '../managers/calendarManager.js';
 import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from '../managers/paletteManager.js';
 import { authService } from '../services/auth.service.js'; // Importamos el servicio de auth
 
 /**
  * Componente: FocoProductivitySidebar (Vanilla JS)
- * Barra lateral derecha de productividad. Contiene el Cronómetro Pomodoro y el Tracker de Hábitos con historial.
+ * Barra lateral derecha de productividad. Contiene el Cronómetro Pomodoro, Agenda Google Calendar y Tracker de Hábitos.
  * Refactorizado bajo el principio SRP (Single Responsibility Principle) delegando la lógica de negocio a Managers.
  */
 
@@ -16,6 +18,7 @@ class FocoProductivitySidebar extends HTMLElement {
     super();
     this.pomodoroManager = new PomodoroManager(() => this.render());
     this.habitManager = new HabitManager(() => this.render());
+    this.calendarManager = new CalendarManager(() => this.render());
   }
 
   // Modificamos a async para manejar la validación de sesión y carga de datos
@@ -37,6 +40,7 @@ class FocoProductivitySidebar extends HTMLElement {
       if (session || authService.isGuest()) {
         await this.habitManager.loadInitialData(); 
         // loadInitialData() llamará internamente a notify() -> this.render()
+        await this.calendarManager.init();
       }
     } catch (error) {
       console.error("Error al verificar sesión en el sidebar de productividad:", error);
@@ -50,6 +54,7 @@ class FocoProductivitySidebar extends HTMLElement {
   disconnectedCallback() {
     // Limpieza de recursos al desmontar del DOM (previene fugas de memoria - LSP)
     this.pomodoroManager.destroy();
+    this.calendarManager.destroy();
   }
 
   render() {
@@ -207,6 +212,7 @@ class FocoProductivitySidebar extends HTMLElement {
           breakMinutes: pomodoroState.breakMinutes,
           isRunning: pomodoroState.isRunning,
         })}
+        ${renderCalendarWidget(this.calendarManager.getState())}
         ${renderHabitTracker({ daysHtml, habitsHtml, addHabitFormHtml, statusBadge })}
       </div>
       `;
@@ -222,6 +228,11 @@ class FocoProductivitySidebar extends HTMLElement {
           <div id="quick-pomodoro" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Pomodoro">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alarm-clock-check"><circle cx="12" cy="13" r="8"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/><path d="m9 13 2 2 4-4"/></svg>
             <span class="text-[8px] font-black mt-1 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Foco</span>
+          </div>
+
+          <div id="quick-calendar" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Google Calendar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <span class="text-[8px] font-bold mt-1.5 uppercase tracking-wider group-hover:text-[--color-prod-icono,#22298A]">Agenda</span>
           </div>
 
           <div id="quick-habits" class="flex flex-col items-center cursor-pointer text-slate-400 hover:text-[--color-prod-icono,#22298A] transition-all group" title="Abrir Tracker de Hábitos">
@@ -251,10 +262,87 @@ class FocoProductivitySidebar extends HTMLElement {
     this.querySelector('#save-config')?.addEventListener('click', () => this.handleSaveConfig());
 
     this.querySelector('#quick-pomodoro')?.addEventListener('click', () => this.toggleCollapse());
+    this.querySelector('#quick-calendar')?.addEventListener('click', () => this.toggleCollapse());
     this.querySelector('#quick-habits')?.addEventListener('click', () => {
       this.habitManager.setSelectedOffset(0);
       this.toggleCollapse();
     });
+
+    // Google Calendar: Conexión y Actualización
+    this.querySelector('#btn-connect-calendar')?.addEventListener('click', () => this.calendarManager.connectGoogleCalendar());
+    this.querySelector('#btn-refresh-calendar')?.addEventListener('click', () => this.calendarManager.loadEvents(false));
+
+    // Modal de agendamiento Drag & Drop
+    this.querySelector('#modal-close-btn')?.addEventListener('click', () => this.calendarManager.closeScheduleModal());
+    this.querySelector('#modal-cancel-btn')?.addEventListener('click', () => this.calendarManager.closeScheduleModal());
+    this.querySelector('#modal-confirm-schedule-btn')?.addEventListener('click', async () => {
+      const titleInput = this.querySelector('#modal-event-title');
+      const dateInput = this.querySelector('#modal-event-date');
+      const timeInput = this.querySelector('#modal-event-time');
+
+      const title = titleInput?.value.trim() || 'Tarea de FOCO';
+      const dateVal = dateInput?.value || new Date().toISOString().split('T')[0];
+      const timeVal = timeInput?.value || '10:00';
+
+      const startDateTime = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+      const endDateTime = new Date(new Date(startDateTime).getTime() + 60 * 60 * 1000).toISOString();
+
+      try {
+        await this.calendarManager.scheduleCard(
+          { ...this.calendarManager.draggedCardData, title },
+          startDateTime,
+          endDateTime
+        );
+      } catch (err) {
+        alert('Error al agendar en Google Calendar: ' + err.message);
+      }
+    });
+
+    // Zona de caída (Drop Zone) para tarjetas desde el lienzo
+    const dropZone = this.querySelector('.foco-calendar-dropzone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-orange-500', 'bg-orange-50/50');
+        const hint = dropZone.querySelector('.drop-zone-hint');
+        if (hint) hint.classList.remove('hidden');
+      });
+
+      dropZone.addEventListener('dragleave', (e) => {
+        if (!dropZone.contains(e.relatedTarget)) {
+          dropZone.classList.remove('border-orange-500', 'bg-orange-50/50');
+          const hint = dropZone.querySelector('.drop-zone-hint');
+          if (hint) hint.classList.add('hidden');
+        }
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-orange-500', 'bg-orange-50/50');
+        const hint = dropZone.querySelector('.drop-zone-hint');
+        if (hint) hint.classList.add('hidden');
+
+        let cardData = null;
+        const jsonStr = e.dataTransfer.getData('application/json');
+        if (jsonStr) {
+          try {
+            cardData = JSON.parse(jsonStr);
+          } catch (parseErr) {
+            console.warn('Error parseando JSON en drop de tarjeta:', parseErr);
+          }
+        }
+        if (!cardData) {
+          const plainText = e.dataTransfer.getData('text/plain');
+          if (plainText) {
+            cardData = { title: plainText, text: plainText };
+          }
+        }
+
+        if (cardData) {
+          this.calendarManager.openScheduleModal(cardData);
+        }
+      });
+    }
 
     const dayButtons = this.querySelectorAll('.day-selector-btn');
     dayButtons.forEach(btn => {
