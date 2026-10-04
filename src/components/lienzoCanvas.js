@@ -178,6 +178,21 @@ class FocoLienzoCanvas extends HTMLElement {
     if (item.id) tarjeta.dataset.noteId = item.id;
     if (blockId) tarjeta.dataset.blockId = blockId;
 
+    tarjeta.draggable = true;
+    tarjeta.addEventListener("dragstart", (e) => {
+      const cardPayload = {
+        noteId: item.id,
+        blockId: blockId,
+        title: item.title || item.text || "Tarea de FOCO",
+        text: item.text || item.title || "",
+        isTask: Boolean(item.isTask),
+        type: item.type || "task"
+      };
+      e.dataTransfer.setData("application/json", JSON.stringify(cardPayload));
+      e.dataTransfer.setData("text/plain", cardPayload.title);
+      e.dataTransfer.effectAllowed = "copyMove";
+    });
+
     tarjeta.addEventListener("click", (e) => {
       if (e.target.closest("button") || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
         return;
@@ -658,6 +673,21 @@ class FocoLienzoCanvas extends HTMLElement {
 
     if (item.id) tarjeta.dataset.noteId = item.id;
     if (blockId) tarjeta.dataset.blockId = blockId;
+
+    tarjeta.draggable = true;
+    tarjeta.addEventListener("dragstart", (e) => {
+      const cardPayload = {
+        noteId: item.id,
+        blockId: blockId,
+        title: item.title || "Lista",
+        text: item.text || item.title || "",
+        isTask: false,
+        type: "list"
+      };
+      e.dataTransfer.setData("application/json", JSON.stringify(cardPayload));
+      e.dataTransfer.setData("text/plain", cardPayload.title);
+      e.dataTransfer.effectAllowed = "copyMove";
+    });
 
     tarjeta.addEventListener("click", (e) => {
       if (e.target.closest("button") || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {

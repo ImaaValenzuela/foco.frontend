@@ -472,7 +472,12 @@ async function handleGoogleAuth() {
       provider: 'google',
       options: {
         // Al tener éxito, Google redirecciona a login.html donde se evalúa el estado del onboarding
-        redirectTo: window.location.origin + '/login.html' 
+        redirectTo: window.location.origin + '/login.html',
+        scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
       }
     });
     
