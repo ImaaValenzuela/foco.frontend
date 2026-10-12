@@ -1,5 +1,5 @@
 import '../styles.css';
-import './components/header.js';
-import './components/sidebarActions.js';
-import './components/lienzoCanvas.js';
-import './components/productivitySidebar.js';
+import './components/header.jsx';
+import './components/sidebarActions.jsx';
+import './components/lienzoCanvas.jsx';
+import './components/productivitySidebar.jsx';
