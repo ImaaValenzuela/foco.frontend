@@ -542,3 +542,27 @@ foco-sidebar-actions .group:hover span {
   animation: pulse-soft 2s infinite ease-in-out;
   z-index: 15;
 }
+
+/* =========================================================================
+   ESTILOS OFICIALES CHATBOT Y COPILOTO F.O.C.O.
+   ========================================================================= */
+#foco-chatbot-modal-window {
+  box-shadow: 0 20px 40px -15px rgba(34, 41, 138, 0.25), 0 0 0 1px rgba(34, 41, 138, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+#foco-chatbot-launcher-btn {
+  box-shadow: 0 10px 25px -5px rgba(34, 41, 138, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+[data-action-card] {
+  background-color: var(--color-asociacion-suave, #eef2ff);
+  border-color: var(--color-asociacion-borde, #c7d2fe);
+  color: var(--color-asociacion-primario, #22298A);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-action-card]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(34, 41, 138, 0.12);
+}
