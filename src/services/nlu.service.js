@@ -22,6 +22,80 @@ export class NluService {
   }
 
   /**
+   * Extrae el contenido y bloque objetivo de una orden de nota o tarea,
+   * perfectamente alineado con las reglas regex del backend de F.O.C.O.
+   *
+   * @param {string} rawText
+   * @param {boolean} isTask
+   * @returns {{ text: string, targetBlock: string, blockHumanName: string }}
+   */
+  static extractNoteOrTask(rawText, isTask = false) {
+    const text = String(rawText || '').trim();
+    if (!text) {
+      return {
+        text: isTask ? 'Tarea rápida' : 'Nota rápida',
+        targetBlock: 'active_objectives',
+        blockHumanName: 'Objetivos Activos'
+      };
+    }
+
+    // 1. Inferencia de cuadrante P.A.R.A.
+    let targetBlock = 'active_objectives';
+    let blockHumanName = 'Objetivos Activos';
+
+    if (/\bpersonal\b/i.test(text)) {
+      targetBlock = 'personal_block';
+      blockHumanName = 'Bloque Personal';
+    } else if (/\binspiraci[oó]n(?:\s+y\s+creatividad)?|creatividad|ideas?\b/i.test(text)) {
+      targetBlock = 'inspiration_creativity';
+      blockHumanName = 'Inspiración y Creatividad';
+    } else if (/\barchivo\s+de\s+vida|archivo|vida|bit[aá]cora\b/i.test(text)) {
+      targetBlock = 'life_archive';
+      blockHumanName = 'Archivo de Vida';
+    } else if (/\bobjetivos?\s+activos?|objetivo|activo|proyecto\b/i.test(text)) {
+      targetBlock = 'active_objectives';
+      blockHumanName = 'Objetivos Activos';
+    }
+
+    // 2. Cláusula explícita de contenido ("que diga...", "con el texto...", "que dice...", etc.)
+    const contentMatch = text.match(/(?:que diga(?: que)?|que dice(?: que)?|con el texto|que he dicho(?: que)?|que tengo que|diciendo(?: que)?)\s+(.+)/i);
+    let cleanContent = '';
+
+    if (contentMatch && contentMatch[1]) {
+      cleanContent = contentMatch[1].trim();
+      // Eliminar mención de bloque si quedó al final de la cláusula
+      cleanContent = cleanContent
+        .replace(/(?:en|para)?\s*(?:el|la)?\s*(?:bloque\s+)?(?:de\s+)?(?:personal|objetivos?\s+activos?|inspiraci[oó]n(?:\s+y\s+creatividad)?|creatividad|archivo\s+de\s+vida|archivo|vida|bit[aá]cora)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi, '')
+        .trim();
+    } else {
+      cleanContent = text
+        // Verbos de comando y prefijos de acción
+        .replace(/(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:foco|crea|crear|cre[aá]|agrega|agregar|agreg[aá]|agregame|nuevo|nueva|genera|generame|generar|quiero|necesito|anota|anotar|anot[aá]|anotame|guarda|guardar|guard[aá]|guardame|escribe|escribir|escrib[íi]|pon|pone|poner|pon[eé])(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi, ' ')
+        // Palabras de tipo de componente
+        .replace(/(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:una?\s+)?(?:tareas?|notas?|ideas?|recordatorios?|pendientes?|apuntes?|tarjetas?)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi, ' ')
+        // Referencias a bloques del lienzo
+        .replace(/(?:en|para)?\s*(?:el|la)?\s*(?:bloque\s+)?(?:de\s+)?(?:personal|objetivos?\s+activos?|inspiraci[oó]n(?:\s+y\s+creatividad)?|creatividad|archivo\s+de\s+vida|archivo|vida|bit[aá]cora)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi, ' ')
+        // Conectores y artículos iniciales
+        .replace(/^(?:\s*(?:y|que|de|en|para|el|la|los|las|un|una|unos|unas|sobre|con|mis?|tus?)\s+)+/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Limpieza final de conectores residuales al inicio
+    cleanContent = cleanContent.replace(/^(?:\s*(?:y|que|de|en|para|el|la|los|las|un|una|unos|unas|sobre|con)\s+)+/gi, ' ').trim();
+
+    const finalText = cleanContent
+      ? cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1)
+      : (isTask ? 'Tarea rápida' : 'Nota rápida');
+
+    return {
+      text: finalText,
+      targetBlock,
+      blockHumanName
+    };
+  }
+
+  /**
    * Clasificador NLU local ultra-rápido para intenciones operativas de F.O.C.O.
    * Procesa órdenes como:
    *  - "Agregá una nota de repasar React"
@@ -77,20 +151,14 @@ export class NluService {
     // 3. INTENCIÓN: TAREA (Task con checkbox en Objetivos Activos)
     const isTask = /(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:tareas?|pendientes?|recordatorios?|to-?do)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/i.test(text);
     if (isTask) {
-      const taskText = NluService.cleanEntity(text, [
-        /(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:foco|crea|crear|cre[aá]|agrega|agregar|agreg[aá]|nueva|nuevo|anota|anotar|tareas?|pendientes?|recordatorios?)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi,
-        /(?:en|para)?\s*(?:el|la)?\s*(?:bloque\s+)?(?:de\s+)?(?:objetivos?\s+activos?|personal|inspiraci[oó]n|archivo\s+de\s+vida)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi
-      ]) || text;
-
-      let targetBlock = 'active_objectives';
-      if (/\bpersonal\b/i.test(text)) targetBlock = 'personal_block';
+      const { text: taskText, targetBlock, blockHumanName } = NluService.extractNoteOrTask(text, true);
 
       return {
         intent: 'CREATE_BLOCK_ITEM',
         actionTaken: 'ADD_NOTE',
         actionLabel: `Tarea: ${taskText}`,
-        actionDescription: `Crear tarjeta de tarea verificable en Objetivos Activos.`,
-        actionPayload: { text: taskText, targetBlock, isTask: true },
+        actionDescription: `Crear tarjeta de tarea verificable en ${blockHumanName}.`,
+        actionPayload: { text: taskText, targetBlock, isTask: true, type: 'task' },
         reply: `Anotado. Tener tus tareas pendientes visibles reduce la sobrecarga cognitiva. Hacé clic en "Ejecutar en el lienzo" para insertar "${taskText}".`
       };
     }
@@ -98,31 +166,14 @@ export class NluService {
     // 4. INTENCIÓN: NOTA / TARJETA GENERAL (Lienzo Canvas)
     const isNote = /(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:notas?|apuntes?|anotaci[oó]n|anotar|anot[aá]|recordar|guardar|guarda|guard[aá]|escribir|agreg[aá]r?|cre[aá]r?)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/i.test(text);
     if (isNote) {
-      const noteText = NluService.cleanEntity(text, [
-        /(?:^|[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_])(?:foco|crea|crear|cre[aá]|agrega|agregar|agreg[aá]|nueva|nuevo|anota|anotar|anot[aá]|guardar|guarda|guard[aá]|notas?|apuntes?)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi,
-        /(?:en|para)?\s*(?:el|la)?\s*(?:bloque\s+)?(?:de\s+)?(?:objetivos?\s+activos?|personal|inspiraci[oó]n|archivo\s+de\s+vida)(?=[^a-záéíóúñA-ZÁÉÍÓÚÑ0-9_]|$)/gi
-      ]) || text;
-
-      let targetBlock = 'active_objectives';
-      let blockHumanName = 'Objetivos Activos';
-
-      if (/\bpersonal\b/i.test(text)) {
-        targetBlock = 'personal_block';
-        blockHumanName = 'Bloque Personal';
-      } else if (/\binspiraci[oó]n|creatividad|ideas?\b/i.test(text)) {
-        targetBlock = 'inspiration_creativity';
-        blockHumanName = 'Inspiración y Creatividad';
-      } else if (/\barchivo|bit[aá]cora|vida\b/i.test(text)) {
-        targetBlock = 'life_archive';
-        blockHumanName = 'Archivo de Vida';
-      }
+      const { text: noteText, targetBlock, blockHumanName } = NluService.extractNoteOrTask(text, false);
 
       return {
         intent: 'CREATE_BLOCK_ITEM',
         actionTaken: 'ADD_NOTE',
         actionLabel: `Nota: ${noteText}`,
         actionDescription: `Añadir tarjeta al bloque de ${blockHumanName}.`,
-        actionPayload: { text: noteText, targetBlock, isTask: false },
+        actionPayload: { text: noteText, targetBlock, isTask: false, type: 'note' },
         reply: `Entendido. Despejar tu mente anotando tus pensamientos en el lienzo es fundamental. Hacé clic en "Ejecutar en el lienzo" para plasmar "${noteText}".`
       };
     }

@@ -86,6 +86,42 @@ describe('Pipeline NLU y Acciones "Ejecutar en el Lienzo" (Integración)', () =>
       expect(resVida.actionPayload?.targetBlock).toBe('life_archive');
     });
 
+    it('Interpreta intenciones dictadas por voz con cláusulas explícitas (que diga, con el texto, etc.)', () => {
+      const resDiga = nluService.parseIntent('Crear nota que diga comprar café');
+      expect(resDiga.actionTaken).toBe('ADD_NOTE');
+      expect(resDiga.actionPayload?.text).toBe('Comprar café');
+      expect(resDiga.actionPayload?.isTask).toBe(false);
+
+      const resTexto = nluService.parseIntent('Crear una nota con el texto terminar informe para mañana');
+      expect(resTexto.actionTaken).toBe('ADD_NOTE');
+      expect(resTexto.actionPayload?.text).toBe('Terminar informe para mañana');
+
+      const resTengo = nluService.parseIntent('Agregar tarea que tengo que pagar la luz');
+      expect(resTengo.actionTaken).toBe('ADD_NOTE');
+      expect(resTengo.actionPayload?.isTask).toBe(true);
+      expect(resTengo.actionPayload?.text).toBe('Pagar la luz');
+    });
+
+    it('Interpreta órdenes de voz directas ("Crear nota...", "Agregar tarea...") con fallbacks seguros', () => {
+      const resNota = nluService.parseIntent('Crear nota repasar React');
+      expect(resNota.actionTaken).toBe('ADD_NOTE');
+      expect(resNota.actionPayload?.text).toBe('Repasar React');
+      expect(resNota.actionPayload?.targetBlock).toBe('active_objectives');
+
+      const resTarea = nluService.parseIntent('Agregar tarea entregar informe');
+      expect(resTarea.actionTaken).toBe('ADD_NOTE');
+      expect(resTarea.actionPayload?.isTask).toBe(true);
+      expect(resTarea.actionPayload?.text).toBe('Entregar informe');
+
+      const resVacia = nluService.parseIntent('Crear nota');
+      expect(resVacia.actionTaken).toBe('ADD_NOTE');
+      expect(resVacia.actionPayload?.text).toBe('Nota rápida');
+
+      const resTareaVacia = nluService.parseIntent('Agregar tarea');
+      expect(resTareaVacia.actionTaken).toBe('ADD_NOTE');
+      expect(resTareaVacia.actionPayload?.text).toBe('Tarea rápida');
+    });
+
     it('Fallback para conversación general sin intenciones operativas', () => {
       const res = nluService.parseIntent('¿Cómo estás hoy?');
       expect(res.intent).toBe('GENERAL_CHAT');
