@@ -5,6 +5,141 @@ import { emitCustomEvent } from "../../utils/events.js";
 import WhisperWorker from '../../workers/whisper.worker.js?worker';
 
 /**
+ * Controlador de grabación de voz y transcripción Whisper local.
+ * Reutilizable por AudioRecorder y ChatbotModal.
+ */
+export class AudioRecorderController {
+  constructor({ onStatus, onTranscription, onError } = {}) {
+    this.onStatus = onStatus || (() => {});
+    this.onTranscription = onTranscription || (() => {});
+    this.onError = onError || (() => {});
+    this.isRecording = false;
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.worker = null;
+    this.stream = null;
+    this.initWorker();
+  }
+
+  initWorker() {
+    try {
+      if (typeof Worker !== 'undefined') {
+        this.worker = new WhisperWorker();
+        this.worker.addEventListener('message', async (e) => {
+          const { status, text, error } = e.data || {};
+          if (status === 'loading') this.onStatus('Cargando Motor IA...');
+          if (status === 'ready') this.onStatus('IA Lista', 2000);
+          if (status === 'transcribing') this.onStatus('Transcribiendo audio (Local)...');
+          if (status === 'success') {
+            this.onStatus('Transcripción completada', 2000);
+            if (text) {
+              this.onTranscription(text);
+            }
+          }
+          if (status === 'error') {
+            console.error('[AudioRecorderController] Error en Whisper:', error);
+            this.onStatus('Error en transcripción', 3000);
+            this.onError(error);
+          }
+        });
+        this.worker.postMessage({ type: 'LOAD_MODEL' });
+      }
+    } catch (err) {
+      console.warn('[AudioRecorderController] Worker no inicializado:', err?.message);
+    }
+  }
+
+  async start() {
+    if (this.isRecording) return false;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('API de micrófono no soportada en este entorno');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true }
+      });
+      this.stream = stream;
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) this.audioChunks.push(e.data);
+      };
+
+      this.mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          await this.processAudioBlob(audioBlob);
+        } catch (procErr) {
+          console.error('[AudioRecorderController] Error procesando audio:', procErr);
+          this.onStatus('Error procesando audio', 3000);
+        }
+      };
+
+      this.mediaRecorder.start();
+      this.isRecording = true;
+      this.onStatus('Escuchando...');
+      return true;
+    } catch (err) {
+      console.error('[AudioRecorderController] Permiso de micrófono denegado:', err);
+      this.onStatus('Micrófono denegado', 3000);
+      this.onError(err);
+      return false;
+    }
+  }
+
+  stop() {
+    if (this.mediaRecorder && this.isRecording) {
+      try {
+        this.mediaRecorder.stop();
+      } catch {}
+      if (this.stream) {
+        try {
+          this.stream.getTracks().forEach((track) => track.stop());
+        } catch {}
+        this.stream = null;
+      }
+      this.isRecording = false;
+    }
+  }
+
+  async toggle() {
+    if (!this.isRecording) {
+      return await this.start();
+    } else {
+      this.stop();
+      return false;
+    }
+  }
+
+  async processAudioBlob(blob) {
+    if (!this.worker) return;
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) throw new Error('AudioContext no soportado');
+      const audioContext = new AudioCtx({ sampleRate: 16000 });
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const float32Data = audioBuffer.getChannelData(0);
+      this.worker.postMessage({ type: 'TRANSCRIBE', audioData: float32Data });
+    } catch (err) {
+      console.error('[AudioRecorderController] Error procesando buffer de audio:', err);
+      this.onStatus('Error procesando audio', 3000);
+    }
+  }
+
+  destroy() {
+    this.stop();
+    if (this.worker) {
+      try {
+        this.worker.terminate();
+      } catch {}
+      this.worker = null;
+    }
+  }
+}
+
+/**
  * Componente React: AudioRecorder (F.O.C.O. Voice & AI Ingestion)
  * Optimizado con React.memo, useCallback y manejo eficiente de estados.
  */

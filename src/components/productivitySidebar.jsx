@@ -82,6 +82,31 @@ class FocoProductivitySidebar extends HTMLElement {
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
     escucharCambiosDePaleta((nombrePaleta) => aplicarPaleta(nombrePaleta));
     
+    this.onStartPomodoroEvent = (e) => {
+      if (this.classList.contains('w-16')) {
+        this.classList.remove('w-16');
+        this.classList.add('w-80');
+      }
+      const minutes = e.detail?.focusMinutes || 25;
+      this.pomodoroManager.updateConfig({ focusMinutes: minutes });
+      this.pomodoroManager.startTimer();
+      this.render();
+    };
+    window.addEventListener('foco:start-pomodoro', this.onStartPomodoroEvent);
+
+    this.onAddHabitEvent = async (e) => {
+      if (this.classList.contains('w-16')) {
+        this.classList.remove('w-16');
+        this.classList.add('w-80');
+      }
+      if (e.detail?.name) {
+        this.habitManager.setSelectedOffset(0);
+        await this.habitManager.addHabit(e.detail.name);
+        this.render();
+      }
+    };
+    window.addEventListener('foco:add-habit', this.onAddHabitEvent);
+    
     // 1. Render inicial
     this.render();
 
@@ -102,6 +127,8 @@ class FocoProductivitySidebar extends HTMLElement {
   }
 
   disconnectedCallback() {
+    if (this.onStartPomodoroEvent) window.removeEventListener('foco:start-pomodoro', this.onStartPomodoroEvent);
+    if (this.onAddHabitEvent) window.removeEventListener('foco:add-habit', this.onAddHabitEvent);
     this.pomodoroManager.destroy();
     this.calendarManager.destroy();
   }

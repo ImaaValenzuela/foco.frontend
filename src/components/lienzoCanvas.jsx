@@ -7,6 +7,7 @@ import { emitCustomEvent, FOCO_EVENTS } from "../utils/events.js";
 import { localStore } from "../services/storage.service.js";
 import { aplicarPaleta, obtenerPaletaActual, escucharCambiosDePaleta } from "../managers/paletteManager.js";
 import "./ui/audioRecorder.jsx";
+import "./ChatbotModal.jsx";
 
 const LOCAL_BLOCKS_KEY = "foco-local-blocks";
 
@@ -486,10 +487,19 @@ class FocoLienzoCanvas extends HTMLElement {
       }
     });
 
-    window.addEventListener("foco:refresh-canvas", () => this.cargarBlocks());
+    this.onRefreshCanvas = () => this.cargarBlocks();
+    window.addEventListener("foco:refresh-canvas", this.onRefreshCanvas);
 
-    const audioComponent = document.createElement('foco-audio-recorder');
-    this.appendChild(audioComponent);
+    this.onAddCardEvent = async (e) => {
+      if (e.detail?.text) {
+        await this.guardarItemEnBackend(e.detail.text, e.detail.targetBlock || 'active_objectives', Boolean(e.detail.isTask));
+        await this.cargarBlocks();
+      }
+    };
+    window.addEventListener("foco:add-card", this.onAddCardEvent);
+
+    const chatbotComponent = document.createElement('foco-chatbot-modal');
+    this.appendChild(chatbotComponent);
 
     supabase?.auth.onAuthStateChange((_event, session) => {
       if (session) this.migrarBlocksLocales(session);
