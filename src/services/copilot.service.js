@@ -1,4 +1,5 @@
 import { getToken } from '../auth.js';
+import { nluService } from './nlu.service.js';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -125,38 +126,33 @@ export class CopilotService {
   }
 
   /**
-   * Interpreta un mensaje del usuario integrando RAG y reglas de inferencia.
+   * Interpreta un mensaje del usuario integrando NLU, RAG y reglas de inferencia.
    *
    * @param {string} messageText
-   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, logId: string|number|null }>}
+   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, actionPayload: object|null, intent: string|null, logId: string|number|null }>}
    */
   async interpretMessage(messageText) {
+    const nluResult = await nluService.processInput(messageText);
     const promptData = await this.getAssembledPrompt(messageText);
-    const lower = (messageText || '').toLowerCase().trim();
+    const logId = promptData?.contextSnapshot?.lastInferenceLogId || null;
 
-    let actionTaken = null;
-    let actionLabel = null;
-    let actionDescription = null;
+    if (nluResult && nluResult.actionTaken) {
+      return {
+        reply: nluResult.reply,
+        actionTaken: nluResult.actionTaken,
+        actionLabel: nluResult.actionLabel,
+        actionDescription: nluResult.actionDescription,
+        actionPayload: nluResult.actionPayload || {},
+        intent: nluResult.intent || null,
+        logId
+      };
+    }
 
-    // 1. Identificar acción por telemetría RAG o por intención semántica
-    if (lower.includes('pomodoro') || lower.includes('foco') || lower.includes('temporizador') || lower.includes('concentrar')) {
-      actionTaken = 'CONFIG_POMODORO';
-      actionLabel = 'Configurar temporizador pomodoro';
-      actionDescription = 'Iniciar un ciclo de enfoque de 25 minutos para impulsar tu concentración.';
-    } else if (lower.includes('nota') || lower.includes('anotar') || lower.includes('tarea') || lower.includes('objetivo')) {
-      actionTaken = 'ADD_NOTE';
-      actionLabel = 'Añadir nota/s';
-      actionDescription = 'Crear una nueva tarjeta directamente en tu bloque de Objetivos Activos.';
-    } else if (lower.includes('habito') || lower.includes('hábito') || lower.includes('rutina')) {
-      actionTaken = 'ADD_HABIT';
-      actionLabel = 'Añadir hábito';
-      actionDescription = 'Registrar un nuevo hábito diario en la barra de productividad.';
-    } else if (lower.includes('descanso') || lower.includes('pausa') || lower.includes('cansado') || lower.includes('recreo')) {
-      actionTaken = 'SHOW_BREAK_PROMPT_UI';
-      actionLabel = 'Pausa activa y descanso';
-      actionDescription = 'Tomar un recreo de 10 minutos para despejar la mente y evitar fatiga.';
-    } else if (promptData?.meta?.actionTaken && promptData.meta.actionTaken !== 'GENERAL_COPILOT_GUIDANCE') {
-      actionTaken = promptData.meta.actionTaken;
+    if (promptData?.meta?.actionTaken && promptData.meta.actionTaken !== 'GENERAL_COPILOT_GUIDANCE') {
+      const actionTaken = promptData.meta.actionTaken;
+      let actionLabel = 'Acción sugerida';
+      let actionDescription = 'Optimización recomendada según tu ritmo de trabajo.';
+
       if (actionTaken === 'INJECT_CONVERSATIONAL_ALERT') {
         actionLabel = 'Revisar objetivos pendientes';
         actionDescription = 'Identificamos tareas que requieren tu atención en el lienzo.';
@@ -166,35 +162,35 @@ export class CopilotService {
       } else if (actionTaken === 'LOCK_POMODORO_COOLDOWN') {
         actionLabel = 'Pausa de enfriamiento';
         actionDescription = 'Pausa sugerida tras sesiones continuas de concentración.';
-      } else {
-        actionLabel = 'Acción sugerida';
-        actionDescription = 'Optimización recomendada según tu ritmo de trabajo.';
       }
+
+      return {
+        reply: promptData.systemPrompt || 'Identifiqué una sugerencia basada en tu ritmo de trabajo en F.O.C.O.',
+        actionTaken,
+        actionLabel,
+        actionDescription,
+        actionPayload: {},
+        intent: actionTaken,
+        logId
+      };
     }
 
-    // 2. Generación de respuesta contextual
     let reply = '';
-    if (actionTaken === 'CONFIG_POMODORO') {
-      reply = '¡Excelente momento para concentrarse! Te sugiero iniciar un ciclo Pomodoro de 25 minutos. Podés activarlo haciendo clic en el badge azul de abajo.';
-    } else if (actionTaken === 'ADD_NOTE') {
-      reply = 'Perfecto, registrar tus pensamientos en notas despeja tu carga mental. Hacé clic en la acción sugerida para plasmarla en tu lienzo.';
-    } else if (actionTaken === 'ADD_HABIT') {
-      reply = 'La constancia construye grandes logros. Podés registrar tu hábito en el tracker haciendo clic en la acción sugerida.';
-    } else if (actionTaken === 'SHOW_BREAK_PROMPT_UI') {
-      reply = 'Noté que necesitás un respiro. Tomarte unos minutos para estirar o hidratarte mejorará tu rendimiento cognitivo.';
-    } else if (promptData?.retrievedPassages?.length > 0) {
+    if (promptData?.retrievedPassages?.length > 0) {
       const topTitle = promptData.retrievedPassages[0].title || promptData.retrievedPassages[0].text || '';
       reply = `Encontré información relacionada en tu segundo cerebro: "${topTitle}". ¿Te gustaría que la vinculemos a una tarea o configuremos un bloque de estudio?`;
     } else {
-      reply = `Entendido: "${messageText}". Como Copiloto de F.O.C.O., estoy listo para ayudarte a organizar notas, planificar tu rutina o monitorear tus hábitos.`;
+      reply = nluResult.reply || `Entendido: "${messageText}". Como Copiloto de F.O.C.O., estoy listo para ayudarte a organizar notas, planificar tu rutina o monitorear tus hábitos.`;
     }
 
     return {
       reply,
-      actionTaken,
-      actionLabel,
-      actionDescription,
-      logId: promptData?.contextSnapshot?.lastInferenceLogId || null
+      actionTaken: null,
+      actionLabel: null,
+      actionDescription: null,
+      actionPayload: null,
+      intent: 'GENERAL_CHAT',
+      logId
     };
   }
 }
