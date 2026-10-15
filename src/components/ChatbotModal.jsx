@@ -53,6 +53,7 @@ export const ChatbotModal = memo(function ChatbotModal({
   const [rightOffset, setRightOffset] = useState('6rem'); // 96px por defecto (sidebar colapsada)
 
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
   const audioControllerRef = useRef(null);
   const modalContainerRef = useRef(null);
@@ -66,23 +67,44 @@ export const ChatbotModal = memo(function ChatbotModal({
     }
   }, [messages]);
 
-  // 2. Desplazar al último mensaje
+  // 2. Desplazar al último mensaje (garantiza scroll persistente al fondo)
   const scrollToBottom = useCallback((smooth = true) => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      if (smooth && typeof container.scrollTo === 'function') {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+      try {
+        messagesEndRef.current.scrollIntoView({
+          behavior: smooth ? 'smooth' : 'auto',
+          block: 'end'
+        });
+      } catch {}
     }
   }, []);
 
   useEffect(() => {
     if (isOpen) {
       scrollToBottom(false);
-      setTimeout(() => inputRef.current?.focus(), 150);
+      const timer = setTimeout(() => {
+        scrollToBottom(false);
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, scrollToBottom]);
 
   useEffect(() => {
     scrollToBottom(true);
-  }, [messages, isLoading, scrollToBottom]);
+    const frameId = requestAnimationFrame(() => {
+      scrollToBottom(true);
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [messages, isLoading, sttStatus, scrollToBottom]);
 
   // 3. Ajuste responsivo de posición sin solapamiento con la barra de productividad
   const calculatePositionOffset = useCallback(() => {
@@ -445,6 +467,7 @@ export const ChatbotModal = memo(function ChatbotModal({
         {/* Historial de Mensajes */}
         <div
           id="chatbot-messages-list"
+          ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4 foco-scrollbar bg-[--color-lienzo-bg,#f8fafc]"
         >
           {messages.map((msg) => {
@@ -750,6 +773,24 @@ export class FocoChatbotModal extends HTMLElement {
         </form>
       </div>
     `;
+
+    if (this.isOpen) {
+      this.scrollToBottom(false);
+    }
+  }
+
+  scrollToBottom(smooth = false) {
+    const list = this.querySelector('#chatbot-messages-list');
+    if (list) {
+      if (smooth && typeof list.scrollTo === 'function') {
+        list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+      } else {
+        list.scrollTop = list.scrollHeight;
+      }
+      requestAnimationFrame(() => {
+        if (list) list.scrollTop = list.scrollHeight;
+      });
+    }
   }
 
   renderMessagesHtml() {
@@ -793,6 +834,9 @@ export class FocoChatbotModal extends HTMLElement {
       this.isOpen = !this.isOpen;
       this.render();
       this.initListeners();
+      if (this.isOpen) {
+        this.scrollToBottom(false);
+      }
     });
 
     this.querySelector('#chatbot-close-modal-btn')?.addEventListener('click', () => {
@@ -929,6 +973,7 @@ export class FocoChatbotModal extends HTMLElement {
     });
     this.render();
     this.initListeners();
+    this.scrollToBottom(false);
 
     try {
       const response = await copilotService.interpretMessage(val);
@@ -962,6 +1007,7 @@ export class FocoChatbotModal extends HTMLElement {
     localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
     this.render();
     this.initListeners();
+    this.scrollToBottom(true);
   }
 }
 
