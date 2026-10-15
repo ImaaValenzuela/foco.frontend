@@ -19,6 +19,12 @@ export default defineConfig({
       },
     },
   ],
+  resolve: {
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+  },
+  esbuild: {
+    jsx: 'automatic',
+  },
   build: {
     rollupOptions: {
       input: {

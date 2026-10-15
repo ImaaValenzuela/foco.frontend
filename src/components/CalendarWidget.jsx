@@ -1,3 +1,5 @@
+import React, { memo } from 'react';
+
 /**
  * Componente: CalendarWidget (F.O.C.O. Google Calendar Integration)
  * Renderiza el widget de agenda diaria y zona de caída (Drop Zone) para arrastrar tarjetas desde el lienzo.
@@ -209,5 +211,11 @@ export function renderCalendarWidget(state = {}) {
   `;
 }
 
+export const CalendarWidgetComponent = memo(function CalendarWidgetComponent(props) {
+  const html = renderCalendarWidget(props);
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
 export const GoogleCalendarWidget = renderCalendarWidget;
 export default renderCalendarWidget;
+
