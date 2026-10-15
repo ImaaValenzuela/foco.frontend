@@ -178,7 +178,7 @@ export const ChatbotModal = memo(function ChatbotModal({
       const started = await audioControllerRef.current.start();
       if (started) {
         setIsRecording(true);
-        setSttStatus('Escuchando voz...');
+        setSttStatus('Escuchando...');
       }
     }
   }, [isRecording]);
@@ -589,20 +589,9 @@ export const ChatbotModal = memo(function ChatbotModal({
 
         {/* Estado STT en vivo */}
         {sttStatus && (
-          <div className="px-3 py-1.5 bg-blue-50 border-t border-blue-100 flex items-center justify-between text-xs text-blue-700 font-medium">
-            <div className="flex items-center space-x-2">
-              <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-ping' : 'bg-blue-600'}`}></span>
-              <span>{sttStatus}</span>
-            </div>
-            {isRecording && (
-              <button
-                type="button"
-                onClick={handleToggleVoice}
-                className="text-[11px] underline font-semibold text-red-600 hover:text-red-700"
-              >
-                Detener
-              </button>
-            )}
+          <div className="px-3.5 py-1.5 bg-blue-50/90 border-t border-blue-100 flex items-center space-x-2 text-xs text-blue-700 font-medium select-none">
+            <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-ping' : 'bg-blue-600'}`}></span>
+            <span>{sttStatus}</span>
           </div>
         )}
 
@@ -745,9 +734,9 @@ export class FocoChatbotModal extends HTMLElement {
           ${this.renderMessagesHtml()}
         </div>
 
-        <div id="chatbot-stt-status-bar" class="hidden px-3 py-1.5 bg-blue-50 border-t border-blue-100 flex items-center justify-between text-xs text-blue-700 font-medium">
+        <div id="chatbot-stt-status-bar" class="hidden px-3.5 py-1.5 bg-blue-50/90 border-t border-blue-100 flex items-center space-x-2 text-xs text-blue-700 font-medium select-none">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
           <span id="chatbot-stt-status-text">Escuchando...</span>
-          <button id="chatbot-stt-cancel-btn" type="button" class="text-[11px] underline font-semibold text-red-600">Detener</button>
         </div>
 
         <form id="chatbot-input-form" class="p-3 bg-white border-t border-slate-100 flex items-center gap-2 select-none shrink-0">
