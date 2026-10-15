@@ -372,10 +372,6 @@ export const ChatbotModal = memo(function ChatbotModal({
               <h3 id="chatbot-header-title" className="text-sm font-bold tracking-tight leading-tight">
                 Copiloto F.O.C.O.
               </h3>
-              <p className="text-[10px] text-orange-200 flex items-center gap-1 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Asistente NLU Activo</span>
-              </p>
             </div>
           </div>
 
@@ -733,10 +729,6 @@ export class FocoChatbotModal extends HTMLElement {
             </div>
             <div>
               <h3 class="text-sm font-bold tracking-tight leading-tight">Copiloto F.O.C.O.</h3>
-              <p class="text-[10px] text-orange-200 flex items-center gap-1 font-medium">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Asistente NLU Activo</span>
-              </p>
             </div>
           </div>
           <div class="flex items-center space-x-1">
