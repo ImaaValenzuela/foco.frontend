@@ -487,7 +487,16 @@ class FocoLienzoCanvas extends HTMLElement {
       }
     });
 
-    window.addEventListener("foco:refresh-canvas", () => this.cargarBlocks());
+    this.onRefreshCanvas = () => this.cargarBlocks();
+    window.addEventListener("foco:refresh-canvas", this.onRefreshCanvas);
+
+    this.onAddCardEvent = async (e) => {
+      if (e.detail?.text) {
+        await this.guardarItemEnBackend(e.detail.text, e.detail.targetBlock || 'active_objectives', Boolean(e.detail.isTask));
+        await this.cargarBlocks();
+      }
+    };
+    window.addEventListener("foco:add-card", this.onAddCardEvent);
 
     const chatbotComponent = document.createElement('foco-chatbot-modal');
     this.appendChild(chatbotComponent);
