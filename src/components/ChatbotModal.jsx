@@ -1,24 +1,29 @@
-import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { memo, useState, useEffect, useRef, useCallback } from 'react';
 import logoUrl from '../images/logo.svg';
 import { copilotService } from '../services/copilot.service.js';
+import { canvasMutators } from '../services/canvasMutators.js';
 import { AudioRecorderController } from './ui/audioRecorder.jsx';
 import { escucharCambiosDePaleta, aplicarPaleta, obtenerPaletaActual } from '../managers/paletteManager.js';
-import { emitCustomEvent } from '../utils/events.js';
 
 const STORAGE_CHAT_KEY = 'foco_chat_history_v1';
 
 const INITIAL_WELCOME_MESSAGE = {
   id: 'msg-welcome-0',
   role: 'assistant',
-  content: '¡Hola! Soy tu Copiloto F.O.C.O. 🧠\n\nPuedo ayudarte a organizar tus notas, planificar bloques de trabajo, configurar tu Pomodoro o registrar nuevos hábitos.\n\nPodés escribirme o hablarme por voz en cualquier momento.',
+  content: '¡Hola! Soy tu Copiloto F.O.C.O. 🧠\n\nPuedo ayudarte a organizar tus notas, planificar bloques de trabajo, configurar tu Pomodoro o registrar nuevos hábitos.\n\nPodés escribirme o hablarme por voz en cualquier momento (ej: "Agregá una nota de repasar React", "Iniciá un Pomodoro de 25 min", "Creá un hábito de tomar agua").',
   timestamp: new Date().toISOString(),
   actionTaken: null,
+  actionLabel: null,
+  actionDescription: null,
+  actionPayload: null,
+  isExecuted: false,
   feedback: null,
 };
 
 /**
  * Componente React: ChatbotModal (F.O.C.O. Floating AI Copilot & Voice STT)
- * Integra entrada dual de voz y texto, historial persistente, badges de acción y feedback.
+ * Integra entrada dual de voz y texto, pipeline NLU, botón azul "Ejecutar en el lienzo"
+ * y binding reactivo con los mutadores de estado del tablero.
  */
 export const ChatbotModal = memo(function ChatbotModal({
   isOpen: controlledIsOpen,
@@ -45,8 +50,7 @@ export const ChatbotModal = memo(function ChatbotModal({
   const [sttStatus, setSttStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
-  const [rightOffset, setRightOffset] = useState('6rem'); // 96px por defecto (sidebar collapsed)
-  const [activePalette, setActivePalette] = useState(() => obtenerPaletaActual());
+  const [rightOffset, setRightOffset] = useState('6rem'); // 96px por defecto (sidebar colapsada)
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -111,7 +115,6 @@ export const ChatbotModal = memo(function ChatbotModal({
     window.addEventListener('resize', onResize);
 
     const removePaletteListener = escucharCambiosDePaleta((palette) => {
-      setActivePalette(palette);
       aplicarPaleta(palette);
     });
 
@@ -137,7 +140,7 @@ export const ChatbotModal = memo(function ChatbotModal({
         setIsRecording(false);
         setSttStatus('Voz procesada');
         setTimeout(() => setSttStatus(''), 2000);
-        // Colocar texto en el input y enviarlo automáticamente para fluidez
+        // Pipeline NLU: procesar la orden capturada por voz directamente
         handleSendMessageDirect(text);
       },
       onError: (err) => {
@@ -155,7 +158,7 @@ export const ChatbotModal = memo(function ChatbotModal({
     };
   }, []);
 
-  // 5. Manejador de alternancia de modal
+  // 5. Alternancia de apertura del modal
   const handleToggle = useCallback(() => {
     if (controlledOnToggle) {
       controlledOnToggle();
@@ -164,7 +167,7 @@ export const ChatbotModal = memo(function ChatbotModal({
     }
   }, [controlledOnToggle]);
 
-  // 6. Manejador de grabación de voz
+  // 6. Grabación de voz (STT)
   const handleToggleVoice = useCallback(async () => {
     if (!audioControllerRef.current) return;
     if (isRecording) {
@@ -180,7 +183,7 @@ export const ChatbotModal = memo(function ChatbotModal({
     }
   }, [isRecording]);
 
-  // 7. Envío directo de mensaje (usado por texto o voz)
+  // 7. Envío directo al pipeline NLU (texto o audio)
   const handleSendMessageDirect = useCallback(async (textToSend) => {
     const trimmed = (textToSend || '').trim();
     if (!trimmed) return;
@@ -208,19 +211,25 @@ export const ChatbotModal = memo(function ChatbotModal({
         actionTaken: response.actionTaken,
         actionLabel: response.actionLabel,
         actionDescription: response.actionDescription,
+        actionPayload: response.actionPayload || null,
+        isExecuted: false,
         logId: response.logId,
         feedback: null,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      console.error('[ChatbotModal] Error consultando al copiloto:', err);
+      console.error('[ChatbotModal] Error en pipeline NLU:', err);
       const fallbackMessage = {
         id: `msg-asst-${Date.now()}`,
         role: 'assistant',
-        content: 'Hubo una breve interrupción de conexión con el motor de IA. Podés intentar nuevamente o ejecutar tus tareas manualmente en el lienzo.',
+        content: 'No se pudo procesar la solicitud con el copiloto NLU. Podés intentar nuevamente.',
         timestamp: new Date().toISOString(),
         actionTaken: null,
+        actionLabel: null,
+        actionDescription: null,
+        actionPayload: null,
+        isExecuted: false,
         feedback: null,
       };
       setMessages((prev) => [...prev, fallbackMessage]);
@@ -266,7 +275,7 @@ export const ChatbotModal = memo(function ChatbotModal({
     }
   }, [messages]);
 
-  // 9. Borrar Historial de Conversación con confirmación rápida
+  // 9. Borrar Historial
   const handleClearHistory = useCallback(() => {
     setMessages([INITIAL_WELCOME_MESSAGE]);
     setShowConfirmClear(false);
@@ -275,38 +284,19 @@ export const ChatbotModal = memo(function ChatbotModal({
     } catch {}
   }, []);
 
-  // 10. Ejecutar acción sugerida en el lienzo / widgets
-  const handleExecuteAction = useCallback((actionTaken) => {
+  // 10. Binding Real con el Lienzo (Canvas Binding) al presionar "Ejecutar en el lienzo"
+  const handleExecuteAction = useCallback(async (msgId, actionTaken, actionPayload) => {
     if (!actionTaken) return;
 
-    if (actionTaken === 'CONFIG_POMODORO') {
-      const sidebar = document.querySelector('foco-productivity-sidebar');
-      if (sidebar) {
-        if (!sidebar.classList.contains('w-80')) {
-          sidebar.classList.remove('w-16');
-          sidebar.classList.add('w-80');
-          if (typeof sidebar.render === 'function') sidebar.render();
-        }
-      }
-      window.dispatchEvent(new CustomEvent('foco:quick-pomodoro'));
-    } else if (actionTaken === 'ADD_HABIT' || actionTaken === 'SUGGEST_HABIT_LOG') {
-      const sidebar = document.querySelector('foco-productivity-sidebar');
-      if (sidebar) {
-        if (!sidebar.classList.contains('w-80')) {
-          sidebar.classList.remove('w-16');
-          sidebar.classList.add('w-80');
-          if (typeof sidebar.render === 'function') sidebar.render();
-        }
-      }
-      window.dispatchEvent(new CustomEvent('foco:refresh-habits'));
-    } else if (actionTaken === 'ADD_NOTE' || actionTaken === 'RECOMMEND_PROJECT_PLAN') {
-      const blockObjetivos = document.getElementById('bloque-objetivos-activos');
-      if (blockObjetivos) {
-        blockObjetivos.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      window.dispatchEvent(new CustomEvent('foco:refresh-canvas'));
-    } else if (actionTaken === 'SHOW_BREAK_PROMPT_UI') {
-      window.dispatchEvent(new CustomEvent('foco:break-prompt'));
+    try {
+      await canvasMutators.executeNluAction(actionTaken, actionPayload || {});
+
+      // Actualizar estado de ejecución para confirmación visual inmediata
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === msgId ? { ...msg, isExecuted: true } : msg))
+      );
+    } catch (err) {
+      console.error('[ChatbotModal] Error ejecutando acción en el lienzo:', err);
     }
   }, []);
 
@@ -347,14 +337,11 @@ export const ChatbotModal = memo(function ChatbotModal({
           ) : (
             <div className="relative w-8 h-8 flex items-center justify-center">
               <img src={logoUrl} alt="Logo F.O.C.O." className="w-full h-full object-contain pointer-events-none drop-shadow-sm" />
-              {/* Badge sutil de IA */}
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[--color-asociacion-acento,#FC7206] rounded-full border-2 border-[--color-btn-iniciar,#22298A] flex items-center justify-center">
                 <span className="w-1 h-1 bg-white rounded-full"></span>
               </span>
             </div>
           )}
-
-          {/* Halo de animación al hover */}
           <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
         </button>
       </div>
@@ -375,7 +362,7 @@ export const ChatbotModal = memo(function ChatbotModal({
         aria-modal="true"
         aria-labelledby="chatbot-header-title"
       >
-        {/* 1. Encabezado del Chatbot */}
+        {/* Encabezado */}
         <div className="h-14 px-4 bg-[--color-btn-iniciar,#22298A] text-white flex items-center justify-between border-b border-white/10 select-none shadow-xs shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-full bg-white/15 p-1 flex items-center justify-center shadow-xs overflow-hidden">
@@ -387,13 +374,12 @@ export const ChatbotModal = memo(function ChatbotModal({
               </h3>
               <p className="text-[10px] text-orange-200 flex items-center gap-1 font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Asistente Activo</span>
+                <span>Asistente NLU Activo</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-1">
-            {/* Botón Borrar Historial */}
             <button
               id="chatbot-clear-history-btn"
               type="button"
@@ -410,7 +396,6 @@ export const ChatbotModal = memo(function ChatbotModal({
               </svg>
             </button>
 
-            {/* Botón Cerrar Modal */}
             <button
               id="chatbot-close-modal-btn"
               type="button"
@@ -461,7 +446,7 @@ export const ChatbotModal = memo(function ChatbotModal({
           </div>
         )}
 
-        {/* 2. Lista de Mensajes (Historial Completo) */}
+        {/* Historial de Mensajes */}
         <div
           id="chatbot-messages-list"
           className="flex-1 overflow-y-auto p-4 space-y-4 foco-scrollbar bg-[--color-lienzo-bg,#f8fafc]"
@@ -476,7 +461,6 @@ export const ChatbotModal = memo(function ChatbotModal({
                 data-role={msg.role}
                 className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
               >
-                {/* Globo de mensaje */}
                 <div
                   className={`p-3.5 rounded-2xl text-xs md:text-sm shadow-xs break-words max-w-[88%] leading-relaxed ${
                     isUser
@@ -484,19 +468,18 @@ export const ChatbotModal = memo(function ChatbotModal({
                       : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80 shadow-xs'
                   }`}
                 >
-                  {/* Contenido de texto con saltos de línea preservados */}
                   <div className="whitespace-pre-line">{msg.content}</div>
 
                   {/* ========================================================
-                      4. Validación de Acción Sugerida (Badges en Azul)
+                      C. Tarjeta con Botón Azul "Ejecutar en el lienzo"
                       ======================================================== */}
                   {!isUser && msg.actionTaken && (
                     <div
                       data-action-card={msg.actionTaken}
-                      className="mt-3 p-3 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
+                      className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/80 text-[--color-asociacion-primario,#323888]">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">
                           Acción Sugerida
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -509,28 +492,42 @@ export const ChatbotModal = memo(function ChatbotModal({
                       </h5>
 
                       {msg.actionDescription && (
-                        <p className="text-[11px] text-slate-600 mb-2 leading-tight">
+                        <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
                           {msg.actionDescription}
                         </p>
                       )}
 
+                      {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
                       <button
                         type="button"
                         data-action-trigger={msg.actionTaken}
-                        onClick={() => handleExecuteAction(msg.actionTaken)}
-                        className="w-full py-1.5 px-3 rounded-lg bg-[--color-asociacion-primario,#323888] hover:opacity-90 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
+                        onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
+                        className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
+                          msg.isExecuted
+                            ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
+                            : 'bg-[#2563EB] hover:bg-blue-700'
+                        }`}
                       >
-                        <span>Ejecutar en el lienzo</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="5 3 19 12 5 21 5 3" />
-                        </svg>
+                        {msg.isExecuted ? (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>✓ Ejecutado en el lienzo</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Ejecutar en el lienzo</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
 
-                  {/* ========================================================
-                      3. Mecanismo de Feedback (👍 / 👎)
-                      ======================================================== */}
+                  {/* Feedback */}
                   {!isUser && (
                     <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                       <span className="text-[10px] text-slate-400">¿Fue útil esta respuesta?</span>
@@ -575,7 +572,6 @@ export const ChatbotModal = memo(function ChatbotModal({
                   )}
                 </div>
 
-                {/* Hora del mensaje */}
                 <span className="text-[10px] text-slate-400 mt-1 px-1">
                   {formatTime(msg.timestamp)}
                 </span>
@@ -583,13 +579,12 @@ export const ChatbotModal = memo(function ChatbotModal({
             );
           })}
 
-          {/* Indicador de carga de IA */}
           {isLoading && (
             <div className="flex items-center space-x-2 text-slate-400 text-xs py-1">
               <div className="w-5 h-5 rounded-full bg-[--color-asociacion-suave,#eef2ff] p-0.5 flex items-center justify-center">
                 <img src={logoUrl} alt="FOCO" className="w-full h-full object-contain animate-spin" />
               </div>
-              <span className="italic">El Copiloto está formulando una sugerencia...</span>
+              <span className="italic">El Copiloto está analizando la intención con NLU...</span>
             </div>
           )}
 
@@ -615,14 +610,11 @@ export const ChatbotModal = memo(function ChatbotModal({
           </div>
         )}
 
-        {/* ========================================================
-            1. Barra de Entrada Dual (Voz STT + Texto)
-            ======================================================== */}
+        {/* Barra de Entrada Dual */}
         <form
           onSubmit={handleFormSubmit}
           className="p-3 bg-white border-t border-slate-100 flex items-center gap-2 select-none shrink-0"
         >
-          {/* Botón de Entrada por Voz (Reutilizando AudioRecorder STT) */}
           <button
             id="chatbot-mic-toggle-btn"
             type="button"
@@ -642,7 +634,6 @@ export const ChatbotModal = memo(function ChatbotModal({
             </svg>
           </button>
 
-          {/* Campo de Entrada de Texto */}
           <input
             ref={inputRef}
             id="chatbot-text-input"
@@ -654,7 +645,6 @@ export const ChatbotModal = memo(function ChatbotModal({
             className="flex-1 bg-slate-50 border border-slate-200 focus:border-[--color-btn-iniciar,#22298A] focus:bg-white rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-800 focus:outline-none transition-all placeholder:text-slate-400"
           />
 
-          {/* Botón de Enviar */}
           <button
             id="chatbot-send-btn"
             type="submit"
@@ -683,7 +673,6 @@ export class FocoChatbotModal extends HTMLElement {
     this.isOpen = false;
     this.messages = [];
 
-    // Cargar historial
     try {
       const saved = localStorage.getItem(STORAGE_CHAT_KEY);
       if (saved) {
@@ -739,14 +728,14 @@ export class FocoChatbotModal extends HTMLElement {
       <div id="foco-chatbot-modal-window" class="fixed bottom-24 z-50 w-[92vw] sm:w-[390px] md:w-[420px] h-[580px] max-h-[calc(100vh-7.5rem)] bg-[--color-bloque-bg,#ffffff] border border-[--color-bloque-borde,#e2e8f0] rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ease-out origin-bottom-right ${this.isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'}" style="right: ${offset}">
         <div class="h-14 px-4 bg-[--color-btn-iniciar,#22298A] text-white flex items-center justify-between border-b border-white/10 select-none shadow-xs shrink-0">
           <div class="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-full bg-white/15 p-1 flex items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-white/15 p-1 flex items-center justify-center">
               <img src="${logoUrl}" alt="Logo" class="w-8 h-8 object-contain" />
             </div>
             <div>
               <h3 class="text-sm font-bold tracking-tight leading-tight">Copiloto F.O.C.O.</h3>
               <p class="text-[10px] text-orange-200 flex items-center gap-1 font-medium">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Asistente Activo</span>
+                <span>Asistente NLU Activo</span>
               </p>
             </div>
           </div>
@@ -792,14 +781,14 @@ export class FocoChatbotModal extends HTMLElement {
           }">
             <div class="whitespace-pre-line">${msg.content}</div>
             ${!isUser && msg.actionTaken ? `
-              <div data-action-card="${msg.actionTaken}" class="mt-3 p-3 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
+              <div data-action-card="${msg.actionTaken}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/80 text-[--color-asociacion-primario,#323888]">Acción Sugerida</span>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">Acción Sugerida</span>
                 </div>
                 <h5 class="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">${msg.actionLabel || msg.actionTaken}</h5>
-                ${msg.actionDescription ? `<p class="text-[11px] text-slate-600 mb-2 leading-tight">${msg.actionDescription}</p>` : ''}
-                <button type="button" data-action-trigger="${msg.actionTaken}" class="w-full py-1.5 px-3 rounded-lg bg-[--color-asociacion-primario,#323888] hover:opacity-90 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                  <span>Ejecutar en el lienzo</span>
+                ${msg.actionDescription ? `<p class="text-[11px] text-slate-600 mb-2.5 leading-tight">${msg.actionDescription}</p>` : ''}
+                <button type="button" data-action-trigger="${msg.actionTaken}" class="w-full py-2 px-3 rounded-xl ${msg.isExecuted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#2563EB] hover:bg-blue-700'} text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98">
+                  ${msg.isExecuted ? '<span>✓ Ejecutado en el lienzo</span>' : '<span>Ejecutar en el lienzo</span>'}
                 </button>
               </div>
             ` : ''}
@@ -847,57 +836,70 @@ export class FocoChatbotModal extends HTMLElement {
       e.preventDefault();
       const val = input?.value.trim();
       if (!val) return;
-
-      this.messages.push({
-        id: `msg-user-${Date.now()}`,
-        role: 'user',
-        content: val,
-        timestamp: new Date().toISOString(),
-      });
-      input.value = '';
-      this.render();
-      this.initListeners();
-
-      try {
-        const response = await copilotService.interpretMessage(val);
-        this.messages.push({
-          id: `msg-asst-${Date.now()}`,
-          role: 'assistant',
-          content: response.reply,
-          timestamp: new Date().toISOString(),
-          actionTaken: response.actionTaken,
-          actionLabel: response.actionLabel,
-          actionDescription: response.actionDescription,
-          logId: response.logId,
-          feedback: null,
-        });
-      } catch {
-        this.messages.push({
-          id: `msg-asst-${Date.now()}`,
-          role: 'assistant',
-          content: 'No se pudo procesar tu solicitud con el copiloto.',
-          timestamp: new Date().toISOString(),
-          actionTaken: null,
-          feedback: null,
-        });
-      }
-      localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
-      this.render();
-      this.initListeners();
+      await this.handleSendMessage(val);
     });
 
-    // Listeners de acción
+    // Listeners de acción "Ejecutar en el lienzo"
     this.querySelectorAll('[data-action-trigger]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const action = btn.getAttribute('data-action-trigger');
-        if (action === 'CONFIG_POMODORO') {
-          window.dispatchEvent(new CustomEvent('foco:quick-pomodoro'));
-        } else if (action === 'ADD_HABIT') {
-          window.dispatchEvent(new CustomEvent('foco:refresh-habits'));
-        } else if (action === 'ADD_NOTE') {
-          window.dispatchEvent(new CustomEvent('foco:refresh-canvas'));
+        const card = btn.closest('[data-message-id]');
+        const msgId = card?.getAttribute('data-message-id');
+        const msg = this.messages.find((m) => m.id === msgId);
+
+        try {
+          await canvasMutators.executeNluAction(action, msg?.actionPayload || {});
+          if (msg) {
+            msg.isExecuted = true;
+            localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
+            this.render();
+            this.initListeners();
+          }
+        } catch (err) {
+          console.error('[FocoChatbotModal] Error al ejecutar acción:', err);
         }
       });
+    });
+
+    // Micrófono STT
+    const micBtn = this.querySelector('#chatbot-mic-toggle-btn');
+    const statusBar = this.querySelector('#chatbot-stt-status-bar');
+    const statusText = this.querySelector('#chatbot-stt-status-text');
+
+    if (!this.audioController) {
+      this.audioController = new AudioRecorderController({
+        onStatus: (status) => {
+          if (statusBar && statusText) {
+            statusText.textContent = status;
+            statusBar.classList.remove('hidden');
+          }
+        },
+        onTranscription: async (transcribedText) => {
+          if (statusBar) statusBar.classList.add('hidden');
+          if (micBtn) micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+          if (!transcribedText) return;
+          await this.handleSendMessage(transcribedText);
+        },
+        onError: () => {
+          if (statusBar) statusBar.classList.add('hidden');
+          if (micBtn) micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+        }
+      });
+    }
+
+    micBtn?.addEventListener('click', async () => {
+      if (this.audioController.isRecording) {
+        this.audioController.stop();
+        micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+        if (statusBar) statusBar.classList.add('hidden');
+      } else {
+        const started = await this.audioController.start();
+        if (started) {
+          micBtn.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+          if (statusBar) statusBar.classList.remove('hidden');
+        }
+      }
     });
 
     // Listeners de feedback
@@ -923,7 +925,7 @@ export class FocoChatbotModal extends HTMLElement {
       });
     });
 
-    // Observer para sidebar
+    // Observer para la barra de productividad
     const sidebar = document.querySelector('foco-productivity-sidebar');
     if (sidebar && !this.sidebarObserver) {
       this.sidebarObserver = new MutationObserver(() => {
@@ -935,6 +937,50 @@ export class FocoChatbotModal extends HTMLElement {
       });
       this.sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ['class', 'style'] });
     }
+  }
+
+  async handleSendMessage(val) {
+    this.messages.push({
+      id: `msg-user-${Date.now()}`,
+      role: 'user',
+      content: val,
+      timestamp: new Date().toISOString(),
+    });
+    this.render();
+    this.initListeners();
+
+    try {
+      const response = await copilotService.interpretMessage(val);
+      this.messages.push({
+        id: `msg-asst-${Date.now()}`,
+        role: 'assistant',
+        content: response.reply,
+        timestamp: new Date().toISOString(),
+        actionTaken: response.actionTaken,
+        actionLabel: response.actionLabel,
+        actionDescription: response.actionDescription,
+        actionPayload: response.actionPayload || null,
+        isExecuted: false,
+        logId: response.logId,
+        feedback: null,
+      });
+    } catch {
+      this.messages.push({
+        id: `msg-asst-${Date.now()}`,
+        role: 'assistant',
+        content: 'No se pudo procesar tu solicitud con el copiloto.',
+        timestamp: new Date().toISOString(),
+        actionTaken: null,
+        actionLabel: null,
+        actionDescription: null,
+        actionPayload: null,
+        isExecuted: false,
+        feedback: null,
+      });
+    }
+    localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
+    this.render();
+    this.initListeners();
   }
 }
 
