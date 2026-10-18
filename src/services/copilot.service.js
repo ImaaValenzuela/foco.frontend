@@ -126,12 +126,84 @@ export class CopilotService {
   }
 
   /**
-   * Interpreta un mensaje del usuario integrando NLU, RAG y reglas de inferencia.
+   * Ejecuta la inferencia estructurada LangChain en el backend (Fase 5)
+   * Consume el prompt RAG de Fase 4 y devuelve JSON con rule_id, suggested_message, action_taken y action_payload.
    *
    * @param {string} messageText
-   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, actionPayload: object|null, intent: string|null, logId: string|number|null }>}
+   * @param {object} [options]
+   * @returns {Promise<object|null>}
    */
-  async interpretMessage(messageText) {
+  async inferStructured(messageText, options = {}) {
+    try {
+      const headers = await this.#getHeaders();
+      const res = await fetch(`${API_BASE}/ai/infer`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: messageText,
+          rule_id: options.ruleId || null,
+          customAction: options.customAction || null
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Inferencia estructurada respondió con HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.warn('[CopilotService] Inferencia remota no disponible. Activando fallback local:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Interpreta un mensaje del usuario integrando LangChain Structured Outputs (Fase 5),
+   * NLU, RAG y reglas de inferencia.
+   *
+   * @param {string} messageText
+   * @param {object} [options]
+   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, actionPayload: object|null, intent: string|null, logId: string|number|null, ruleId?: string }>}
+   */
+  async interpretMessage(messageText, options = {}) {
+    // 1. INTENTO PRINCIPAL (FASE 5): Inferencia Estructurada con LangChain y Prompt de Fase 4
+    const structuredResult = await this.inferStructured(messageText, options);
+
+    if (structuredResult && (structuredResult.suggested_message || structuredResult.rule_id)) {
+      const actionTaken = structuredResult.action_taken || null;
+      const actionPayload = structuredResult.action_payload || null;
+      const logId = structuredResult.log_id || structuredResult.id || null;
+
+      let actionLabel = actionPayload?.title || 'Acción sugerida';
+      let actionDescription = actionPayload?.content || 'Optimización recomendada según tu ritmo de trabajo.';
+
+      if (actionPayload?.type === 'add_card') {
+        actionLabel = actionPayload.title || 'Agregar al lienzo';
+        actionDescription = actionPayload.content || 'Tarea sugerida por el copiloto para despejar la mente.';
+      } else if (actionPayload?.type === 'start_pomodoro') {
+        actionLabel = `Iniciar Pomodoro (${actionPayload.focusMinutes || 25} min)`;
+        actionDescription = 'Ciclo de enfoque recomendado para avanzar con claridad.';
+      } else if (actionPayload?.type === 'add_habit') {
+        actionLabel = `Hábito: ${actionPayload.title || 'Nuevo hábito'}`;
+        actionDescription = 'Meta mínima en tu tracker de productividad.';
+      } else if (actionPayload?.type === 'break_prompt') {
+        actionLabel = 'Pausa recomendada';
+        actionDescription = actionPayload.content || 'Momento para desconectar y recargar energías.';
+      }
+
+      return {
+        reply: structuredResult.suggested_message,
+        actionTaken,
+        actionLabel,
+        actionDescription,
+        actionPayload,
+        intent: actionTaken || 'STRUCTURED_INFERENCE',
+        ruleId: structuredResult.rule_id,
+        logId
+      };
+    }
+
+    // 2. FALLBACK RESILIENTE: NLU Local y Contexto RAG ensamblado
     const nluResult = await nluService.processInput(messageText);
     const promptData = await this.getAssembledPrompt(messageText);
     const logId = promptData?.contextSnapshot?.lastInferenceLogId || null;
@@ -196,3 +268,4 @@ export class CopilotService {
 }
 
 export const copilotService = new CopilotService();
+
