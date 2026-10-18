@@ -492,9 +492,9 @@ export const ChatbotModal = memo(function ChatbotModal({
                   {/* ========================================================
                       C. Tarjeta con Botón Azul "Ejecutar en el lienzo"
                       ======================================================== */}
-                  {!isUser && msg.actionTaken && (
+                  {!isUser && (msg.actionTaken || msg.actionPayload) && (
                     <div
-                      data-action-card={msg.actionTaken}
+                      data-action-card={msg.actionTaken || msg.actionPayload?.type}
                       className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
                     >
                       <div className="flex items-center justify-between mb-1.5">
@@ -507,19 +507,19 @@ export const ChatbotModal = memo(function ChatbotModal({
                       </div>
 
                       <h5 className="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">
-                        {msg.actionLabel || msg.actionTaken}
+                        {msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}
                       </h5>
 
-                      {msg.actionDescription && (
+                      {(msg.actionDescription || msg.actionPayload?.content) && (
                         <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
-                          {msg.actionDescription}
+                          {msg.actionDescription || msg.actionPayload?.content}
                         </p>
                       )}
 
                       {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
                       <button
                         type="button"
-                        data-action-trigger={msg.actionTaken}
+                        data-action-trigger={msg.actionTaken || msg.actionPayload?.type}
                         onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
                         className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
                           msg.isExecuted
@@ -802,14 +802,14 @@ export class FocoChatbotModal extends HTMLElement {
             isUser ? 'bg-[--color-btn-iniciar,#22298A] text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80'
           }">
             <div class="whitespace-pre-line">${msg.content}</div>
-            ${!isUser && msg.actionTaken ? `
-              <div data-action-card="${msg.actionTaken}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
+            ${!isUser && (msg.actionTaken || msg.actionPayload) ? `
+              <div data-action-card="${msg.actionTaken || msg.actionPayload?.type}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">Acción Sugerida</span>
                 </div>
-                <h5 class="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">${msg.actionLabel || msg.actionTaken}</h5>
-                ${msg.actionDescription ? `<p class="text-[11px] text-slate-600 mb-2.5 leading-tight">${msg.actionDescription}</p>` : ''}
-                <button type="button" data-action-trigger="${msg.actionTaken}" class="w-full py-2 px-3 rounded-xl ${msg.isExecuted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#2563EB] hover:bg-blue-700'} text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98">
+                <h5 class="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">${msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}</h5>
+                ${(msg.actionDescription || msg.actionPayload?.content) ? `<p class="text-[11px] text-slate-600 mb-2.5 leading-tight">${msg.actionDescription || msg.actionPayload?.content}</p>` : ''}
+                <button type="button" data-action-trigger="${msg.actionTaken || msg.actionPayload?.type}" class="w-full py-2 px-3 rounded-xl ${msg.isExecuted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#2563EB] hover:bg-blue-700'} text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98">
                   ${msg.isExecuted ? '<span>✓ Ejecutado en el lienzo</span>' : '<span>Ejecutar en el lienzo</span>'}
                 </button>
               </div>
@@ -940,6 +940,7 @@ export class FocoChatbotModal extends HTMLElement {
             localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
             await copilotService.sendFeedback({
               messageId: msgId,
+              logId: target.logId || null,
               rating,
               actionTaken: target.actionTaken || null,
             });
