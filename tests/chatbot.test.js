@@ -308,6 +308,43 @@ describe('Chatbot F.O.C.O. - Componente UI y Modal (Pruebas de Integración)', (
     const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
     expect(actionTriggers.length).toBe(0);
   });
+
+  it('10. Mensajes de creación de tarea o nota renderizan tarjeta de Acción Sugerida y botón de ejecución', async () => {
+    localStorage.setItem(
+      'foco_chat_history_v1',
+      JSON.stringify([
+        {
+          id: 'msg-task-1',
+          role: 'assistant',
+          content: 'He preparado la tarea para tu lienzo.',
+          actionTaken: 'ADD_TASK',
+          actionPayload: {
+            type: 'add_card',
+            isTask: true,
+            title: 'Hacer compras',
+            content: 'Leche, pan, café'
+          },
+          actionLabel: 'Crear tarea: Hacer compras',
+          actionDescription: 'Agregar tarea interactiva al lienzo'
+        }
+      ])
+    );
+
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const actionCard = modalElement.querySelector('[data-action-card="ADD_TASK"]');
+    expect(actionCard).not.toBeNull();
+    expect(actionCard?.textContent).toContain('Acción Sugerida');
+    expect(actionCard?.textContent).toContain('Crear tarea: Hacer compras');
+
+    const actionTrigger = modalElement.querySelector('[data-action-trigger="ADD_TASK"]');
+    expect(actionTrigger).not.toBeNull();
+    expect(actionTrigger?.textContent).toContain('Ejecutar en el lienzo');
+  });
 });
 
 

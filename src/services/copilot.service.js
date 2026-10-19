@@ -170,26 +170,55 @@ export class CopilotService {
     const structuredResult = await this.inferStructured(messageText, options);
 
     if (structuredResult && (structuredResult.suggested_message || structuredResult.rule_id)) {
-      const actionTaken = structuredResult.action_taken || null;
-      const actionPayload = structuredResult.action_payload || null;
+      let actionTaken = structuredResult.action_taken || null;
+      let actionPayload = structuredResult.action_payload || null;
       const logId = structuredResult.log_id || structuredResult.id || null;
+
+      // Respaldo de intención operativa si el backend no generó payload pero el usuario pidió crear algo
+      if (!actionPayload || !actionPayload.type) {
+        const localNlu = nluService.parseIntent(messageText);
+        if (localNlu && localNlu.actionPayload && localNlu.actionTaken) {
+          actionPayload = localNlu.actionPayload;
+          actionTaken = localNlu.actionTaken;
+        }
+      }
 
       let actionLabel = null;
       let actionDescription = null;
 
-      if (actionPayload && (actionPayload.type || actionPayload.title)) {
-        actionLabel = actionPayload.title || 'Acción sugerida';
-        actionDescription = actionPayload.content || 'Optimización recomendada según tu ritmo de trabajo.';
+      if (actionPayload && (actionPayload.type || actionPayload.title || actionPayload.text)) {
+        if (!actionPayload.type) {
+          actionPayload.type = 'add_card';
+        }
 
         if (actionPayload.type === 'add_card') {
-          actionLabel = actionPayload.title || 'Agregar al lienzo';
-          actionDescription = actionPayload.content || 'Tarea sugerida por el copiloto para despejar la mente.';
+          const isTask = actionPayload.isTask !== undefined ? Boolean(actionPayload.isTask) : (actionTaken === 'ADD_TASK');
+          const title = actionPayload.title || '';
+          if (actionTaken === 'ADD_CARD' || !actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = isTask ? 'ADD_TASK' : 'ADD_NOTE';
+          }
+          if (actionTaken === 'ADD_TASK') {
+            actionLabel = title ? (title.startsWith('Crear tarea') ? title : `Crear tarea: ${title}`) : 'Agregar tarea';
+            actionDescription = actionPayload.content || actionPayload.text || 'Tarea con casilla de verificación para el lienzo.';
+          } else if (actionTaken === 'ADD_NOTE') {
+            actionLabel = title ? (title.startsWith('Crear nota') ? title : `Crear nota: ${title}`) : 'Agregar nota';
+            actionDescription = actionPayload.content || actionPayload.text || 'Nota informativa para el lienzo.';
+          } else {
+            actionLabel = title || (isTask ? 'Agregar tarea' : 'Agregar nota');
+            actionDescription = actionPayload.content || actionPayload.text || (isTask ? 'Tarea con casilla de verificación para el lienzo.' : 'Nota informativa para el lienzo.');
+          }
         } else if (actionPayload.type === 'start_pomodoro') {
           actionLabel = `Iniciar Pomodoro (${actionPayload.focusMinutes || 25} min)`;
           actionDescription = 'Ciclo de enfoque recomendado para avanzar con claridad.';
+          if (!actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = 'CONFIG_POMODORO';
+          }
         } else if (actionPayload.type === 'add_habit') {
-          actionLabel = `Hábito: ${actionPayload.title || 'Nuevo hábito'}`;
+          actionLabel = `Hábito: ${actionPayload.title || actionPayload.name || 'Nuevo hábito'}`;
           actionDescription = 'Meta mínima en tu tracker de productividad.';
+          if (!actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = 'ADD_HABIT';
+          }
         } else if (actionPayload.type === 'break_prompt') {
           actionLabel = 'Pausa recomendada';
           actionDescription = actionPayload.content || 'Momento para desconectar y recargar energías.';
@@ -198,7 +227,7 @@ export class CopilotService {
 
       const isActionable = Boolean(
         (actionPayload && actionPayload.type) ||
-        (actionTaken && ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'].includes(actionTaken))
+        (actionTaken && ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'].includes(actionTaken))
       );
 
       return {

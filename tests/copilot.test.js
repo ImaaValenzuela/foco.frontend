@@ -145,6 +145,54 @@ describe('CopilotService (Frontend)', () => {
       expect(interpreted.logId).toBe('log-fase5-789');
     });
 
+    it('interpretMessage distingue entre crear tarea (isTask: true) y crear nota (isTask: false)', async () => {
+      // 1. Tarea
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          rule_id: 'RAG_AUGMENTED_INFERENCE',
+          suggested_message: 'He preparado la tarea "Estudiar Álgebra" para tu tablero.',
+          action_taken: 'ADD_CARD',
+          action_payload: {
+            type: 'add_card',
+            isTask: true,
+            title: 'Estudiar Álgebra',
+            content: 'Repasar ejercicios 1 al 10',
+            block_type: 'active_objectives'
+          },
+          log_id: 'log-task-1'
+        })
+      });
+
+      const taskResult = await copilotService.interpretMessage('crear tarea estudiar algebra');
+      expect(taskResult.actionTaken).toBe('ADD_TASK');
+      expect(taskResult.actionPayload.isTask).toBe(true);
+      expect(taskResult.actionLabel).toBe('Crear tarea: Estudiar Álgebra');
+
+      // 2. Nota
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          rule_id: 'RAG_AUGMENTED_INFERENCE',
+          suggested_message: 'He preparado la nota "Ideas de Negocio" para tu tablero.',
+          action_taken: 'ADD_CARD',
+          action_payload: {
+            type: 'add_card',
+            isTask: false,
+            title: 'Ideas de Negocio',
+            content: 'App de micro-hábitos',
+            block_type: 'inbox'
+          },
+          log_id: 'log-note-1'
+        })
+      });
+
+      const noteResult = await copilotService.interpretMessage('crear nota ideas de negocio');
+      expect(noteResult.actionTaken).toBe('ADD_NOTE');
+      expect(noteResult.actionPayload.isTask).toBe(false);
+      expect(noteResult.actionLabel).toBe('Crear nota: Ideas de Negocio');
+    });
+
     it('sendFeedback envía POST /ai/copilot/feedback con logId y persistencia', async () => {
       global.fetch.mockResolvedValueOnce({
         ok: true,

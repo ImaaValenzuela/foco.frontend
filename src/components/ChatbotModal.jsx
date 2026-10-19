@@ -497,26 +497,16 @@ export const ChatbotModal = memo(function ChatbotModal({
                       ======================================================== */}
                   {(() => {
                     const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
-                    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
-                    const GENERAL_ACTIONS = new Set([
-                      'CONVERSATIONAL_SUGGESTION',
-                      'GENERAL_COPILOT_GUIDANCE',
-                      'GENERAL_CHAT',
-                      'INJECT_CONVERSATIONAL_ALERT',
-                      'NONE'
-                    ]);
+                    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
 
-                    const hasExplicitActionTaken = Boolean(
-                      msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
+                    const hasExecutablePayload = Boolean(
+                      !isUser && msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
                     );
-                    const hasExplicitPayloadType = Boolean(
-                      msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+                    const hasExecutableActionTaken = Boolean(
+                      !isUser && msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
                     );
 
-                    const isActionable = !isUser && (hasExplicitPayloadType || hasExplicitActionTaken);
-                    const isGeneral = !isActionable || GENERAL_ACTIONS.has(msg.actionTaken) || (msg.ruleId === 'GENERAL_CONVERSATION' && !isActionable);
-
-                    const showActionCard = isActionable && !isGeneral;
+                    const showActionCard = hasExecutablePayload || hasExecutableActionTaken;
 
                     if (!showActionCard) return null;
 
@@ -824,28 +814,18 @@ export class FocoChatbotModal extends HTMLElement {
 
   renderMessagesHtml() {
     const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
-    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
-    const GENERAL_ACTIONS = new Set([
-      'CONVERSATIONAL_SUGGESTION',
-      'GENERAL_COPILOT_GUIDANCE',
-      'GENERAL_CHAT',
-      'INJECT_CONVERSATIONAL_ALERT',
-      'NONE'
-    ]);
+    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
 
     return this.messages.map((msg) => {
       const isUser = msg.role === 'user';
-      const hasExplicitActionTaken = Boolean(
-        msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
+      const hasExecutablePayload = Boolean(
+        !isUser && msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
       );
-      const hasExplicitPayloadType = Boolean(
-        msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+      const hasExecutableActionTaken = Boolean(
+        !isUser && msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
       );
 
-      const isActionable = !isUser && (hasExplicitPayloadType || hasExplicitActionTaken);
-      const isGeneral = !isActionable || GENERAL_ACTIONS.has(msg.actionTaken) || (msg.ruleId === 'GENERAL_CONVERSATION' && !isActionable);
-
-      const showActionCard = isActionable && !isGeneral;
+      const showActionCard = hasExecutablePayload || hasExecutableActionTaken;
 
       return `
         <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'}" data-message-id="${msg.id}">

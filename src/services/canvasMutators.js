@@ -231,11 +231,15 @@ export class CanvasMutators {
       actionTaken === 'PROMPT_WEEKLY_PLANNING' ||
       actionTaken === 'SUGGEST_INTEREST_CARD' ||
       actionTaken === 'ADD_NOTE' ||
+      actionTaken === 'ADD_TASK' ||
+      actionTaken === 'ADD_CARD' ||
       actionTaken === 'CREATE_BLOCK_ITEM'
     ) {
-      const cardText = actionPayload?.content || actionPayload?.text || actionPayload?.title || 'Nueva tarea sugerida';
+      const cardText = actionPayload?.content || actionPayload?.text || actionPayload?.title || 'Nueva tarjeta sugerida';
       const targetBlock = actionPayload?.block_type || actionPayload?.targetBlock || 'active_objectives';
-      const isTask = actionPayload?.isTask !== undefined ? Boolean(actionPayload.isTask) : true;
+      const isTask = actionPayload?.isTask !== undefined
+        ? Boolean(actionPayload.isTask)
+        : (actionTaken === 'ADD_TASK' || actionTaken === 'INJECT_CONVERSATIONAL_ALERT');
       const title = actionPayload?.title || null;
 
       const res = await this.addCard({
