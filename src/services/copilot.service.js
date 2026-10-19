@@ -174,21 +174,26 @@ export class CopilotService {
       const actionPayload = structuredResult.action_payload || null;
       const logId = structuredResult.log_id || structuredResult.id || null;
 
-      let actionLabel = actionPayload?.title || 'Acción sugerida';
-      let actionDescription = actionPayload?.content || 'Optimización recomendada según tu ritmo de trabajo.';
+      let actionLabel = null;
+      let actionDescription = null;
 
-      if (actionPayload?.type === 'add_card') {
-        actionLabel = actionPayload.title || 'Agregar al lienzo';
-        actionDescription = actionPayload.content || 'Tarea sugerida por el copiloto para despejar la mente.';
-      } else if (actionPayload?.type === 'start_pomodoro') {
-        actionLabel = `Iniciar Pomodoro (${actionPayload.focusMinutes || 25} min)`;
-        actionDescription = 'Ciclo de enfoque recomendado para avanzar con claridad.';
-      } else if (actionPayload?.type === 'add_habit') {
-        actionLabel = `Hábito: ${actionPayload.title || 'Nuevo hábito'}`;
-        actionDescription = 'Meta mínima en tu tracker de productividad.';
-      } else if (actionPayload?.type === 'break_prompt') {
-        actionLabel = 'Pausa recomendada';
-        actionDescription = actionPayload.content || 'Momento para desconectar y recargar energías.';
+      if (actionPayload && (actionPayload.type || actionPayload.title)) {
+        actionLabel = actionPayload.title || 'Acción sugerida';
+        actionDescription = actionPayload.content || 'Optimización recomendada según tu ritmo de trabajo.';
+
+        if (actionPayload.type === 'add_card') {
+          actionLabel = actionPayload.title || 'Agregar al lienzo';
+          actionDescription = actionPayload.content || 'Tarea sugerida por el copiloto para despejar la mente.';
+        } else if (actionPayload.type === 'start_pomodoro') {
+          actionLabel = `Iniciar Pomodoro (${actionPayload.focusMinutes || 25} min)`;
+          actionDescription = 'Ciclo de enfoque recomendado para avanzar con claridad.';
+        } else if (actionPayload.type === 'add_habit') {
+          actionLabel = `Hábito: ${actionPayload.title || 'Nuevo hábito'}`;
+          actionDescription = 'Meta mínima en tu tracker de productividad.';
+        } else if (actionPayload.type === 'break_prompt') {
+          actionLabel = 'Pausa recomendada';
+          actionDescription = actionPayload.content || 'Momento para desconectar y recargar energías.';
+        }
       }
 
       return {

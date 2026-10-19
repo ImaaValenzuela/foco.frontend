@@ -238,4 +238,32 @@ describe('Chatbot F.O.C.O. - Componente UI y Modal (Pruebas de Integración)', (
     sidebar.className = 'w-80';
     expect(modalElement.getRightOffset()).toBe('21.5rem');
   });
+
+  it('8. Sugerencias conversacionales en texto plano no renderizan tarjeta de acción ni botón en el lienzo', async () => {
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const form = modalElement.querySelector('#chatbot-input-form');
+    const textInput = modalElement.querySelector('#chatbot-text-input');
+
+    textInput.value = '¿Cómo estás hoy?';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    await new Promise((r) => setTimeout(r, 60));
+
+    // Debe mostrar la respuesta en texto
+    const textContent = modalElement.querySelector('#chatbot-messages-list')?.textContent;
+    expect(textContent).toContain('Respuesta a: ¿Cómo estás hoy?');
+
+    // NO debe existir tarjeta de acción ni botón "Ejecutar en el lienzo"
+    const actionCards = modalElement.querySelectorAll('[data-action-card]');
+    expect(actionCards.length).toBe(0);
+
+    const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
+    expect(actionTriggers.length).toBe(0);
+  });
 });
+

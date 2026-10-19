@@ -492,7 +492,10 @@ export const ChatbotModal = memo(function ChatbotModal({
                   {/* ========================================================
                       C. Tarjeta con Botón Azul "Ejecutar en el lienzo"
                       ======================================================== */}
-                  {!isUser && (msg.actionTaken || msg.actionPayload) && (
+                  {!isUser && Boolean(
+                    (msg.actionPayload && (msg.actionPayload.type || msg.actionPayload.title || msg.actionPayload.focusMinutes)) ||
+                    (msg.actionTaken && !['CONVERSATIONAL_SUGGESTION', 'GENERAL_COPILOT_GUIDANCE', 'NONE'].includes(msg.actionTaken) && (msg.actionLabel || msg.actionPayload))
+                  ) && (
                     <div
                       data-action-card={msg.actionTaken || msg.actionPayload?.type}
                       className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
