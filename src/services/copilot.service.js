@@ -225,31 +225,33 @@ export class CopilotService {
       };
     }
 
-    if (promptData?.meta?.actionTaken && promptData.meta.actionTaken !== 'GENERAL_COPILOT_GUIDANCE') {
+    if (promptData?.meta?.actionTaken && !['GENERAL_COPILOT_GUIDANCE', 'INJECT_CONVERSATIONAL_ALERT', 'CONVERSATIONAL_SUGGESTION'].includes(promptData.meta.actionTaken)) {
       const actionTaken = promptData.meta.actionTaken;
-      let actionLabel = 'Acción sugerida';
-      let actionDescription = 'Optimización recomendada según tu ritmo de trabajo.';
+      let actionLabel = null;
+      let actionDescription = null;
+      let actionPayload = null;
 
-      if (actionTaken === 'INJECT_CONVERSATIONAL_ALERT') {
-        actionLabel = 'Revisar objetivos pendientes';
-        actionDescription = 'Identificamos tareas que requieren tu atención en el lienzo.';
-      } else if (actionTaken === 'RECOMMEND_PROJECT_PLAN') {
+      if (actionTaken === 'RECOMMEND_PROJECT_PLAN') {
         actionLabel = 'Dividir tareas de proyecto';
         actionDescription = 'Desglosar tarjetas inactivas en acciones más pequeñas.';
+        actionPayload = { type: 'recommend_plan', title: 'Dividir proyecto en micro-tareas' };
       } else if (actionTaken === 'LOCK_POMODORO_COOLDOWN') {
         actionLabel = 'Pausa de enfriamiento';
         actionDescription = 'Pausa sugerida tras sesiones continuas de concentración.';
+        actionPayload = { type: 'break_prompt', focusMinutes: 15, content: 'Pausa de enfriamiento' };
       }
 
-      return {
-        reply: promptData.systemPrompt || 'Identifiqué una sugerencia basada en tu ritmo de trabajo en F.O.C.O.',
-        actionTaken,
-        actionLabel,
-        actionDescription,
-        actionPayload: {},
-        intent: actionTaken,
-        logId
-      };
+      if (actionPayload) {
+        return {
+          reply: promptData.systemPrompt || 'Identifiqué una sugerencia basada en tu ritmo de trabajo en F.O.C.O.',
+          actionTaken,
+          actionLabel,
+          actionDescription,
+          actionPayload,
+          intent: actionTaken,
+          logId
+        };
+      }
     }
 
     let reply = '';

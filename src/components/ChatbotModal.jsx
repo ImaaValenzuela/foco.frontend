@@ -491,63 +491,82 @@ export const ChatbotModal = memo(function ChatbotModal({
 
                   {/* ========================================================
                       C. Tarjeta con Botón Azul "Ejecutar en el lienzo"
+                      Solo se muestra para acciones operativas concretas sobre el lienzo.
+                      Las respuestas de carácter general NO renderizan este recuadro.
                       ======================================================== */}
-                  {!isUser && Boolean(
-                    (msg.actionPayload && (msg.actionPayload.type || msg.actionPayload.title || msg.actionPayload.focusMinutes)) ||
-                    (msg.actionTaken && !['CONVERSATIONAL_SUGGESTION', 'GENERAL_COPILOT_GUIDANCE', 'NONE'].includes(msg.actionTaken) && (msg.actionLabel || msg.actionPayload))
-                  ) && (
-                    <div
-                      data-action-card={msg.actionTaken || msg.actionPayload?.type}
-                      className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">
-                          Acción Sugerida
-                        </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </div>
+                  {(() => {
+                    const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
+                    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
 
-                      <h5 className="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">
-                        {msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}
-                      </h5>
+                    const isGeneralResponse = !msg.actionPayload || !msg.actionPayload.type || [
+                      'CONVERSATIONAL_SUGGESTION',
+                      'GENERAL_COPILOT_GUIDANCE',
+                      'GENERAL_CHAT',
+                      'INJECT_CONVERSATIONAL_ALERT',
+                      'NONE'
+                    ].includes(msg.actionTaken) || msg.ruleId === 'GENERAL_CONVERSATION';
 
-                      {(msg.actionDescription || msg.actionPayload?.content) && (
-                        <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
-                          {msg.actionDescription || msg.actionPayload?.content}
-                        </p>
-                      )}
+                    const showActionCard = !isUser && !isGeneralResponse && Boolean(
+                      (msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)) ||
+                      (msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken) && (msg.actionLabel || msg.actionPayload?.type))
+                    );
 
-                      {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
-                      <button
-                        type="button"
-                        data-action-trigger={msg.actionTaken || msg.actionPayload?.type}
-                        onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
-                        className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
-                          msg.isExecuted
-                            ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
-                            : 'bg-[#2563EB] hover:bg-blue-700'
-                        }`}
+                    if (!showActionCard) return null;
+
+                    return (
+                      <div
+                        data-action-card={msg.actionTaken || msg.actionPayload?.type}
+                        className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
                       >
-                        {msg.isExecuted ? (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            <span>✓ Ejecutado en el lienzo</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Ejecutar en el lienzo</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                          </>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">
+                            Acción Sugerida
+                          </span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+
+                        <h5 className="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">
+                          {msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}
+                        </h5>
+
+                        {(msg.actionDescription || msg.actionPayload?.content) && (
+                          <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
+                            {msg.actionDescription || msg.actionPayload?.content}
+                          </p>
                         )}
-                      </button>
-                    </div>
-                  )}
+
+                        {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
+                        <button
+                          type="button"
+                          data-action-trigger={msg.actionTaken || msg.actionPayload?.type}
+                          onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
+                          className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
+                            msg.isExecuted
+                              ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
+                              : 'bg-[#2563EB] hover:bg-blue-700'
+                          }`}
+                        >
+                          {msg.isExecuted ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>✓ Ejecutado en el lienzo</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Ejecutar en el lienzo</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                              </svg>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   {/* Feedback */}
                   {!isUser && (
