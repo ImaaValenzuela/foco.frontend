@@ -234,6 +234,7 @@ export const ChatbotModal = memo(function ChatbotModal({
         actionLabel: response.actionLabel,
         actionDescription: response.actionDescription,
         actionPayload: response.actionPayload || null,
+        ruleId: response.ruleId || 'GENERAL_CONVERSATION',
         isExecuted: false,
         logId: response.logId,
         feedback: null,
@@ -497,19 +498,25 @@ export const ChatbotModal = memo(function ChatbotModal({
                   {(() => {
                     const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
                     const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
-
-                    const isGeneralResponse = !msg.actionPayload || !msg.actionPayload.type || [
+                    const GENERAL_ACTIONS = new Set([
                       'CONVERSATIONAL_SUGGESTION',
                       'GENERAL_COPILOT_GUIDANCE',
                       'GENERAL_CHAT',
                       'INJECT_CONVERSATIONAL_ALERT',
                       'NONE'
-                    ].includes(msg.actionTaken) || msg.ruleId === 'GENERAL_CONVERSATION';
+                    ]);
 
-                    const showActionCard = !isUser && !isGeneralResponse && Boolean(
-                      (msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)) ||
-                      (msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken) && (msg.actionLabel || msg.actionPayload?.type))
+                    const hasExplicitActionTaken = Boolean(
+                      msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
                     );
+                    const hasExplicitPayloadType = Boolean(
+                      msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+                    );
+
+                    const isActionable = !isUser && (hasExplicitPayloadType || hasExplicitActionTaken);
+                    const isGeneral = !isActionable || GENERAL_ACTIONS.has(msg.actionTaken) || (msg.ruleId === 'GENERAL_CONVERSATION' && !isActionable);
+
+                    const showActionCard = isActionable && !isGeneral;
 
                     if (!showActionCard) return null;
 
@@ -816,15 +823,37 @@ export class FocoChatbotModal extends HTMLElement {
   }
 
   renderMessagesHtml() {
+    const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
+    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
+    const GENERAL_ACTIONS = new Set([
+      'CONVERSATIONAL_SUGGESTION',
+      'GENERAL_COPILOT_GUIDANCE',
+      'GENERAL_CHAT',
+      'INJECT_CONVERSATIONAL_ALERT',
+      'NONE'
+    ]);
+
     return this.messages.map((msg) => {
       const isUser = msg.role === 'user';
+      const hasExplicitActionTaken = Boolean(
+        msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
+      );
+      const hasExplicitPayloadType = Boolean(
+        msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+      );
+
+      const isActionable = !isUser && (hasExplicitPayloadType || hasExplicitActionTaken);
+      const isGeneral = !isActionable || GENERAL_ACTIONS.has(msg.actionTaken) || (msg.ruleId === 'GENERAL_CONVERSATION' && !isActionable);
+
+      const showActionCard = isActionable && !isGeneral;
+
       return `
         <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'}" data-message-id="${msg.id}">
           <div class="p-3.5 rounded-2xl text-xs md:text-sm shadow-xs max-w-[88%] leading-relaxed ${
             isUser ? 'bg-[--color-btn-iniciar,#22298A] text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80'
           }">
             <div class="whitespace-pre-line">${msg.content}</div>
-            ${!isUser && (msg.actionTaken || msg.actionPayload) ? `
+            ${showActionCard ? `
               <div data-action-card="${msg.actionTaken || msg.actionPayload?.type}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">Acción Sugerida</span>
@@ -1009,6 +1038,7 @@ export class FocoChatbotModal extends HTMLElement {
         actionLabel: response.actionLabel,
         actionDescription: response.actionDescription,
         actionPayload: response.actionPayload || null,
+        ruleId: response.ruleId || 'GENERAL_CONVERSATION',
         isExecuted: false,
         logId: response.logId,
         feedback: null,

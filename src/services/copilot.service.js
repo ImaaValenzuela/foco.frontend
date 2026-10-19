@@ -196,14 +196,19 @@ export class CopilotService {
         }
       }
 
+      const isActionable = Boolean(
+        (actionPayload && actionPayload.type) ||
+        (actionTaken && ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'].includes(actionTaken))
+      );
+
       return {
         reply: structuredResult.suggested_message,
-        actionTaken,
-        actionLabel,
-        actionDescription,
-        actionPayload,
-        intent: actionTaken || 'STRUCTURED_INFERENCE',
-        ruleId: structuredResult.rule_id,
+        actionTaken: isActionable ? actionTaken : null,
+        actionLabel: isActionable ? actionLabel : null,
+        actionDescription: isActionable ? actionDescription : null,
+        actionPayload: isActionable ? actionPayload : null,
+        intent: isActionable ? (actionTaken || 'STRUCTURED_INFERENCE') : 'GENERAL_CONVERSATION',
+        ruleId: isActionable ? (structuredResult.rule_id || actionTaken) : 'GENERAL_CONVERSATION',
         logId
       };
     }
@@ -221,6 +226,7 @@ export class CopilotService {
         actionDescription: nluResult.actionDescription,
         actionPayload: nluResult.actionPayload || {},
         intent: nluResult.intent || null,
+        ruleId: nluResult.actionTaken,
         logId
       };
     }

@@ -265,5 +265,49 @@ describe('Chatbot F.O.C.O. - Componente UI y Modal (Pruebas de Integración)', (
     const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
     expect(actionTriggers.length).toBe(0);
   });
+
+  it('9. Mensajes con alertas conversacionales (ej. INJECT_CONVERSATIONAL_ALERT o CONVERSATIONAL_SUGGESTION) no renderizan tarjeta de acción', async () => {
+    // Simulamos historial preexistente con mensajes conversacionales
+    localStorage.setItem(
+      'foco_chat_history_v1',
+      JSON.stringify([
+        {
+          id: 'msg-alert-1',
+          role: 'assistant',
+          content: 'Noté que tenés metas pendientes, pero date un respiro.',
+          actionTaken: 'INJECT_CONVERSATIONAL_ALERT',
+          actionPayload: null,
+          ruleId: 'GENERAL_CONVERSATION'
+        },
+        {
+          id: 'msg-sugg-2',
+          role: 'assistant',
+          content: 'Un buen consejo para hoy es avanzar de a una sola tarea.',
+          actionTaken: 'CONVERSATIONAL_SUGGESTION',
+          actionPayload: null,
+          ruleId: 'GENERAL_CONVERSATION'
+        }
+      ])
+    );
+
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    // Verificamos que se rendericen los textos de los mensajes
+    const textContent = modalElement.querySelector('#chatbot-messages-list')?.textContent;
+    expect(textContent).toContain('Noté que tenés metas pendientes');
+    expect(textContent).toContain('Un buen consejo para hoy');
+
+    // Ninguno de estos mensajes conversacionales debe tener tarjeta de acción ni botón "Ejecutar en el lienzo"
+    const actionCards = modalElement.querySelectorAll('[data-action-card]');
+    expect(actionCards.length).toBe(0);
+
+    const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
+    expect(actionTriggers.length).toBe(0);
+  });
 });
+
 
