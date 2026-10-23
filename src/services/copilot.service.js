@@ -126,12 +126,123 @@ export class CopilotService {
   }
 
   /**
-   * Interpreta un mensaje del usuario integrando NLU, RAG y reglas de inferencia.
+   * Ejecuta la inferencia estructurada LangChain en el backend (Fase 5)
+   * Consume el prompt RAG de Fase 4 y devuelve JSON con rule_id, suggested_message, action_taken y action_payload.
    *
    * @param {string} messageText
-   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, actionPayload: object|null, intent: string|null, logId: string|number|null }>}
+   * @param {object} [options]
+   * @returns {Promise<object|null>}
    */
-  async interpretMessage(messageText) {
+  async inferStructured(messageText, options = {}) {
+    try {
+      const headers = await this.#getHeaders();
+      const res = await fetch(`${API_BASE}/ai/infer`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: messageText,
+          rule_id: options.ruleId || null,
+          customAction: options.customAction || null
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Inferencia estructurada respondió con HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.warn('[CopilotService] Inferencia remota no disponible. Activando fallback local:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Interpreta un mensaje del usuario integrando LangChain Structured Outputs (Fase 5),
+   * NLU, RAG y reglas de inferencia.
+   *
+   * @param {string} messageText
+   * @param {object} [options]
+   * @returns {Promise<{ reply: string, actionTaken: string|null, actionLabel: string|null, actionDescription: string|null, actionPayload: object|null, intent: string|null, logId: string|number|null, ruleId?: string }>}
+   */
+  async interpretMessage(messageText, options = {}) {
+    // 1. INTENTO PRINCIPAL (FASE 5): Inferencia Estructurada con LangChain y Prompt de Fase 4
+    const structuredResult = await this.inferStructured(messageText, options);
+
+    if (structuredResult && (structuredResult.suggested_message || structuredResult.rule_id)) {
+      let actionTaken = structuredResult.action_taken || null;
+      let actionPayload = structuredResult.action_payload || null;
+      const logId = structuredResult.log_id || structuredResult.id || null;
+
+      // Respaldo de intención operativa si el backend no generó payload pero el usuario pidió crear algo
+      if (!actionPayload || !actionPayload.type) {
+        const localNlu = nluService.parseIntent(messageText);
+        if (localNlu && localNlu.actionPayload && localNlu.actionTaken) {
+          actionPayload = localNlu.actionPayload;
+          actionTaken = localNlu.actionTaken;
+        }
+      }
+
+      let actionLabel = null;
+      let actionDescription = null;
+
+      if (actionPayload && (actionPayload.type || actionPayload.title || actionPayload.text)) {
+        if (!actionPayload.type) {
+          actionPayload.type = 'add_card';
+        }
+
+        if (actionPayload.type === 'add_card') {
+          const isTask = actionPayload.isTask !== undefined ? Boolean(actionPayload.isTask) : (actionTaken === 'ADD_TASK');
+          const title = actionPayload.title || '';
+          if (actionTaken === 'ADD_CARD' || !actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = isTask ? 'ADD_TASK' : 'ADD_NOTE';
+          }
+          if (actionTaken === 'ADD_TASK') {
+            actionLabel = title ? (title.startsWith('Crear tarea') ? title : `Crear tarea: ${title}`) : 'Agregar tarea';
+            actionDescription = actionPayload.content || actionPayload.text || 'Tarea con casilla de verificación para el lienzo.';
+          } else if (actionTaken === 'ADD_NOTE') {
+            actionLabel = title ? (title.startsWith('Crear nota') ? title : `Crear nota: ${title}`) : 'Agregar nota';
+            actionDescription = actionPayload.content || actionPayload.text || 'Nota informativa para el lienzo.';
+          } else {
+            actionLabel = title || (isTask ? 'Agregar tarea' : 'Agregar nota');
+            actionDescription = actionPayload.content || actionPayload.text || (isTask ? 'Tarea con casilla de verificación para el lienzo.' : 'Nota informativa para el lienzo.');
+          }
+        } else if (actionPayload.type === 'start_pomodoro') {
+          actionLabel = `Iniciar Pomodoro (${actionPayload.focusMinutes || 25} min)`;
+          actionDescription = 'Ciclo de enfoque recomendado para avanzar con claridad.';
+          if (!actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = 'CONFIG_POMODORO';
+          }
+        } else if (actionPayload.type === 'add_habit') {
+          actionLabel = `Hábito: ${actionPayload.title || actionPayload.name || 'Nuevo hábito'}`;
+          actionDescription = 'Meta mínima en tu tracker de productividad.';
+          if (!actionTaken || actionTaken === 'CONVERSATIONAL_SUGGESTION') {
+            actionTaken = 'ADD_HABIT';
+          }
+        } else if (actionPayload.type === 'break_prompt') {
+          actionLabel = 'Pausa recomendada';
+          actionDescription = actionPayload.content || 'Momento para desconectar y recargar energías.';
+        }
+      }
+
+      const isActionable = Boolean(
+        (actionPayload && actionPayload.type) ||
+        (actionTaken && ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'].includes(actionTaken))
+      );
+
+      return {
+        reply: structuredResult.suggested_message,
+        actionTaken: isActionable ? actionTaken : null,
+        actionLabel: isActionable ? actionLabel : null,
+        actionDescription: isActionable ? actionDescription : null,
+        actionPayload: isActionable ? actionPayload : null,
+        intent: isActionable ? (actionTaken || 'STRUCTURED_INFERENCE') : 'GENERAL_CONVERSATION',
+        ruleId: isActionable ? (structuredResult.rule_id || actionTaken) : 'GENERAL_CONVERSATION',
+        logId
+      };
+    }
+
+    // 2. FALLBACK RESILIENTE: NLU Local y Contexto RAG ensamblado
     const nluResult = await nluService.processInput(messageText);
     const promptData = await this.getAssembledPrompt(messageText);
     const logId = promptData?.contextSnapshot?.lastInferenceLogId || null;
@@ -144,35 +255,38 @@ export class CopilotService {
         actionDescription: nluResult.actionDescription,
         actionPayload: nluResult.actionPayload || {},
         intent: nluResult.intent || null,
+        ruleId: nluResult.actionTaken,
         logId
       };
     }
 
-    if (promptData?.meta?.actionTaken && promptData.meta.actionTaken !== 'GENERAL_COPILOT_GUIDANCE') {
+    if (promptData?.meta?.actionTaken && !['GENERAL_COPILOT_GUIDANCE', 'INJECT_CONVERSATIONAL_ALERT', 'CONVERSATIONAL_SUGGESTION'].includes(promptData.meta.actionTaken)) {
       const actionTaken = promptData.meta.actionTaken;
-      let actionLabel = 'Acción sugerida';
-      let actionDescription = 'Optimización recomendada según tu ritmo de trabajo.';
+      let actionLabel = null;
+      let actionDescription = null;
+      let actionPayload = null;
 
-      if (actionTaken === 'INJECT_CONVERSATIONAL_ALERT') {
-        actionLabel = 'Revisar objetivos pendientes';
-        actionDescription = 'Identificamos tareas que requieren tu atención en el lienzo.';
-      } else if (actionTaken === 'RECOMMEND_PROJECT_PLAN') {
+      if (actionTaken === 'RECOMMEND_PROJECT_PLAN') {
         actionLabel = 'Dividir tareas de proyecto';
         actionDescription = 'Desglosar tarjetas inactivas en acciones más pequeñas.';
+        actionPayload = { type: 'recommend_plan', title: 'Dividir proyecto en micro-tareas' };
       } else if (actionTaken === 'LOCK_POMODORO_COOLDOWN') {
         actionLabel = 'Pausa de enfriamiento';
         actionDescription = 'Pausa sugerida tras sesiones continuas de concentración.';
+        actionPayload = { type: 'break_prompt', focusMinutes: 15, content: 'Pausa de enfriamiento' };
       }
 
-      return {
-        reply: promptData.systemPrompt || 'Identifiqué una sugerencia basada en tu ritmo de trabajo en F.O.C.O.',
-        actionTaken,
-        actionLabel,
-        actionDescription,
-        actionPayload: {},
-        intent: actionTaken,
-        logId
-      };
+      if (actionPayload) {
+        return {
+          reply: promptData.systemPrompt || 'Identifiqué una sugerencia basada en tu ritmo de trabajo en F.O.C.O.',
+          actionTaken,
+          actionLabel,
+          actionDescription,
+          actionPayload,
+          intent: actionTaken,
+          logId
+        };
+      }
     }
 
     let reply = '';
@@ -196,3 +310,4 @@ export class CopilotService {
 }
 
 export const copilotService = new CopilotService();
+

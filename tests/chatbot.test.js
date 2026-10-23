@@ -238,4 +238,113 @@ describe('Chatbot F.O.C.O. - Componente UI y Modal (Pruebas de Integración)', (
     sidebar.className = 'w-80';
     expect(modalElement.getRightOffset()).toBe('21.5rem');
   });
+
+  it('8. Sugerencias conversacionales en texto plano no renderizan tarjeta de acción ni botón en el lienzo', async () => {
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const form = modalElement.querySelector('#chatbot-input-form');
+    const textInput = modalElement.querySelector('#chatbot-text-input');
+
+    textInput.value = '¿Cómo estás hoy?';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    await new Promise((r) => setTimeout(r, 60));
+
+    // Debe mostrar la respuesta en texto
+    const textContent = modalElement.querySelector('#chatbot-messages-list')?.textContent;
+    expect(textContent).toContain('Respuesta a: ¿Cómo estás hoy?');
+
+    // NO debe existir tarjeta de acción ni botón "Ejecutar en el lienzo"
+    const actionCards = modalElement.querySelectorAll('[data-action-card]');
+    expect(actionCards.length).toBe(0);
+
+    const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
+    expect(actionTriggers.length).toBe(0);
+  });
+
+  it('9. Mensajes con alertas conversacionales (ej. INJECT_CONVERSATIONAL_ALERT o CONVERSATIONAL_SUGGESTION) no renderizan tarjeta de acción', async () => {
+    // Simulamos historial preexistente con mensajes conversacionales
+    localStorage.setItem(
+      'foco_chat_history_v1',
+      JSON.stringify([
+        {
+          id: 'msg-alert-1',
+          role: 'assistant',
+          content: 'Noté que tenés metas pendientes, pero date un respiro.',
+          actionTaken: 'INJECT_CONVERSATIONAL_ALERT',
+          actionPayload: null,
+          ruleId: 'GENERAL_CONVERSATION'
+        },
+        {
+          id: 'msg-sugg-2',
+          role: 'assistant',
+          content: 'Un buen consejo para hoy es avanzar de a una sola tarea.',
+          actionTaken: 'CONVERSATIONAL_SUGGESTION',
+          actionPayload: null,
+          ruleId: 'GENERAL_CONVERSATION'
+        }
+      ])
+    );
+
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    // Verificamos que se rendericen los textos de los mensajes
+    const textContent = modalElement.querySelector('#chatbot-messages-list')?.textContent;
+    expect(textContent).toContain('Noté que tenés metas pendientes');
+    expect(textContent).toContain('Un buen consejo para hoy');
+
+    // Ninguno de estos mensajes conversacionales debe tener tarjeta de acción ni botón "Ejecutar en el lienzo"
+    const actionCards = modalElement.querySelectorAll('[data-action-card]');
+    expect(actionCards.length).toBe(0);
+
+    const actionTriggers = modalElement.querySelectorAll('[data-action-trigger]');
+    expect(actionTriggers.length).toBe(0);
+  });
+
+  it('10. Mensajes de creación de tarea o nota renderizan tarjeta de Acción Sugerida y botón de ejecución', async () => {
+    localStorage.setItem(
+      'foco_chat_history_v1',
+      JSON.stringify([
+        {
+          id: 'msg-task-1',
+          role: 'assistant',
+          content: 'He preparado la tarea para tu lienzo.',
+          actionTaken: 'ADD_TASK',
+          actionPayload: {
+            type: 'add_card',
+            isTask: true,
+            title: 'Hacer compras',
+            content: 'Leche, pan, café'
+          },
+          actionLabel: 'Crear tarea: Hacer compras',
+          actionDescription: 'Agregar tarea interactiva al lienzo'
+        }
+      ])
+    );
+
+    const modalElement = document.createElement('foco-chatbot-modal');
+    document.body.appendChild(modalElement);
+
+    const launcherBtn = modalElement.querySelector('#foco-chatbot-launcher-btn');
+    launcherBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const actionCard = modalElement.querySelector('[data-action-card="ADD_TASK"]');
+    expect(actionCard).not.toBeNull();
+    expect(actionCard?.textContent).toContain('Acción Sugerida');
+    expect(actionCard?.textContent).toContain('Crear tarea: Hacer compras');
+
+    const actionTrigger = modalElement.querySelector('[data-action-trigger="ADD_TASK"]');
+    expect(actionTrigger).not.toBeNull();
+    expect(actionTrigger?.textContent).toContain('Ejecutar en el lienzo');
+  });
 });
+
+

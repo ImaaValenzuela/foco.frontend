@@ -234,6 +234,7 @@ export const ChatbotModal = memo(function ChatbotModal({
         actionLabel: response.actionLabel,
         actionDescription: response.actionDescription,
         actionPayload: response.actionPayload || null,
+        ruleId: response.ruleId || 'GENERAL_CONVERSATION',
         isExecuted: false,
         logId: response.logId,
         feedback: null,
@@ -491,60 +492,78 @@ export const ChatbotModal = memo(function ChatbotModal({
 
                   {/* ========================================================
                       C. Tarjeta con Botón Azul "Ejecutar en el lienzo"
+                      Solo se muestra para acciones operativas concretas sobre el lienzo.
+                      Las respuestas de carácter general NO renderizan este recuadro.
                       ======================================================== */}
-                  {!isUser && msg.actionTaken && (
-                    <div
-                      data-action-card={msg.actionTaken}
-                      className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">
-                          Acción Sugerida
-                        </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </div>
+                  {(() => {
+                    const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
+                    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
 
-                      <h5 className="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">
-                        {msg.actionLabel || msg.actionTaken}
-                      </h5>
+                    const hasExecutablePayload = Boolean(
+                      !isUser && msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+                    );
+                    const hasExecutableActionTaken = Boolean(
+                      !isUser && msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
+                    );
 
-                      {msg.actionDescription && (
-                        <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
-                          {msg.actionDescription}
-                        </p>
-                      )}
+                    const showActionCard = hasExecutablePayload || hasExecutableActionTaken;
 
-                      {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
-                      <button
-                        type="button"
-                        data-action-trigger={msg.actionTaken}
-                        onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
-                        className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
-                          msg.isExecuted
-                            ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
-                            : 'bg-[#2563EB] hover:bg-blue-700'
-                        }`}
+                    if (!showActionCard) return null;
+
+                    return (
+                      <div
+                        data-action-card={msg.actionTaken || msg.actionPayload?.type}
+                        className="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs"
                       >
-                        {msg.isExecuted ? (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            <span>✓ Ejecutado en el lienzo</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Ejecutar en el lienzo</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                          </>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">
+                            Acción Sugerida
+                          </span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+
+                        <h5 className="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">
+                          {msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}
+                        </h5>
+
+                        {(msg.actionDescription || msg.actionPayload?.content) && (
+                          <p className="text-[11px] text-slate-600 mb-2.5 leading-tight">
+                            {msg.actionDescription || msg.actionPayload?.content}
+                          </p>
                         )}
-                      </button>
-                    </div>
-                  )}
+
+                        {/* Botón Azul Requerido (#2563EB) con leyenda "Ejecutar en el lienzo" */}
+                        <button
+                          type="button"
+                          data-action-trigger={msg.actionTaken || msg.actionPayload?.type}
+                          onClick={() => handleExecuteAction(msg.id, msg.actionTaken, msg.actionPayload)}
+                          className={`w-full py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98 ${
+                            msg.isExecuted
+                              ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
+                              : 'bg-[#2563EB] hover:bg-blue-700'
+                          }`}
+                        >
+                          {msg.isExecuted ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>✓ Ejecutado en el lienzo</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Ejecutar en el lienzo</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                              </svg>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   {/* Feedback */}
                   {!isUser && (
@@ -794,22 +813,34 @@ export class FocoChatbotModal extends HTMLElement {
   }
 
   renderMessagesHtml() {
+    const EXECUTABLE_PAYLOAD_TYPES = ['add_card', 'start_pomodoro', 'add_habit', 'toggle_habit', 'break_prompt', 'recommend_plan'];
+    const EXECUTABLE_ACTION_TAKENS = ['CONFIG_POMODORO', 'START_POMODORO', 'ADD_NOTE', 'ADD_TASK', 'ADD_CARD', 'ADD_HABIT', 'TOGGLE_HABIT'];
+
     return this.messages.map((msg) => {
       const isUser = msg.role === 'user';
+      const hasExecutablePayload = Boolean(
+        !isUser && msg.actionPayload && EXECUTABLE_PAYLOAD_TYPES.includes(msg.actionPayload.type)
+      );
+      const hasExecutableActionTaken = Boolean(
+        !isUser && msg.actionTaken && EXECUTABLE_ACTION_TAKENS.includes(msg.actionTaken)
+      );
+
+      const showActionCard = hasExecutablePayload || hasExecutableActionTaken;
+
       return `
         <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'}" data-message-id="${msg.id}">
           <div class="p-3.5 rounded-2xl text-xs md:text-sm shadow-xs max-w-[88%] leading-relaxed ${
             isUser ? 'bg-[--color-btn-iniciar,#22298A] text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80'
           }">
             <div class="whitespace-pre-line">${msg.content}</div>
-            ${!isUser && msg.actionTaken ? `
-              <div data-action-card="${msg.actionTaken}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
+            ${showActionCard ? `
+              <div data-action-card="${msg.actionTaken || msg.actionPayload?.type}" class="mt-3 p-3.5 rounded-xl bg-[--color-asociacion-suave,#eef2ff] border border-[--color-asociacion-borde,#c7d2fe] text-[--color-asociacion-primario,#323888] shadow-xs">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100/90 text-[--color-asociacion-primario,#323888]">Acción Sugerida</span>
                 </div>
-                <h5 class="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">${msg.actionLabel || msg.actionTaken}</h5>
-                ${msg.actionDescription ? `<p class="text-[11px] text-slate-600 mb-2.5 leading-tight">${msg.actionDescription}</p>` : ''}
-                <button type="button" data-action-trigger="${msg.actionTaken}" class="w-full py-2 px-3 rounded-xl ${msg.isExecuted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#2563EB] hover:bg-blue-700'} text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98">
+                <h5 class="text-xs font-bold text-[--color-asociacion-primario,#323888] mb-1">${msg.actionLabel || msg.actionPayload?.title || msg.actionTaken}</h5>
+                ${(msg.actionDescription || msg.actionPayload?.content) ? `<p class="text-[11px] text-slate-600 mb-2.5 leading-tight">${msg.actionDescription || msg.actionPayload?.content}</p>` : ''}
+                <button type="button" data-action-trigger="${msg.actionTaken || msg.actionPayload?.type}" class="w-full py-2 px-3 rounded-xl ${msg.isExecuted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#2563EB] hover:bg-blue-700'} text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98">
                   ${msg.isExecuted ? '<span>✓ Ejecutado en el lienzo</span>' : '<span>Ejecutar en el lienzo</span>'}
                 </button>
               </div>
@@ -940,6 +971,7 @@ export class FocoChatbotModal extends HTMLElement {
             localStorage.setItem(STORAGE_CHAT_KEY, JSON.stringify(this.messages));
             await copilotService.sendFeedback({
               messageId: msgId,
+              logId: target.logId || null,
               rating,
               actionTaken: target.actionTaken || null,
             });
@@ -986,6 +1018,7 @@ export class FocoChatbotModal extends HTMLElement {
         actionLabel: response.actionLabel,
         actionDescription: response.actionDescription,
         actionPayload: response.actionPayload || null,
+        ruleId: response.ruleId || 'GENERAL_CONVERSATION',
         isExecuted: false,
         logId: response.logId,
         feedback: null,

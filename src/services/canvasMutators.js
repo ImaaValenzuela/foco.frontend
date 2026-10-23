@@ -219,47 +219,84 @@ export class CanvasMutators {
    * @returns {Promise<{ success: boolean, action: string, data?: any }>}
    */
   async executeNluAction(actionTaken, actionPayload = {}) {
-    if (!actionTaken) return { success: false, error: 'No action provided' };
+    const payloadType = actionPayload?.type;
+    if (!actionTaken && !payloadType) return { success: false, error: 'No action provided' };
 
-    switch (actionTaken) {
-      case 'CONFIG_POMODORO':
-      case 'START_POMODORO': {
-        const res = await this.startPomodoro(actionPayload);
-        return { success: true, action: actionTaken, data: res };
-      }
+    // 1. Inserción de Tarjeta / Tarea en el Lienzo (add_card o alertas conversacionales)
+    if (
+      payloadType === 'add_card' ||
+      actionTaken === 'INJECT_CONVERSATIONAL_ALERT' ||
+      actionTaken === 'RECOMMEND_PROJECT_PLAN' ||
+      actionTaken === 'PROMPT_BRAIN_DUMP' ||
+      actionTaken === 'PROMPT_WEEKLY_PLANNING' ||
+      actionTaken === 'SUGGEST_INTEREST_CARD' ||
+      actionTaken === 'ADD_NOTE' ||
+      actionTaken === 'ADD_TASK' ||
+      actionTaken === 'ADD_CARD' ||
+      actionTaken === 'CREATE_BLOCK_ITEM'
+    ) {
+      const cardText = actionPayload?.content || actionPayload?.text || actionPayload?.title || 'Nueva tarjeta sugerida';
+      const targetBlock = actionPayload?.block_type || actionPayload?.targetBlock || 'active_objectives';
+      const isTask = actionPayload?.isTask !== undefined
+        ? Boolean(actionPayload.isTask)
+        : (actionTaken === 'ADD_TASK' || actionTaken === 'INJECT_CONVERSATIONAL_ALERT');
+      const title = actionPayload?.title || null;
 
-      case 'ADD_HABIT':
-      case 'CREATE_HABIT':
-      case 'SUGGEST_HABIT_LOG': {
-        const name = actionPayload?.name || actionPayload?.text || 'Nuevo hábito';
-        const res = await this.addHabit(name);
-        return { success: true, action: actionTaken, data: res };
-      }
-
-      case 'ADD_NOTE':
-      case 'CREATE_BLOCK_ITEM':
-      case 'RECOMMEND_PROJECT_PLAN': {
-        const res = await this.addCard({
-          text: actionPayload?.text || 'Nueva nota',
-          targetBlock: actionPayload?.targetBlock || 'active_objectives',
-          isTask: Boolean(actionPayload?.isTask),
-          title: actionPayload?.title || null
-        });
-        return { success: true, action: actionTaken, data: res };
-      }
-
-      case 'SHOW_BREAK_PROMPT_UI': {
-        CanvasMutators.notify('Pausa sugerida', 'Tomate 10 minutos para despejarte y volver con energía.');
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('foco:break-prompt'));
-        }
-        return { success: true, action: actionTaken };
-      }
-
-      default:
-        console.warn('[CanvasMutators] Acción desconocida:', actionTaken);
-        return { success: false, error: `Acción desconocida: ${actionTaken}` };
+      const res = await this.addCard({
+        text: cardText,
+        targetBlock,
+        isTask,
+        title
+      });
+      return { success: true, action: actionTaken || 'ADD_CARD', data: res };
     }
+
+    // 2. Temporizador Pomodoro
+    if (
+      payloadType === 'start_pomodoro' ||
+      actionTaken === 'CONFIG_POMODORO' ||
+      actionTaken === 'START_POMODORO'
+    ) {
+      const minutes = actionPayload?.focusMinutes || 25;
+      const res = await this.startPomodoro({ focusMinutes: minutes });
+      return { success: true, action: actionTaken || 'START_POMODORO', data: res };
+    }
+
+    // 3. Creación o Reenganche de Hábitos
+    if (
+      payloadType === 'add_habit' ||
+      actionTaken === 'ADD_HABIT' ||
+      actionTaken === 'CREATE_HABIT' ||
+      actionTaken === 'SUGGEST_HABIT_LOG' ||
+      actionTaken === 'HIGHLIGHT_HABIT_TRACKER'
+    ) {
+      const name = actionPayload?.title || actionPayload?.name || actionPayload?.content || actionPayload?.text || 'Nuevo hábito';
+      const res = await this.addHabit(name);
+      return { success: true, action: actionTaken || 'ADD_HABIT', data: res };
+    }
+
+    // 4. Alternancia de Estado de Hábito
+    if (payloadType === 'toggle_habit' || actionTaken === 'TOGGLE_HABIT') {
+      const res = await this.toggleHabit(actionPayload?.habitId);
+      return { success: true, action: actionTaken || 'TOGGLE_HABIT', data: res };
+    }
+
+    // 5. Alerta de Pausa / Cooldown
+    if (
+      payloadType === 'break_prompt' ||
+      actionTaken === 'SHOW_BREAK_PROMPT_UI' ||
+      actionTaken === 'LOCK_POMODORO_COOLDOWN'
+    ) {
+      const breakMsg = actionPayload?.content || 'Tomate 10 minutos para despejarte y volver con energía.';
+      CanvasMutators.notify('Pausa sugerida', breakMsg);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('foco:break-prompt', { detail: actionPayload }));
+      }
+      return { success: true, action: actionTaken || 'BREAK_PROMPT' };
+    }
+
+    console.warn('[CanvasMutators] Acción desconocida:', actionTaken, actionPayload);
+    return { success: false, error: `Acción desconocida: ${actionTaken}` };
   }
 }
 

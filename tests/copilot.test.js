@@ -81,4 +81,140 @@ describe('CopilotService (Frontend)', () => {
     expect(result.meta.usedFallback).toBe(true);
     expect(result.retrievedPassages).toEqual([]);
   });
+
+  describe('Fase 5: Structured Outputs con LangChain y Feedback Loop', () => {
+    it('inferStructured ejecuta POST /ai/infer y retorna objeto estructurado', async () => {
+      const mockStructured = {
+        rule_id: 'F_DISP_DESVIO_ESTUDIO',
+        suggested_message: "¡Hola! Noté que tenés un objetivo pendiente ('Repasar React'). ¿Qué tal si hoy le dedicamos un solo ciclo Pomodoro?",
+        action_taken: 'INJECT_CONVERSATIONAL_ALERT',
+        action_payload: {
+          type: 'add_card',
+          block_type: 'active_objectives',
+          title: 'Repasar React - Ciclo Pomodoro',
+          content: 'Tarea sugerida por el copiloto para despejar la mente'
+        },
+        log_id: 'log-fase5-test-1'
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockStructured)
+      });
+
+      const res = await copilotService.inferStructured('Repasar React', { ruleId: 'F_DISP_DESVIO_ESTUDIO' });
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/ai/infer'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            message: 'Repasar React',
+            rule_id: 'F_DISP_DESVIO_ESTUDIO',
+            customAction: null
+          })
+        })
+      );
+      expect(res.rule_id).toBe('F_DISP_DESVIO_ESTUDIO');
+      expect(res.action_payload.type).toBe('add_card');
+    });
+
+    it('interpretMessage procesa y mapea la respuesta estructurada de Fase 5', async () => {
+      const mockStructured = {
+        rule_id: 'F_DISP_DESVIO_ESTUDIO',
+        suggested_message: '¡Hola, Alex! Noté que tenés un objetivo pendiente...',
+        action_taken: 'INJECT_CONVERSATIONAL_ALERT',
+        action_payload: {
+          type: 'add_card',
+          block_type: 'active_objectives',
+          title: 'Repasar React - Ciclo Pomodoro',
+          content: 'Tarea sugerida por el copiloto'
+        },
+        log_id: 'log-fase5-789'
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockStructured)
+      });
+
+      const interpreted = await copilotService.interpretMessage('Repasar React');
+      expect(interpreted.reply).toBe('¡Hola, Alex! Noté que tenés un objetivo pendiente...');
+      expect(interpreted.actionTaken).toBe('INJECT_CONVERSATIONAL_ALERT');
+      expect(interpreted.actionPayload.type).toBe('add_card');
+      expect(interpreted.actionLabel).toBe('Repasar React - Ciclo Pomodoro');
+      expect(interpreted.logId).toBe('log-fase5-789');
+    });
+
+    it('interpretMessage distingue entre crear tarea (isTask: true) y crear nota (isTask: false)', async () => {
+      // 1. Tarea
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          rule_id: 'RAG_AUGMENTED_INFERENCE',
+          suggested_message: 'He preparado la tarea "Estudiar Álgebra" para tu tablero.',
+          action_taken: 'ADD_CARD',
+          action_payload: {
+            type: 'add_card',
+            isTask: true,
+            title: 'Estudiar Álgebra',
+            content: 'Repasar ejercicios 1 al 10',
+            block_type: 'active_objectives'
+          },
+          log_id: 'log-task-1'
+        })
+      });
+
+      const taskResult = await copilotService.interpretMessage('crear tarea estudiar algebra');
+      expect(taskResult.actionTaken).toBe('ADD_TASK');
+      expect(taskResult.actionPayload.isTask).toBe(true);
+      expect(taskResult.actionLabel).toBe('Crear tarea: Estudiar Álgebra');
+
+      // 2. Nota
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          rule_id: 'RAG_AUGMENTED_INFERENCE',
+          suggested_message: 'He preparado la nota "Ideas de Negocio" para tu tablero.',
+          action_taken: 'ADD_CARD',
+          action_payload: {
+            type: 'add_card',
+            isTask: false,
+            title: 'Ideas de Negocio',
+            content: 'App de micro-hábitos',
+            block_type: 'inbox'
+          },
+          log_id: 'log-note-1'
+        })
+      });
+
+      const noteResult = await copilotService.interpretMessage('crear nota ideas de negocio');
+      expect(noteResult.actionTaken).toBe('ADD_NOTE');
+      expect(noteResult.actionPayload.isTask).toBe(false);
+      expect(noteResult.actionLabel).toBe('Crear nota: Ideas de Negocio');
+    });
+
+    it('sendFeedback envía POST /ai/copilot/feedback con logId y persistencia', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, logId: 'log-fase5-789', user_feedback: 'positive' })
+      });
+
+      const feedbackRes = await copilotService.sendFeedback({
+        messageId: 'msg-123',
+        logId: 'log-fase5-789',
+        rating: 'positive',
+        actionTaken: 'INJECT_CONVERSATIONAL_ALERT'
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/ai/copilot/feedback'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"logId":"log-fase5-789"')
+        })
+      );
+      expect(feedbackRes.success).toBe(true);
+    });
+  });
 });
+
